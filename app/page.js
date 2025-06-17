@@ -330,15 +330,45 @@ export default function AIImageGenerator() {
     const { name, value, type } = e.target;
     setVideoParams(p => ({ ...p, [name]: type === 'number' ? Number(value) : value }));
   };
+
+  const fileToBase64 = (file) => new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = (error) => reject(error);
+  });
   
   const handleAnalyzeImage = async () => {
-      if (!imageForAnalysis) { showToast('Silakan pilih gambar.', 'error'); return; }
+      if (!imageForAnalysis) { showToast('Silakan pilih gambar untuk dianalisis.', 'error'); return; }
       setIsAnalyzing(true); setAnalyzedPrompt('');
-      showToast('Analisis gambar memerlukan API produksi.', 'info');
-      setTimeout(() => {
-          setAnalyzedPrompt('Contoh: Anjing golden retriever tersenyum di padang bunga matahari saat senja.');
+      try {
+          const base64DataUrl = await fileToBase64(imageForAnalysis);
+          const payload = {
+              model: "openai",
+              messages: [{ role: "user", content: [ { type: "text", text: "Describe this image for a text-to-image prompt. Be descriptive and artistic." }, { type: "image_url", image_url: { url: base64DataUrl }}]}],
+              max_tokens: 500
+          };
+          const response = await fetch('https://text.pollinations.ai/openai', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+          });
+          if (!response.ok) {
+              const errorData = await response.text();
+              console.error("API Error Response:", errorData);
+              throw new Error(`Analisis gambar gagal: ${response.statusText}`);
+          }
+          const result = await response.json();
+          const description = result.choices[0]?.message?.content;
+          if (!description) { throw new Error('Format respons API tidak dikenali.'); }
+          setAnalyzedPrompt(description.trim());
+          showToast('Gambar berhasil dianalisis!', 'success');
+      } catch (error) {
+          console.error("Image analysis error:", error);
+          showToast(error.message, 'error');
+      } finally {
           setIsAnalyzing(false);
-      }, 1500);
+      }
   };
   
   const handleReset = () => {
@@ -453,7 +483,7 @@ export default function AIImageGenerator() {
                 </div>
             </main>
             <footer className="text-center p-4 mt-8 border-t border-gray-500/20 text-sm opacity-70">
-                <p>&copy; {new Date().getFullYear()} - RuangRiung AI Image Generator - Developed with ❤️ by Arif Tirtana</p>
+                <p>&copy; {new Date().getFullYear()} RuangRiung AI Image Generator- Developed with ❤️ by Arif Tirtana</p>
             </footer>
         </div>
         {showBackToTop && (
