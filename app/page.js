@@ -102,6 +102,12 @@ export default function AIImageGenerator() {
     } catch(e) { console.error("Gagal menyimpan state:", e); }
   }, [isMounted, prompt, model, quality, sizePreset, apiKey, generationHistory, savedPrompts, batchSize, seed, useCustomSize, customWidth, customHeight, artStyle, coins]);
 
+  const showToast = useCallback((message, type = 'info', duration = 4000) => {
+    const id = Date.now() + Math.random();
+    setToasts(prev => [...prev, { id, message, type }]);
+    setTimeout(() => setToasts(prev => prev.filter(toast => toast.id !== id)), duration);
+  }, []);
+
   useEffect(() => {
     const timer = setInterval(() => {
       try {
@@ -145,18 +151,12 @@ export default function AIImageGenerator() {
     };
     window.addEventListener('scroll', handleScroll);
     return () => { clearInterval(timer); window.removeEventListener('scroll', handleScroll); };
-  }, [model]);
+  }, [model, showToast]);
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', darkMode);
     localStorage.setItem('darkMode', darkMode ? 'true' : 'false');
   }, [darkMode]);
-  
-  const showToast = useCallback((message, type = 'info', duration = 4000) => {
-    const id = Date.now() + Math.random();
-    setToasts(prev => [...prev, { id, message, type }]);
-    setTimeout(() => setToasts(prev => prev.filter(toast => toast.id !== id)), duration);
-  }, []);
 
   const scrollToTop = () => { window.scrollTo({ top: 0, behavior: 'smooth' }); };
   
@@ -276,21 +276,128 @@ export default function AIImageGenerator() {
     
   const handleMasterReset = () => {
     try {
+      // Preserve coin data and dark mode preference
+      const coinData = localStorage.getItem('aiGeneratorCoinsData');
+      const darkModePref = localStorage.getItem('darkMode');
+      
       localStorage.clear();
-      showToast('Semua data berhasil dihapus. Aplikasi akan dimuat ulang.', 'success', 4000);
-      setTimeout(() => {
-        window.location.reload();
-      }, 2000);
+
+      // Restore preserved data
+      if (coinData) localStorage.setItem('aiGeneratorCoinsData', coinData);
+      if (darkModePref) localStorage.setItem('darkMode', darkModePref);
+
+      // Reset React state to initial values
+      setPrompt('');
+      setModel('flux');
+      setQuality('hd');
+      setSizePreset('1024x1024');
+      setUseCustomSize(false);
+      setCustomWidth(1024);
+      setCustomHeight(1024);
+      setSeed('');
+      setBatchSize(1);
+      setArtStyle('cinematic');
+      setGeneratedImages([]);
+      setLoading(false);
+      setIsEnhancing(false);
+      setIsBuildingPrompt(false);
+      setApiKey('');
+      setGenerationHistory([]);
+      setSavedPrompts([]);
+      setIsEditorOpen(false);
+      setEditingImage(null);
+      setIsAnalysisModalOpen(false);
+      setActiveTab('image');
+      setIsCreatorOpen(false);
+      setPromptCreator({ subject: '', details: '' });
+      setVideoParams({
+          concept: '', visualStyle: 'cinematic', duration: 10, aspectRatio: '16:9',
+          fps: 24, cameraMovement: 'static', cameraAngle: 'eye-level', lensType: 'standard',
+          depthOfField: 'medium', filmGrain: 20, chromaticAberration: 10,
+          colorGrading: 'neutral', timeOfDay: 'midday', weather: 'clear'
+      });
+      setGeneratedAudio(null);
+      setGeneratedVideoPrompt('');
+
+      showToast('Semua data aplikasi telah direset.', 'success');
+      setIsMasterResetModalOpen(false);
+
     } catch (e) {
-      console.error("Gagal menghapus localStorage:", e);
+      console.error("Gagal mereset data:", e);
       showToast('Gagal mereset data.', 'error');
     }
-    setIsMasterResetModalOpen(false);
   };
 
   const handleOpenEditor = (image) => { setEditingImage(image); setIsEditorOpen(true); };
   
-  const handleDownload = (image, filter, watermark) => { const img = new Image(); img.crossOrigin = 'anonymous'; img.src = image.url; img.onload = () => { const canvas = canvasRef.current; const ctx = canvas.getContext('2d'); canvas.width = img.width; canvas.height = img.height; if (filter) ctx.filter = filter; ctx.drawImage(img, 0, 0); if (watermark?.text) { ctx.filter = 'none'; ctx.fillStyle = watermark.color; ctx.font = `${watermark.size}px Arial`; ctx.textAlign = 'right'; ctx.textBaseline = 'bottom'; ctx.fillText(watermark.text, canvas.width - 20, canvas.height - 20); } const link = document.createElement('a'); link.download = `ruangriung-ai-${Date.now()}.png`; link.href = canvas.toDataURL('image/png'); link.click(); showToast('Gambar diunduh...', 'success'); }; img.onerror = () => { showToast('Gagal memuat gambar untuk diunduh.', 'error'); }; };
+  const handleDownload = (image, filter, watermark) => {
+    const mainImage = new Image();
+    mainImage.crossOrigin = 'anonymous';
+    mainImage.src = image.url;
+
+    mainImage.onload = () => {
+        const canvas = canvasRef.current;
+        const ctx = canvas.getContext('2d');
+        canvas.width = mainImage.width;
+        canvas.height = mainImage.height;
+
+        // Apply filter to the main image
+        if (filter) {
+            ctx.filter = filter;
+        }
+        ctx.drawImage(mainImage, 0, 0);
+        ctx.filter = 'none'; // Reset filter after drawing
+
+        // Function to finalize and download
+        const finalizeDownload = () => {
+            const link = document.createElement('a');
+            link.download = `ruangriung-ai-${Date.now()}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+            showToast('Gambar diunduh...', 'success');
+        };
+
+        // Check if there is a watermark to apply
+        if (watermark && (watermark.text || watermark.imageUrl)) {
+            ctx.globalAlpha = watermark.opacity;
+            const x = (watermark.position.x / 100) * canvas.width;
+            const y = (watermark.position.y / 100) * canvas.height;
+
+            if (watermark.type === 'text' && watermark.text) {
+                const fontSize = (watermark.size / 100) * (canvas.width * 0.2); // Relative font size
+                ctx.font = `bold ${fontSize}px Arial`;
+                ctx.fillStyle = watermark.color;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(watermark.text, x, y);
+                finalizeDownload();
+            } else if (watermark.type === 'image' && watermark.imageUrl) {
+                const wmImage = new Image();
+                wmImage.crossOrigin = 'anonymous';
+                wmImage.src = watermark.imageUrl;
+                wmImage.onload = () => {
+                    const wmWidth = (watermark.size / 100) * canvas.width;
+                    const wmHeight = wmImage.height * (wmWidth / wmImage.width);
+                    ctx.drawImage(wmImage, x - wmWidth / 2, y - wmHeight / 2, wmWidth, wmHeight);
+                    finalizeDownload();
+                };
+                wmImage.onerror = () => {
+                    showToast('Gagal memuat gambar watermark.', 'error');
+                    finalizeDownload(); // Download without watermark if it fails
+                };
+            } else {
+                finalizeDownload();
+            }
+        } else {
+            // No watermark, just download
+            finalizeDownload();
+        }
+    };
+
+    mainImage.onerror = () => {
+        showToast('Gagal memuat gambar utama untuk diunduh.', 'error');
+    };
+  };
   
   const handleClearHistory = () => { setGenerationHistory([]); setSavedPrompts([]); setIsClearHistoryModalOpen(false); showToast('Semua riwayat telah dihapus.', 'success'); };
   
@@ -325,7 +432,7 @@ export default function AIImageGenerator() {
         <Toasts toasts={toasts} />
         <canvas ref={canvasRef} className="hidden"></canvas>
         
-        {isEditorOpen && <ImageEditorModal image={editingImage} onClose={() => setIsEditorOpen(false)} onUsePromptAndSeed={usePromptAndSeed} onDownload={handleDownload} onCreateVariation={handleCreateVariation} />}
+        {isEditorOpen && <ImageEditorModal image={editingImage} onClose={() => setIsEditorOpen(false)} onUsePromptAndSeed={usePromptAndSeed} onDownload={handleDownload} onCreateVariation={handleCreateVariation} showToast={showToast} />}
         {isAnalysisModalOpen && <ImageAnalysisModal isOpen={isAnalysisModalOpen} onClose={() => setIsAnalysisModalOpen(false)} onPromptGenerated={(p) => { setPrompt(p); showToast("Prompt dari gambar berhasil digunakan!", "success"); setIsAnalysisModalOpen(false); }} showToast={showToast} />}
         
         {/* MODAL ADMIN */}
@@ -457,4 +564,5 @@ export default function AIImageGenerator() {
             </NeumorphicButton>
         )}
     </div>
-  )}
+  );
+}
