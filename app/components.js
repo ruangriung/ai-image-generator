@@ -25,7 +25,7 @@ export const NeumorphicButton = ({ children, onClick, className = '', as = 'butt
 
 export const Toasts = ({ toasts }) => {
   return (
-    // Mengubah posisi dari right-5 ke left-5
+    // Mengubah posisi dari right-5 ke left-5 dan
     <div className="fixed bottom-5 left-5 z-[100] flex flex-col items-start space-y-2">
       {toasts.map((toast) => {
         const colors = { success: 'bg-green-500', error: 'bg-red-500', info: 'bg-blue-500' };
