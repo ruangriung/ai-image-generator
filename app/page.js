@@ -341,8 +341,8 @@ export default function AIImageGenerator() {
         {isClearHistoryModalOpen && <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4"><div className="p-8 rounded-2xl w-full max-w-md" style={{ background: 'var(--bg-color)', boxShadow: 'var(--shadow-outset)' }}><h2 className="text-xl font-bold mb-4">Konfirmasi</h2><p className="mb-6">Apakah Anda yakin ingin menghapus semua riwayat dan prompt tersimpan?</p><div className="flex justify-end gap-4"><NeumorphicButton onClick={() => setIsClearHistoryModalOpen(false)}>Batal</NeumorphicButton><NeumorphicButton onClick={handleClearHistory} className="font-bold bg-red-500 text-white">Hapus</NeumorphicButton></div></div></div>}
 
         <main className="container mx-auto p-4 sm:p-6 lg:p-8">
-            <header className="flex flex-col sm:flex-row gap-4 justify-between items-center mb-8">
-                <h1 className="text-3xl md:text-4xl font-bold">Ruangriung AI Image Generator</h1>
+            <header className="flex flex-col gap-4 items-center text-center mb-8">
+                <h1 className="text-3xl md:text-4xl font-bold">RuangRiung AI Image Generator</h1>
                 <div className="flex items-center gap-2 sm:gap-4 flex-wrap justify-center">
                      <div className="flex items-center gap-2 sm:gap-4 p-2 rounded-xl" style={{boxShadow: 'var(--shadow-outset)'}}>
                         <div className="flex items-center gap-2 border-r border-transparent sm:border-[var(--shadow-dark)] dark:sm:border-[var(--shadow-light)] pr-2 sm:pr-3">
