@@ -258,15 +258,15 @@ export const ImageEditorModal = ({ image, onClose, onUsePromptAndSeed, onDownloa
               
                  <label className="text-sm">Posisi Cepat</label>
                  <div className="grid grid-cols-3 gap-1 p-1 rounded-lg" style={{boxShadow:'var(--shadow-inset)'}}>
-                    <NeumorphicButton onClick={() => setWatermarkPosition(10,10)} className="!p-2 aspect-square"/>
-                    <NeumorphicButton onClick={() => setWatermarkPosition(50,10)} className="!p-2 aspect-square"/>
-                    <NeumorphicButton onClick={() => setWatermarkPosition(90,10)} className="!p-2 aspect-square"/>
-                    <NeumorphicButton onClick={() => setWatermarkPosition(10,50)} className="!p-2 aspect-square"/>
-                    <NeumorphicButton onClick={() => setWatermarkPosition(50,50)} className="!p-2 aspect-square"><Grid3x3 size={16}/></NeumorphicButton>
-                    <NeumorphicButton onClick={() => setWatermarkPosition(90,50)} className="!p-2 aspect-square"/>
-                    <NeumorphicButton onClick={() => setWatermarkPosition(10,90)} className="!p-2 aspect-square"/>
-                    <NeumorphicButton onClick={() => setWatermarkPosition(50,90)} className="!p-2 aspect-square"/>
-                    <NeumorphicButton onClick={() => setWatermarkPosition(90,90)} className="!p-2 aspect-square"/>
+                    <NeumorphicButton onClick={() => setWatermarkPosition(15, 15)} className="!p-2 aspect-square"/>
+                    <NeumorphicButton onClick={() => setWatermarkPosition(50, 15)} className="!p-2 aspect-square"/>
+                    <NeumorphicButton onClick={() => setWatermarkPosition(85, 15)} className="!p-2 aspect-square"/>
+                    <NeumorphicButton onClick={() => setWatermarkPosition(15, 50)} className="!p-2 aspect-square"/>
+                    <NeumorphicButton onClick={() => setWatermarkPosition(50, 50)} className="!p-2 aspect-square"><Grid3x3 size={16}/></NeumorphicButton>
+                    <NeumorphicButton onClick={() => setWatermarkPosition(85, 50)} className="!p-2 aspect-square"/>
+                    <NeumorphicButton onClick={() => setWatermarkPosition(15, 85)} className="!p-2 aspect-square"/>
+                    <NeumorphicButton onClick={() => setWatermarkPosition(50, 85)} className="!p-2 aspect-square"/>
+                    <NeumorphicButton onClick={() => setWatermarkPosition(85, 85)} className="!p-2 aspect-square"/>
                  </div>
               </div>
             </CollapsibleSection>
