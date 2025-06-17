@@ -5,7 +5,7 @@ import {
     Sun, Moon, Settings, X, Wand2, RefreshCw, ChevronsRight, 
     ImageDown, Bookmark, Trash2, Search, Plus, Minus, History, Star, Upload,
     ChevronDown, ChevronUp, Sparkles, Image as ImageIcon, Video, Layers, DownloadCloud, Coins, Clock,
-    Eye, EyeOff, Diamond
+    Eye, EyeOff, Diamond, Copy
 } from 'lucide-react';
 
 // --- Reusable Components ---
@@ -32,12 +32,13 @@ const Toast = ({ message, type, onDismiss }) => {
 };
 
 // --- Image Editor Modal ---
-const ImageEditorModal = ({ image, onClose, onUsePromptAndSeed, onHDFownload }) => {
+const ImageEditorModal = ({ image, onClose, onUsePromptAndSeed, onEnhanceFeature, onDownload }) => {
     const [zoom, setZoom] = useState(1);
     const [baseFilter, setBaseFilter] = useState('none');
     const [enhancements, setEnhancements] = useState({ sharpness: false, colorCorrection: false, noiseReduction: false });
     const [isDragging, setIsDragging] = useState(false);
     const [position, setPosition] = useState({ x: 0, y: 0 });
+    const [watermark, setWatermark] = useState({ text: '', color: '#ffffff', size: 32, position: 'bottom-right' });
     const imageRef = useRef(null);
     const startPos = useRef({ x: 0, y: 0 });
 
@@ -72,19 +73,27 @@ const ImageEditorModal = ({ image, onClose, onUsePromptAndSeed, onHDFownload }) 
                     <div className="flex justify-between items-center"><h2 className="text-xl font-bold">Editor</h2><NeumorphicButton onClick={onClose} className="!p-2"><X size={20} /></NeumorphicButton></div>
                     <div className="flex flex-col gap-4 p-4 rounded-xl neumorphic-card flex-grow overflow-y-auto">
                         <div><label className="font-semibold text-sm">Zoom</label><div className="flex items-center gap-2 p-2 rounded-xl mt-1" style={{boxShadow: 'var(--shadow-outset)'}}><NeumorphicButton onClick={() => setZoom(z => Math.max(0.5, z - 0.1))} className="w-full !p-2"><Minus size={16}/></NeumorphicButton><NeumorphicButton onClick={() => {setZoom(1); setPosition({x:0, y:0})}} className="w-full !p-2"><Search size={16}/></NeumorphicButton><NeumorphicButton onClick={() => setZoom(z => Math.min(5, z + 0.1))} className="w-full !p-2"><Plus size={16}/></NeumorphicButton></div></div>
-                        <div><label className="font-semibold text-sm">Filter Dasar</label><select onChange={(e) => setBaseFilter(e.target.value)} value={baseFilter} className="w-full p-3 mt-1 rounded-lg neumorphic-input bg-[var(--bg-color)]"><option value="none">Tanpa Filter</option><option value="grayscale(100%)">Grayscale</option><option value="sepia(100%)">Sepia</option><option value="invert(100%)">Invert</option></select></div>
+                        <div><label className="font-semibold text-sm">Filter Dasar</label><select onChange={(e) => setBaseFilter(e.target.value)} value={baseFilter} className="w-full p-3 mt-1 rounded-lg neumorphic-input bg-[var(--bg-color)]"><option value="none">Normal</option><option value="grayscale(100%)">Grayscale</option><option value="sepia(100%)">Sepia</option><option value="invert(100%)">Invert</option><option value="hue-rotate(90deg)">Alien</option><option value="brightness(1.5)">Terang</option></select></div>
                         <div className="space-y-2">
                            <label className="font-semibold text-sm flex items-center gap-2"><Diamond size={16}/>AI Enhance Tools</label>
                            <NeumorphicButton active={enhancements.sharpness} onClick={() => handleEnhancementToggle('sharpness')} className="w-full text-sm !p-2">Tingkatkan Ketajaman</NeumorphicButton>
                            <NeumorphicButton active={enhancements.colorCorrection} onClick={() => handleEnhancementToggle('colorCorrection')} className="w-full text-sm !p-2">Koreksi Warna</NeumorphicButton>
                            <NeumorphicButton active={enhancements.noiseReduction} onClick={() => handleEnhancementToggle('noiseReduction')} className="w-full text-sm !p-2">Kurangi Noise</NeumorphicButton>
-                           <NeumorphicButton disabled={true} className="w-full text-sm !p-2 opacity-50 cursor-not-allowed">Sempurnakan Wajah (Segera)</NeumorphicButton>
-                           <NeumorphicButton disabled={true} className="w-full text-sm !p-2 opacity-50 cursor-not-allowed">Sempurnakan Latar (Segera)</NeumorphicButton>
+                           <NeumorphicButton onClick={() => onEnhanceFeature(image, 'face')} className="w-full text-sm !p-2">Sempurnakan Wajah</NeumorphicButton>
+                           <NeumorphicButton onClick={() => onEnhanceFeature(image, 'background')} className="w-full text-sm !p-2">Sempurnakan Latar</NeumorphicButton>
                         </div>
+                         <div className="space-y-2 pt-2 border-t border-[var(--shadow-dark)]">
+                            <label className="font-semibold text-sm">Watermark / Teks</label>
+                            <input type="text" value={watermark.text} onChange={(e) => setWatermark(w => ({...w, text: e.target.value}))} placeholder="Teks watermark..." className="w-full p-2 rounded-lg neumorphic-input text-sm" />
+                            <div className="grid grid-cols-2 gap-2">
+                                <div><label className="text-xs">Warna</label><input type="color" value={watermark.color} onChange={(e) => setWatermark(w => ({...w, color: e.target.value}))} className="w-full h-8 p-1 rounded-lg"/></div>
+                                <div><label className="text-xs">Ukuran</label><input type="range" min="12" max="128" value={watermark.size} onChange={(e) => setWatermark(w => ({...w, size: Number(e.target.value)}))} className="w-full"/></div>
+                            </div>
+                         </div>
                         <div className="flex-grow"></div>
                         <div className="space-y-3">
                            <NeumorphicButton onClick={() => onUsePromptAndSeed(image.prompt, image.seed)} className="w-full text-sm !p-2"><Layers/>Gunakan Prompt & Seed</NeumorphicButton>
-                           <NeumorphicButton onClick={() => onHDFownload(image, finalFilter)} className="w-full text-sm !p-2"><DownloadCloud/>Unduh Kualitas Tinggi</NeumorphicButton>
+                           <NeumorphicButton onClick={() => onDownload(image, finalFilter, watermark)} className="w-full text-sm !p-2 font-bold"><ImageDown/>Unduh Gambar</NeumorphicButton>
                         </div>
                     </div>
                 </div>
@@ -101,9 +110,9 @@ export default function AIImageGenerator() {
   const [model, setModel] = useState('flux');
   const [quality, setQuality] = useState('hd');
   const [sizePreset, setSizePreset] = useState('1024x1024');
+  const [useCustomSize, setUseCustomSize] = useState(false);
   const [customWidth, setCustomWidth] = useState(1024);
   const [customHeight, setCustomHeight] = useState(1024);
-  const [useCustomSize, setUseCustomSize] = useState(false);
   const [seed, setSeed] = useState('');
   const [batchSize, setBatchSize] = useState(1);
   const [artStyle, setArtStyle] = useState('cinematic');
@@ -136,6 +145,7 @@ export default function AIImageGenerator() {
   const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
   const [adminPassword, setAdminPassword] = useState('');
   const [showAdminPassword, setShowAdminPassword] = useState(false);
+  const [isClearHistoryModalOpen, setIsClearHistoryModalOpen] = useState(false);
 
   const canvasRef = useRef(null);
 
@@ -150,7 +160,7 @@ export default function AIImageGenerator() {
   useEffect(() => {
     setDarkMode(localStorage.getItem('darkMode') === 'true');
     try {
-        const savedState = JSON.parse(localStorage.getItem('aiImageGeneratorState_v10') || '{}');
+        const savedState = JSON.parse(localStorage.getItem('aiImageGeneratorState_v11') || '{}');
         if (savedState) {
             setPrompt(savedState.prompt || ''); setModel(savedState.model || 'flux'); setQuality(savedState.quality || 'hd'); setSizePreset(savedState.sizePreset || '1024x1024'); setApiKey(savedState.apiKey || ''); setGenerationHistory(savedState.generationHistory || []); setSavedPrompts(savedState.savedPrompts || []); setBatchSize(savedState.batchSize || 1); setSeed(savedState.seed || ''); setUseCustomSize(savedState.useCustomSize || false); setCustomWidth(savedState.customWidth || 1024); setCustomHeight(savedState.customHeight || 1024); setArtStyle(savedState.artStyle || 'cinematic');
         }
@@ -162,7 +172,7 @@ export default function AIImageGenerator() {
     if (!isMounted) return;
     try {
         const stateToSave = { prompt, model, quality, sizePreset, apiKey, generationHistory, savedPrompts, batchSize, seed, useCustomSize, customWidth, customHeight, artStyle };
-        localStorage.setItem('aiImageGeneratorState_v10', JSON.stringify(stateToSave));
+        localStorage.setItem('aiImageGeneratorState_v11', JSON.stringify(stateToSave));
         const lastReset = JSON.parse(localStorage.getItem('aiGeneratorCoinsData') || '{}').lastReset || new Date().getTime();
         localStorage.setItem('aiGeneratorCoinsData', JSON.stringify({ coins, lastReset }));
     } catch(e) { console.error("Gagal menyimpan state:", e); }
@@ -170,7 +180,6 @@ export default function AIImageGenerator() {
 
   useEffect(() => {
     const interval = setInterval(() => {
-        // Coin Countdown
         try {
             const savedCoinsData = JSON.parse(localStorage.getItem('aiGeneratorCoinsData') || '{}');
             const lastReset = savedCoinsData.lastReset || 0;
@@ -189,7 +198,6 @@ export default function AIImageGenerator() {
             }
         } catch(e) { console.error("Gagal menghitung mundur koin:", e); }
         
-        // Turbo Password Countdown
         try {
             const turboDataString = localStorage.getItem('turboPasswordData');
             if (turboDataString) {
@@ -353,27 +361,62 @@ export default function AIImageGenerator() {
   };
   const handleOpenEditor = (image) => { setEditingImage(image); setIsEditorOpen(true); };
   
-  const handleHDFownload = async (image, filter) => {
-    if(coins <= 0) return showToast("Koin Anda habis untuk mengunduh versi HD.", "error");
-    showToast("Memproses unduhan HD...", "info");
-    const hdUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(image.prompt)}?model=${model}&width=${width}&height=${height}&quality=ultra&seed=${image.seed}&nologo=true&safe=false`;
+  const handleDownload = async (image, filter, watermark) => {
+    showToast("Mempersiapkan unduhan...", "info");
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     const img = new Image();
     img.crossOrigin = 'anonymous';
-    img.src = hdUrl;
+    img.src = image.url;
     img.onload = () => {
-        canvas.width = img.width; canvas.height = img.height;
-        ctx.filter = filter; ctx.drawImage(img, 0, 0);
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx.filter = filter;
+        ctx.drawImage(img, 0, 0);
+        ctx.filter = 'none';
+
+        if (watermark.text) {
+            ctx.font = `${watermark.size}px Arial`;
+            ctx.fillStyle = watermark.color;
+            ctx.textAlign = 'right';
+            ctx.textBaseline = 'bottom';
+            let x = canvas.width - 20;
+            let y = canvas.height - 20;
+            ctx.fillText(watermark.text, x, y);
+        }
+        
         const link = document.createElement('a');
-        link.download = `hd-${image.seed}.png`;
-        link.href = canvas.toDataURL('image/png'); link.click();
-        setCoins(c => Math.max(0, c - 1));
-        showToast("Gambar HD berhasil diunduh!", "success");
+        link.download = `edited-${image.seed}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+        showToast("Gambar siap diunduh!", "success");
     };
-    img.onerror = () => showToast("Gagal mengunduh gambar HD.", "error");
+    img.onerror = () => showToast("Gagal memuat gambar untuk diunduh.", "error");
   };
+  const handleClearHistory = () => { setGenerationHistory([]); setSavedPrompts([]); setIsClearHistoryModalOpen(false); showToast("Semua riwayat dan prompt berhasil dihapus!", "success"); };
   const usePromptAndSeed = (p, s) => { setPrompt(p); setSeed(s); setIsEditorOpen(false); showToast("Prompt & Seed telah disalin!", "success"); };
+  const handleEnhanceFeature = async (image, feature) => {
+    if(coins <= 0) return showToast("Koin Anda habis untuk fitur enhance.", "error");
+    showToast(`Memproses ${feature === 'face' ? 'wajah' : 'latar'}...`, "info");
+    setLoading(true);
+    const enhancedPrompt = `${image.prompt}, enhance ${feature}, ultra realistic`;
+    try {
+        const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(enhancedPrompt)}?model=${model}&width=${width}&height=${height}&quality=ultra&seed=${image.seed}&nologo=true&safe=false`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error("Gagal menyempurnakan gambar.");
+        const newImage = { url: res.url, seed: image.seed, prompt: enhancedPrompt, date: new Date().toISOString() };
+        setGeneratedImages([newImage]);
+        setGenerationHistory(prev => [newImage, ...prev]);
+        setCoins(c => Math.max(0, c - 1));
+        showToast("Gambar berhasil disempurnakan!", "success");
+    } catch (err) {
+        showToast(err.message, "error");
+    } finally {
+        setLoading(false);
+        setIsEditorOpen(false);
+    }
+  };
+
 
   if (!isMounted) {
     return (
@@ -384,7 +427,7 @@ export default function AIImageGenerator() {
   }
 
   return (
-    <div className={`min-h-screen transition-colors duration-300 text-[var(--text-color)] ${darkMode ? 'dark' : ''}`}>
+    <div className={`min-h-screen transition-colors duration-300 bg-[var(--bg-color)] text-[var(--text-color)]`}>
         <style jsx global>{`
             :root { --bg-color: #e0e0e0; --text-color: #313131; --shadow-light: #ffffff; --shadow-dark: #bebebe; --shadow-outset: 6px 6px 12px var(--shadow-dark), -6px -6px 12px var(--shadow-light); --shadow-inset: inset 6px 6px 12px var(--shadow-dark), inset -6px -6px 12px var(--shadow-light); }
             .dark { --bg-color: #3a3a3a; --text-color: #e0e0e0; --shadow-light: #464646; --shadow-dark: #2e2e2e; }
@@ -398,21 +441,22 @@ export default function AIImageGenerator() {
       
         {toast && <Toast message={toast.message} type={toast.type} onDismiss={() => setToast(null)} />}
         <canvas ref={canvasRef} className="hidden"></canvas>
-        {isEditorOpen && <ImageEditorModal image={editingImage} onClose={() => setIsEditorOpen(false)} onUsePromptAndSeed={usePromptAndSeed} onHDFownload={handleHDFownload} coins={coins} />}
+        {isEditorOpen && <ImageEditorModal image={editingImage} onClose={() => setIsEditorOpen(false)} onUsePromptAndSeed={usePromptAndSeed} onEnhanceFeature={handleEnhanceFeature} onDownload={handleDownload} />}
         {isApiModalOpen && <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4"><div className="p-8 rounded-2xl w-full max-w-md" style={{ background: 'var(--bg-color)', boxShadow: 'var(--shadow-outset)' }}><div className="flex justify-between items-center mb-4"><h2 className="text-xl font-bold">API Key untuk {modelRequiringKey?.toUpperCase()}</h2><NeumorphicButton onClick={() => setIsApiModalOpen(false)} className="!p-2"><X size={20} /></NeumorphicButton></div><p className="mb-4 text-sm">Model ini memerlukan API key yang valid.</p><div className="relative w-full mb-4"><input type={showApiKey ? "text" : "password"} value={tempApiKey} onChange={(e) => setTempApiKey(e.target.value)} placeholder="Masukkan API Key Anda" className="w-full p-3 rounded-lg neumorphic-input pr-12"/><button type="button" onClick={() => setShowApiKey(!showApiKey)} className="absolute inset-y-0 right-0 pr-3 flex items-center">{showApiKey ? <EyeOff size={20} /> : <Eye size={20} />}</button></div><div className="flex justify-end gap-4"><NeumorphicButton onClick={() => setIsApiModalOpen(false)}>Batal</NeumorphicButton><NeumorphicButton onClick={handleApiKeySubmit} className="font-bold">Simpan</NeumorphicButton></div></div></div>}
         {isAdminModalOpen && <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4"><div className="p-8 rounded-2xl w-full max-w-md" style={{ background: 'var(--bg-color)', boxShadow: 'var(--shadow-outset)' }}><div className="flex justify-between items-center mb-4"><h2 className="text-xl font-bold">Reset Koin Admin</h2><NeumorphicButton onClick={() => setIsAdminModalOpen(false)} className="!p-2"><X size={20} /></NeumorphicButton></div><p className="mb-4 text-sm">Masukkan password admin untuk mereset koin.</p><div className="relative w-full mb-4"><input type={showAdminPassword ? "text" : "password"} value={adminPassword} onChange={(e) => setAdminPassword(e.target.value)} placeholder="Password Admin" className="w-full p-3 rounded-lg neumorphic-input pr-12"/><button type="button" onClick={() => setShowAdminPassword(!showAdminPassword)} className="absolute inset-y-0 right-0 pr-3 flex items-center">{showAdminPassword ? <EyeOff size={20} /> : <Eye size={20} />}</button></div><div className="flex justify-end gap-4"><NeumorphicButton onClick={() => setIsAdminModalOpen(false)}>Batal</NeumorphicButton><NeumorphicButton onClick={handleAdminReset} className="font-bold">Reset</NeumorphicButton></div></div></div>}
-        {isTurboModalOpen && <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4"><div className="p-8 rounded-2xl w-full max-w-md" style={{ background: 'var(--bg-color)', boxShadow: 'var(--shadow-outset)' }}><div className="flex justify-between items-center mb-4"><h2 className="text-xl font-bold">Password Model Turbo</h2><NeumorphicButton onClick={() => setIsTurboModalOpen(false)} className="!p-2"><X size={20} /></NeumorphicButton></div><p className="mb-4 text-sm">Gunakan password ini untuk mengakses model Turbo.</p><div className="relative w-full mb-2"><input type="text" readOnly value={turboPassword} className="w-full p-3 rounded-lg neumorphic-input pr-12 font-mono"/><button type="button" onClick={() => {navigator.clipboard.writeText(turboPassword); showToast('Password disalin!', 'success')}} className="absolute inset-y-0 right-0 pr-3 flex items-center"><ImageIcon size={20} /></button></div><p className="text-xs text-center mb-4">Berlaku selama: <span className="font-bold font-mono">{turboCountdown}</span></p><div className="flex justify-end gap-4"><NeumorphicButton onClick={() => {setModel('turbo'); setIsTurboModalOpen(false);}} className="font-bold w-full">Gunakan Model Turbo</NeumorphicButton></div></div></div>}
+        {isTurboModalOpen && <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4"><div className="p-8 rounded-2xl w-full max-w-md" style={{ background: 'var(--bg-color)', boxShadow: 'var(--shadow-outset)' }}><div className="flex justify-between items-center mb-4"><h2 className="text-xl font-bold">Password Model Turbo</h2><NeumorphicButton onClick={() => setIsTurboModalOpen(false)} className="!p-2"><X size={20} /></NeumorphicButton></div><p className="mb-4 text-sm">Gunakan password ini untuk mengakses model Turbo.</p><div className="relative w-full mb-2"><input type="text" readOnly value={turboPassword} className="w-full p-3 rounded-lg neumorphic-input pr-12 font-mono"/><button type="button" onClick={() => {navigator.clipboard.writeText(turboPassword); showToast('Password disalin!', 'success')}} className="absolute inset-y-0 right-0 pr-3 flex items-center"><Copy size={20} /></button></div><p className="text-xs text-center mb-4">Berlaku selama: <span className="font-bold font-mono">{turboCountdown}</span></p><div className="flex justify-end gap-4"><NeumorphicButton onClick={() => {setModel('turbo'); setIsTurboModalOpen(false);}} className="font-bold w-full">Gunakan Model Turbo</NeumorphicButton></div></div></div>}
+        {isClearHistoryModalOpen && <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4"><div className="p-8 rounded-2xl w-full max-w-md" style={{ background: 'var(--bg-color)', boxShadow: 'var(--shadow-outset)' }}><h2 className="text-xl font-bold mb-4">Konfirmasi</h2><p className="mb-6">Apakah Anda yakin ingin menghapus semua riwayat dan prompt tersimpan?</p><div className="flex justify-end gap-4"><NeumorphicButton onClick={() => setIsClearHistoryModalOpen(false)}>Batal</NeumorphicButton><NeumorphicButton onClick={handleClearHistory} className="font-bold bg-red-500 text-white">Hapus</NeumorphicButton></div></div></div>}
 
         <main className="container mx-auto p-4 sm:p-6 lg:p-8">
-            <header className="flex justify-between items-center mb-8">
-                <h1 className="text-3xl md:text-4xl font-bold">AI Generator</h1>
-                <div className="flex items-center gap-4">
-                     <div className="flex items-center gap-4 p-2 rounded-xl" style={{boxShadow: 'var(--shadow-outset)'}}>
-                        <div className="flex items-center gap-2 border-r border-[var(--shadow-dark)] pr-3">
+            <header className="flex flex-col sm:flex-row gap-4 justify-between items-center mb-8">
+                <h1 className="text-3xl md:text-4xl font-bold">Ruangriung AI Image Generator</h1>
+                <div className="flex items-center gap-2 sm:gap-4 flex-wrap justify-center">
+                     <div className="flex items-center gap-2 sm:gap-4 p-2 rounded-xl" style={{boxShadow: 'var(--shadow-outset)'}}>
+                        <div className="flex items-center gap-2 border-r border-transparent sm:border-[var(--shadow-dark)] dark:sm:border-[var(--shadow-light)] pr-2 sm:pr-3">
                             <Coins size={20} className="text-yellow-500"/>
                             <span className="font-bold">{coins}</span>
                         </div>
-                        <div className="flex items-center gap-2 border-r border-[var(--shadow-dark)] pr-3">
+                        <div className="flex items-center gap-2 border-r border-transparent sm:border-[var(--shadow-dark)] dark:sm:border-[var(--shadow-light)] pr-2 sm:pr-3">
                             <Clock size={20} className="opacity-70"/>
                             <span className="font-mono text-sm font-semibold">{countdown}</span>
                         </div>
@@ -458,7 +502,7 @@ export default function AIImageGenerator() {
                     
                     <div className="p-6 rounded-2xl h-fit space-y-6 neumorphic-card">
                         <h2 className="text-xl font-bold flex items-center gap-2"><Settings size={22}/> Pengaturan</h2>
-                        {activeTab === 'image' && <div><label className="font-semibold block mb-2">Gaya Seni</label><select value={artStyle} onChange={(e) => setArtStyle(e.target.value)} className="w-full p-3 rounded-lg neumorphic-input bg-[var(--bg-color)]"><option value="photographic">Fotografi</option><option value="cinematic">Sinematik</option><option value="anime">Anime</option><option value="fantasy">Fantasi</option><option value="3d_render">3D Render</option></select></div>}
+                        {activeTab === 'image' && <div><label className="font-semibold block mb-2">Gaya Seni</label><select value={artStyle} onChange={(e) => setArtStyle(e.target.value)} className="w-full p-3 rounded-lg neumorphic-input bg-[var(--bg-color)]"><option value="photographic">Fotografi</option><option value="cinematic">Sinematik</option><option value="anime">Anime</option><option value="fantasy">Fantasi</option><option value="watercolor">Watercolor</option><option value="line_art">Line Art</option><option value="isometric">Isometric</option><option value="cyberpunk">Cyberpunk</option></select></div>}
                         <div><label className="font-semibold block mb-2">Model</label><select value={model} onChange={handleModelChange} className="w-full p-3 rounded-lg neumorphic-input bg-[var(--bg-color)]"><option value="flux">Flux</option><option value="turbo">Turbo</option><option value="dalle3">DALL-E 3 (Key)</option><option value="stability">Stability (Key)</option><option value="ideogram">Ideogram (Key)</option></select></div>
                         <div><label className="font-semibold block mb-2">Kualitas</label><select value={quality} onChange={(e) => setQuality(e.target.value)} className="w-full p-3 rounded-lg neumorphic-input bg-[var(--bg-color)]"><option value="standard">Standard</option><option value="hd">HD</option><option value="ultra">Ultra</option></select></div>
                         <div><div className="flex items-center justify-between mb-2"><label className="font-semibold">Ukuran</label><button onClick={() => setUseCustomSize(!useCustomSize)} className="text-sm font-medium">{useCustomSize ? 'Preset' : 'Kustom'}</button></div>{!useCustomSize ? <select value={sizePreset} onChange={(e) => setSizePreset(e.target.value)} className="w-full p-3 rounded-lg neumorphic-input bg-[var(--bg-color)]"><option value="1024x1024">1024x1024</option><option value="1024x1792">1024x1792</option><option value="1792x1024">1792x1024</option></select> : <div className="space-y-3 p-3 rounded-lg" style={{boxShadow: 'var(--shadow-inset)'}}><div><label className="text-sm">Width: {customWidth}px</label><input type="range" min="256" max="2048" step="64" value={customWidth} onChange={(e) => setCustomWidth(Number(e.target.value))} className="w-full"/></div><div><label className="text-sm">Height: {customHeight}px</label><input type="range" min="256" max="2048" step="64" value={customHeight} onChange={(e) => setCustomHeight(Number(e.target.value))} className="w-full"/></div></div>}</div>
@@ -477,7 +521,10 @@ export default function AIImageGenerator() {
                         {!loading && generatedImages.length > 0 && <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-6">{generatedImages.map((img, i) => (<div key={i} className="rounded-xl p-2 space-y-2 cursor-pointer" style={{boxShadow: 'var(--shadow-outset)'}} onClick={() => handleOpenEditor(img)}><img src={img.url} className="w-full h-auto rounded-lg"/><p className="text-xs text-center opacity-60">Seed: {img.seed}</p></div>))}</div>}
                     </div>
                     <div className="p-6 rounded-2xl h-fit neumorphic-card">
-                        <h3 className="text-xl font-bold flex items-center gap-2 mb-4"><History size={20}/> Riwayat & Prompt Tersimpan</h3>
+                        <div className="flex justify-between items-center mb-4">
+                           <h3 className="text-xl font-bold flex items-center gap-2"><History size={20}/> Riwayat & Prompt</h3>
+                           <NeumorphicButton onClick={() => setIsClearHistoryModalOpen(true)} className="!p-2"><Trash2 size={16}/></NeumorphicButton>
+                        </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6"><div><h4 className="font-semibold mb-2">Riwayat Gambar</h4><div className="max-h-96 overflow-y-auto space-y-2 pr-2">{generationHistory.length===0?<p className="text-sm opacity-60">Kosong</p>:generationHistory.map((h,i)=>(<div key={i} className="flex gap-3 p-2 rounded-lg cursor-pointer" style={{boxShadow:'var(--shadow-inset)'}} onClick={()=>handleOpenEditor(h)}><img src={h.url} className="w-16 h-16 rounded-md object-cover"/><p className="text-xs line-clamp-3">{h.prompt}</p></div>))}</div></div><div><h4 className="font-semibold mb-2">Prompt Favorit</h4><div className="max-h-96 overflow-y-auto space-y-2 pr-2">{savedPrompts.length===0?<p className="text-sm opacity-60">Kosong</p>:savedPrompts.map((p,i)=>(<div key={i} className="flex items-center gap-2 p-2 rounded-lg" style={{boxShadow:'var(--shadow-inset)'}}><p className="text-sm flex-grow truncate">{p.prompt}</p><NeumorphicButton onClick={()=>setPrompt(p.prompt)} className="!p-1"><ChevronsRight size={14}/></NeumorphicButton><NeumorphicButton onClick={()=>setSavedPrompts(savedPrompts.filter(sp=>sp.prompt!==p.prompt))} className="!p-1"><Trash2 size={14}/></NeumorphicButton></div>))}</div></div></div>
                     </div>
                 </div>
