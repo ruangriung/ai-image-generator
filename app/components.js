@@ -95,8 +95,8 @@ export const ImageEditorModal = ({ image, onClose, onUsePromptAndSeed, onDownloa
 
   // Main image drag handlers
   const handleMouseDown = (e) => { setIsDragging(true); startPos.current = { x: e.clientX - position.x, y: e.clientY - position.y }; };
-  const handleMouseUp = () => setIsDragging(false);
-  const handleMouseMove = (e) => { if (!isDragging) return; setPosition({ x: e.clientX - startPos.current.x, y: e.clientY - startPos.current.y }); };
+  const handleMouseUp = useCallback(() => setIsDragging(false), []);
+  const handleMouseMove = useCallback((e) => { if (!isDragging) return; setPosition({ x: e.clientX - startPos.current.x, y: e.clientY - startPos.current.y }); }, [isDragging]);
 
   // Watermark drag handlers
   const handleWatermarkMouseDown = (e) => {
@@ -104,19 +104,34 @@ export const ImageEditorModal = ({ image, onClose, onUsePromptAndSeed, onDownloa
     setIsDraggingWatermark(true);
   };
 
-  const handleWatermarkMouseMove = useCallback((e) => {
-    if (!isDraggingWatermark || !watermarkRef.current || !imageContainerRef.current) return;
+  const handleWatermarkTouchStart = (e) => {
+    e.stopPropagation();
+    setIsDraggingWatermark(true);
+  };
+
+  const handleWatermarkMove = useCallback((clientX, clientY) => {
+    if (!watermarkRef.current || !imageContainerRef.current) return;
     const containerRect = imageContainerRef.current.getBoundingClientRect();
     
-    let newX = ((e.clientX - containerRect.left) / containerRect.width) * 100;
-    let newY = ((e.clientY - containerRect.top) / containerRect.height) * 100;
+    let newX = ((clientX - containerRect.left) / containerRect.width) * 100;
+    let newY = ((clientY - containerRect.top) / containerRect.height) * 100;
 
-    // Clamp values between 0 and 100
     newX = Math.max(0, Math.min(100, newX));
     newY = Math.max(0, Math.min(100, newY));
 
     setWatermark(w => ({ ...w, position: { x: newX, y: newY } }));
-  }, [isDraggingWatermark]);
+  }, []);
+
+  const handleWatermarkMouseMove = useCallback((e) => {
+    if (!isDraggingWatermark) return;
+    handleWatermarkMove(e.clientX, e.clientY);
+  }, [isDraggingWatermark, handleWatermarkMove]);
+
+  const handleWatermarkTouchMove = useCallback((e) => {
+    if (!isDraggingWatermark) return;
+    const touch = e.touches[0];
+    handleWatermarkMove(touch.clientX, touch.clientY);
+  }, [isDraggingWatermark, handleWatermarkMove]);
 
   const handleWatermarkMouseUp = useCallback(() => {
     setIsDraggingWatermark(false);
@@ -125,15 +140,24 @@ export const ImageEditorModal = ({ image, onClose, onUsePromptAndSeed, onDownloa
   useEffect(() => {
     window.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('mouseup', handleMouseUp);
+    
     window.addEventListener('mousemove', handleWatermarkMouseMove);
     window.addEventListener('mouseup', handleWatermarkMouseUp);
+    
+    window.addEventListener('touchmove', handleWatermarkTouchMove);
+    window.addEventListener('touchend', handleWatermarkMouseUp); // Use same mouseup for touchend
+
     return () => { 
         window.removeEventListener('mousemove', handleMouseMove); 
         window.removeEventListener('mouseup', handleMouseUp);
+
         window.removeEventListener('mousemove', handleWatermarkMouseMove);
         window.removeEventListener('mouseup', handleWatermarkMouseUp);
+
+        window.removeEventListener('touchmove', handleWatermarkTouchMove);
+        window.removeEventListener('touchend', handleWatermarkMouseUp);
     };
-  }, [isDragging, handleWatermarkMouseMove, handleWatermarkMouseUp]);
+  }, [isDragging, handleMouseMove, handleMouseUp, handleWatermarkMouseMove, handleWatermarkMouseUp, handleWatermarkTouchMove]);
 
   const handleWatermarkImageUpload = (e) => {
     const file = e.target.files[0];
@@ -166,6 +190,7 @@ export const ImageEditorModal = ({ image, onClose, onUsePromptAndSeed, onDownloa
              <div
                ref={watermarkRef}
                onMouseDown={handleWatermarkMouseDown}
+               onTouchStart={handleWatermarkTouchStart}
                className="absolute"
                style={{
                  left: `${watermark.position.x}%`,
