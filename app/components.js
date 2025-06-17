@@ -161,7 +161,12 @@ export const ImageAnalysisModal = ({ isOpen, onClose, onPromptGenerated, showToa
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ imageUrl: previewSrc })
             });
-            if (!response.ok || !response.body) { const errorData = await response.json(); throw new Error(errorData.error || 'Analisis gagal.'); }
+
+            if (!response.ok || !response.body) {
+                const errorText = await response.text();
+                throw new Error(errorText || `Analisis gagal dengan status: ${response.status}`);
+            }
+
             const reader = response.body.getReader();
             const decoder = new TextDecoder();
             while (true) {
@@ -177,11 +182,17 @@ export const ImageAnalysisModal = ({ isOpen, onClose, onPromptGenerated, showToa
                             const jsonData = JSON.parse(dataStr);
                             const textChunk = jsonData?.choices?.[0]?.delta?.content;
                             if (textChunk) { setAnalysisResult(prev => prev + textChunk); }
-                        } catch (e) { console.error("Error parsing stream chunk:", e); }
+                        } catch (e) { 
+                            console.error("Error parsing stream chunk, but continuing:", dataStr, e); 
+                        }
                     }
                 }
             }
-        } catch (error) { showToast(error.message, 'error'); setAnalysisResult('Gagal menganalisis gambar. Silakan coba lagi.'); } 
+        } catch (error) { 
+            console.error("Analysis API Error:", error);
+            showToast(`Analisis Gagal: ${error.message}`, 'error');
+            setAnalysisResult(`Terjadi kesalahan saat menghubungi server analisis. Detail: ${error.message}. Silakan coba beberapa saat lagi.`);
+        } 
         finally { setIsAnalyzing(false); }
     };
 
@@ -196,7 +207,6 @@ export const ImageAnalysisModal = ({ isOpen, onClose, onPromptGenerated, showToa
                     <div className="p-4 rounded-lg flex flex-col" style={{boxShadow:'var(--shadow-inset)'}}><h4 className="font-semibold mb-2">Hasil Analisis</h4><div className="flex-grow min-h-[100px] text-sm overflow-y-auto pr-2">{isAnalyzing && <div className="flex items-center gap-2"><Spinner/> Menganalisis...</div>}{analysisResult && <p className="whitespace-pre-wrap">{analysisResult}</p>}{!isAnalyzing && !analysisResult && <p className="opacity-60">Deskripsi gambar akan muncul di sini.</p>}</div></div>
                 </div>
                 <div className="flex gap-4">
-                    {/* INI BAGIAN YANG DIPERBAIKI */}
                     <NeumorphicButton onClick={handleAnalyze} loading={isAnalyzing} loadingText="Menganalisis..." className="w-full font-bold" disabled={!previewSrc}><Sparkles size={18}/> Analisis</NeumorphicButton>
                     <NeumorphicButton onClick={() => onPromptGenerated(analysisResult)} className="w-full font-bold" disabled={!analysisResult || isAnalyzing}><Wand2 size={18}/> Gunakan Prompt Ini</NeumorphicButton>
                 </div>
