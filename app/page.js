@@ -328,8 +328,6 @@ export default function AIImageGenerator() {
             .neumorphic-input, .neumorphic-select, .neumorphic-card { background: var(--bg-color); color: var(--text-color); }
             .neumorphic-card { box-shadow: var(--shadow-outset); transition: background 0.3s ease, color 0.3s ease; }
             .neumorphic-input, .neumorphic-select { box-shadow: var(--shadow-inset); border: none; }
-            .video-theme { --bg-color: #2d3748; --text-color: #e2e8f0; --shadow-dark: #1a202c; --shadow-light: #4a5568; }
-            .dark .video-theme { --bg-color: #e2e8f0; --text-color: #2d3748; --shadow-dark: #cbd5e1; --shadow-light: #ffffff; }
             @keyframes fade-in-up { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
             .animate-fade-in-up { animation: fade-in-up 0.3s ease-out forwards; }
         `}</style>
@@ -362,7 +360,7 @@ export default function AIImageGenerator() {
             </header>
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                 <div className="lg:col-span-4 space-y-6">
-                    <div className={`p-6 rounded-2xl h-fit space-y-4 neumorphic-card ${activeTab === 'video' ? 'video-theme' : ''}`}>
+                    <div className="p-6 rounded-2xl h-fit space-y-4 neumorphic-card">
                         <div className="flex gap-2"><NeumorphicButton onClick={() => setActiveTab('image')} active={activeTab === 'image'} className="w-full"><ImageIcon size={16}/>Gambar</NeumorphicButton><NeumorphicButton onClick={() => setActiveTab('video')} active={activeTab === 'video'} className="w-full"><Video size={16}/>Video</NeumorphicButton><NeumorphicButton onClick={() => setActiveTab('audio')} active={activeTab === 'audio'} className="w-full"><AudioLines size={16}/>Audio</NeumorphicButton></div>
                         <label className="font-semibold block text-xl">{activeTab === 'audio' ? 'Masukkan Teks' : 'Masukkan Prompt'}</label>
                         <div className="relative"><textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder="Ketik di sini..." className="w-full p-3 rounded-lg neumorphic-input h-28 resize-none pr-10"/><button onClick={() => setPrompt('')} className="absolute top-2 right-2 text-gray-400 hover:text-gray-600"><X size={18}/></button></div>
