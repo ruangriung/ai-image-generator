@@ -10,20 +10,7 @@ import {
     Eye, EyeOff, Copy, AudioLines, SlidersHorizontal, Camera, CloudSun
 } from 'lucide-react';
 
-import { Spinner, NeumorphicButton, Toasts, ImageEditorModal } from './components.js';
-
-const CollapsibleSection = ({ title, icon, children, defaultOpen = false }) => {
-    const [isOpen, setIsOpen] = useState(defaultOpen);
-    return (
-        <div className="border-t border-gray-500/20 pt-2 mt-4">
-            <button onClick={() => setIsOpen(!isOpen)} className="w-full flex justify-between items-center py-2 text-left">
-                <h4 className="font-semibold flex items-center gap-2">{icon} {title}</h4>
-                {isOpen ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-            </button>
-            {isOpen && <div className="py-2 space-y-4">{children}</div>}
-        </div>
-    );
-};
+import { Spinner, NeumorphicButton, Toasts, ImageEditorModal, CollapsibleSection } from './components.js';
 
 export default function AIImageGenerator() {
   const [isMounted, setIsMounted] = useState(false);
@@ -99,7 +86,7 @@ export default function AIImageGenerator() {
   useEffect(() => {
     setDarkMode(localStorage.getItem('darkMode') === 'true');
     try {
-        const savedState = JSON.parse(localStorage.getItem('aiImageGeneratorState_v16') || '{}');
+        const savedState = JSON.parse(localStorage.getItem('aiImageGeneratorState_v17') || '{}');
         if (savedState) {
             setPrompt(savedState.prompt || ''); setModel(savedState.model || 'flux'); setQuality(savedState.quality || 'hd'); setSizePreset(savedState.sizePreset || '1024x1024'); setApiKey(savedState.apiKey || ''); setGenerationHistory(savedState.generationHistory || []); setSavedPrompts(savedState.savedPrompts || []); setBatchSize(savedState.batchSize || 1); setSeed(savedState.seed || ''); setUseCustomSize(savedState.useCustomSize || false); setCustomWidth(savedState.customWidth || 1024); setCustomHeight(savedState.customHeight || 1024); setArtStyle(savedState.artStyle || 'cinematic');
         }
@@ -111,7 +98,7 @@ export default function AIImageGenerator() {
     if (!isMounted) return;
     try {
         const stateToSave = { prompt, model, quality, sizePreset, apiKey, generationHistory, savedPrompts, batchSize, seed, useCustomSize, customWidth, customHeight, artStyle };
-        localStorage.setItem('aiImageGeneratorState_v16', JSON.stringify(stateToSave));
+        localStorage.setItem('aiImageGeneratorState_v17', JSON.stringify(stateToSave));
         const coinsData = JSON.parse(localStorage.getItem('aiGeneratorCoinsData') || '{}');
         localStorage.setItem('aiGeneratorCoinsData', JSON.stringify({ ...coinsData, coins }));
     } catch(e) { console.error("Gagal menyimpan state:", e); }
@@ -148,18 +135,10 @@ export default function AIImageGenerator() {
     }, 1000);
 
     const handleScroll = () => {
-        if (window.scrollY > 300) {
-            setShowBackToTop(true);
-        } else {
-            setShowBackToTop(false);
-        }
+        if (window.scrollY > 300) { setShowBackToTop(true); } else { setShowBackToTop(false); }
     };
-
     window.addEventListener('scroll', handleScroll);
-    return () => {
-        clearInterval(timer);
-        window.removeEventListener('scroll', handleScroll);
-    };
+    return () => { clearInterval(timer); window.removeEventListener('scroll', handleScroll); };
   }, []);
 
   useEffect(() => {
@@ -173,248 +152,27 @@ export default function AIImageGenerator() {
     setTimeout(() => setToasts(prev => prev.filter(toast => toast.id !== id)), duration);
   }, []);
 
-  const scrollToTop = () => {
-    window.scrollTo({
-        top: 0,
-        behavior: 'smooth',
-    });
-  };
-
-  const handleAdminReset = () => {
-      if (adminPassword === 'admin') {
-          setCoins(500);
-          localStorage.setItem('aiGeneratorCoinsData', JSON.stringify({ coins: 500, lastReset: new Date().getTime() }));
-          showToast('Koin berhasil direset ke 500!', 'success');
-          setIsAdminModalOpen(false); setAdminPassword('');
-      } else { showToast('Password admin salah.', 'error'); }
-  };
-  
-  const generateTurboPassword = () => {
-      const randomChars = Array(5).fill(0).map(() => String.fromCharCode(65 + Math.floor(Math.random() * 26))).join('');
-      const newPassword = `ruangriung-${randomChars}`;
-      const expiry = new Date().getTime() + 24 * 60 * 60 * 1000;
-      setTurboPassword(newPassword);
-      try {
-          localStorage.setItem('turboPasswordData', JSON.stringify({ password: newPassword, expiry }));
-      } catch (e) { console.error("Gagal menyimpan password turbo:", e); }
-      setIsTurboModalOpen(true);
-  };
-  
-  const handleModelChange = (e) => {
-    const selected = e.target.value;
-    if (['dalle3', 'stability', 'ideogram'].includes(selected) && !apiKey) {
-      setModelRequiringKey(selected); setTempApiKey(''); setIsApiModalOpen(true);
-    } else if (selected === 'turbo') {
-        const turboDataString = localStorage.getItem('turboPasswordData');
-        if (turboDataString) {
-            try {
-                const turboData = JSON.parse(turboDataString);
-                if (turboData.password && turboData.expiry && new Date().getTime() < turboData.expiry) {
-                    setModel('turbo'); showToast('Model Turbo dipilih dengan password yang ada.', 'info'); return;
-                }
-            } catch(e) { console.error("Gagal parse data turbo", e) }
-        }
-        generateTurboPassword();
-    } else { setModel(selected); }
-  };
-
-  const handleApiKeySubmit = () => {
-    if (tempApiKey.trim()) {
-        setApiKey(tempApiKey); setModel(modelRequiringKey);
-        showToast(`API Key tersimpan & model ${modelRequiringKey.toUpperCase()} dipilih.`, 'success');
-        setIsApiModalOpen(false); setTempApiKey(''); setModelRequiringKey(null);
-    } else { showToast('API Key tidak boleh kosong.', 'error'); }
-  };
-
-  const handleEnhancePrompt = async () => {
-      if (!prompt.trim()) { showToast('Prompt tidak boleh kosong.', 'error'); return; }
-      setIsEnhancing(true);
-      try {
-          const res = await fetch('https://text.pollinations.ai/openai', {
-              method: 'POST', headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ model: 'gpt-3.5-turbo', messages: [{ role: 'system', content: 'Rewrite the user prompt to be more vivid and artistic for an AI image generator. Respond only with the enhanced prompt.' },{ role: 'user', content: prompt }] })
-          });
-          if (!res.ok) throw new Error(`API Error: ${res.statusText}`);
-          const data = await res.json();
-          const enhanced = data.choices[0]?.message?.content;
-          if (enhanced) { setPrompt(enhanced.trim()); showToast('Prompt berhasil disempurnakan!', 'success'); } 
-          else { throw new Error('Gagal memproses respons API.'); }
-      } catch (err) { showToast(err.message, 'error'); } 
-      finally { setIsEnhancing(false); }
-  };
-
-  const handleGenerate = async () => {
-    if (activeTab === 'video') {
-        showToast('Gunakan tombol "Buat Prompt Video" di dalam Asisten.', 'info');
-        return;
-    }
-    if (coins <= 0) { showToast("Koin Anda habis.", "error"); return; }
-    if (!prompt.trim()) { showToast('Prompt tidak boleh kosong.', 'error'); return; }
-    setLoading(true);
-    if (activeTab === 'image') await handleGenerateImage();
-    else if (activeTab === 'audio') await handleGenerateAudio();
-    setLoading(false);
-  };
-  
-  const handleGenerateImage = async () => {
-    setGeneratedImages([]);
-    const finalPrompt = `${artStyle}, ${prompt}`;
-    const promises = Array.from({ length: batchSize }, () => {
-        const currentSeed = seed || Math.floor(Math.random() * 1e9);
-        let url = `https://image.pollinations.ai/prompt/${encodeURIComponent(finalPrompt)}?model=${model}&width=${width}&height=${height}&quality=${quality}&seed=${currentSeed}&nologo=true&safe=false`;
-        if (apiKey) url += `&apikey=${apiKey}`;
-        return fetch(url).then(res => res.ok ? { url: res.url, seed: currentSeed, prompt: finalPrompt, date: new Date().toISOString() } : Promise.reject(new Error(`Gagal membuat gambar (status: ${res.status})`)));
-    });
-    try {
-        const results = await Promise.all(promises);
-        setGeneratedImages(results); setGenerationHistory(prev => [...results, ...prev]);
-        setCoins(c => Math.max(0, c - results.length));
-        showToast(`Berhasil! Sisa koin: ${coins - results.length}`, 'success');
-    } catch (err) { showToast(err.message, 'error'); } 
-  };
-  
-  const handleGenerateAudio = async () => {
-      setGeneratedAudio(null);
-      try {
-          const res = await fetch(`https://text.pollinations.ai/${encodeURIComponent(prompt)}?model=openai-audio&voice=${audioVoice}`);
-          if (!res.ok) throw new Error(`Gagal membuat audio (status: ${res.status})`);
-          const blob = await res.blob();
-          setGeneratedAudio(URL.createObjectURL(blob)); setCoins(c => Math.max(0, c - 1));
-          showToast(`Audio berhasil dibuat! Sisa koin: ${coins - 1}`, 'success');
-      } catch (err) { showToast(err.message, 'error'); }
-  };
-
-  const handleBuildImagePrompt = async () => {
-      if (!promptCreator.subject.trim()) { showToast('Subjek tidak boleh kosong.', 'error'); return; }
-      setIsBuildingPrompt(true);
-      try {
-          const userInput = `Main subject: ${promptCreator.subject}. Additional details: ${promptCreator.details || 'None'}.`;
-          const res = await fetch('https://text.pollinations.ai/openai', {
-              method: 'POST', headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ model: 'gpt-3.5-turbo', messages: [ { role: 'system', content: 'You are a prompt engineer who creates detailed, artistic prompts for image generation. Respond only with the final prompt.' }, { role: 'user', content: userInput }]})
-          });
-          if (!res.ok) throw new Error(`API Error: ${res.statusText}`);
-          const data = await res.json();
-          const newPrompt = data.choices[0]?.message?.content;
-          if (newPrompt) { setPrompt(newPrompt.trim()); showToast('Prompt gambar dikembangkan oleh AI!', 'success'); } 
-          else { throw new Error('Gagal memproses respons API.'); }
-      } catch (err) { showToast(err.message, 'error'); } 
-      finally { setIsBuildingPrompt(false); }
-  };
-  
-  const handleBuildVideoPrompt = async () => {
-    if (!videoParams.concept.trim()) { showToast('Konsep utama video tidak boleh kosong.', 'error'); return; }
-    setIsBuildingPrompt(true);
-    setGeneratedVideoPrompt('');
-    const allParams = Object.entries(videoParams).map(([key, value]) => (value ? `${key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}: ${value}` : null)).filter(Boolean).join('. ');
-    try {
-        const res = await fetch('https://text.pollinations.ai/openai', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ model: 'gpt-3.5-turbo', messages: [ { role: 'system', content: 'You are a professional cinematographer. Based on these parameters, write a complete, coherent, and inspiring video prompt for a text-to-video AI. Combine all elements into a natural paragraph.' }, { role: 'user', content: allParams }]})
-        });
-        if (!res.ok) throw new Error(`API Error: ${res.statusText}`);
-        const data = await res.json();
-        const videoPrompt = data.choices[0]?.message?.content;
-        if (videoPrompt) { setGeneratedVideoPrompt(videoPrompt.trim()); showToast('Prompt video profesional berhasil dibuat!', 'success'); } 
-        else { throw new Error('Gagal memproses respons API.'); }
-    } catch (err) { showToast(err.message, 'error'); } 
-    finally { setIsBuildingPrompt(false); }
-  };
-  
-  const handlePromptCreatorChange = (e, type) => {
-      const { name, value } = e.target;
-      if (type === 'image') setPromptCreator(p => ({ ...p, [name]: value }));
-  };
-
-  const handleVideoParamsChange = (e) => {
-    const { name, value, type } = e.target;
-    setVideoParams(p => ({ ...p, [name]: type === 'number' ? Number(value) : value }));
-  };
-
-  const fileToBase64 = (file) => new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result);
-      reader.onerror = (error) => reject(error);
-  });
-  
-  const handleAnalyzeImage = async () => {
-      if (!imageForAnalysis) { showToast('Silakan pilih gambar untuk dianalisis.', 'error'); return; }
-      setIsAnalyzing(true); setAnalyzedPrompt('');
-      try {
-          const base64DataUrl = await fileToBase64(imageForAnalysis);
-          const payload = {
-              model: "openai",
-              messages: [{ role: "user", content: [ { type: "text", text: "Describe this image for a text-to-image prompt. Be descriptive and artistic." }, { type: "image_url", image_url: { url: base64DataUrl }}]}],
-              max_tokens: 500
-          };
-          const response = await fetch('https://text.pollinations.ai/openai', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(payload)
-          });
-          if (!response.ok) {
-              const errorData = await response.text();
-              console.error("API Error Response:", errorData);
-              throw new Error(`Analisis gambar gagal: ${response.statusText}`);
-          }
-          const result = await response.json();
-          const description = result.choices[0]?.message?.content;
-          if (!description) { throw new Error('Format respons API tidak dikenali.'); }
-          setAnalyzedPrompt(description.trim());
-          showToast('Gambar berhasil dianalisis!', 'success');
-      } catch (error) {
-          console.error("Image analysis error:", error);
-          showToast(error.message, 'error');
-      } finally {
-          setIsAnalyzing(false);
-      }
-  };
-  
-  const handleReset = () => {
-    setArtStyle('cinematic'); setModel('flux'); setQuality('hd'); setSizePreset('1024x1024');
-    setUseCustomSize(false); setBatchSize(1); setSeed('');
-    showToast('Pengaturan telah direset.', 'info');
-  };
-
+  const scrollToTop = () => { window.scrollTo({ top: 0, behavior: 'smooth' }); };
+  const handleAdminReset = () => { if (adminPassword === 'admin') { setCoins(500); localStorage.setItem('aiGeneratorCoinsData', JSON.stringify({ coins: 500, lastReset: new Date().getTime() })); showToast('Koin berhasil direset ke 500!', 'success'); setIsAdminModalOpen(false); setAdminPassword(''); } else { showToast('Password admin salah.', 'error'); } };
+  const generateTurboPassword = () => { const randomChars = Array(5).fill(0).map(() => String.fromCharCode(65 + Math.floor(Math.random() * 26))).join(''); const newPassword = `ruangriung-${randomChars}`; const expiry = new Date().getTime() + 24 * 60 * 60 * 1000; setTurboPassword(newPassword); try { localStorage.setItem('turboPasswordData', JSON.stringify({ password: newPassword, expiry })); } catch (e) { console.error("Gagal menyimpan password turbo:", e); } setIsTurboModalOpen(true); };
+  const handleModelChange = (e) => { const selected = e.target.value; if (['dalle3', 'stability', 'ideogram'].includes(selected) && !apiKey) { setModelRequiringKey(selected); setTempApiKey(''); setIsApiModalOpen(true); } else if (selected === 'turbo') { const turboDataString = localStorage.getItem('turboPasswordData'); if (turboDataString) { try { const turboData = JSON.parse(turboDataString); if (turboData.password && turboData.expiry && new Date().getTime() < turboData.expiry) { setModel('turbo'); showToast('Model Turbo dipilih dengan password yang ada.', 'info'); return; } } catch(e) { console.error("Gagal parse data turbo", e) } } generateTurboPassword(); } else { setModel(selected); } };
+  const handleApiKeySubmit = () => { if (tempApiKey.trim()) { setApiKey(tempApiKey); setModel(modelRequiringKey); showToast(`API Key tersimpan & model ${modelRequiringKey.toUpperCase()} dipilih.`, 'success'); setIsApiModalOpen(false); setTempApiKey(''); setModelRequiringKey(null); } else { showToast('API Key tidak boleh kosong.', 'error'); } };
+  const handleEnhancePrompt = async () => { if (!prompt.trim()) { showToast('Prompt tidak boleh kosong.', 'error'); return; } setIsEnhancing(true); try { const res = await fetch('https://text.pollinations.ai/openai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'gpt-3.5-turbo', messages: [{ role: 'system', content: 'Rewrite the user prompt to be more vivid and artistic for an AI image generator. Respond only with the enhanced prompt.' },{ role: 'user', content: prompt }] }) }); if (!res.ok) throw new Error(`API Error: ${res.statusText}`); const data = await res.json(); const enhanced = data.choices[0]?.message?.content; if (enhanced) { setPrompt(enhanced.trim()); showToast('Prompt berhasil disempurnakan!', 'success'); } else { throw new Error('Gagal memproses respons API.'); } } catch (err) { showToast(err.message, 'error'); } finally { setIsEnhancing(false); } };
+  const handleGenerate = async () => { if (activeTab === 'video') { showToast('Gunakan tombol "Buat Prompt Video" di dalam Asisten.', 'info'); return; } if (coins <= 0) { showToast("Koin Anda habis.", "error"); return; } if (!prompt.trim()) { showToast('Prompt tidak boleh kosong.', 'error'); return; } setLoading(true); if (activeTab === 'image') await handleGenerateImage(); else if (activeTab === 'audio') await handleGenerateAudio(); setLoading(false); };
+  const handleGenerateImage = async () => { setGeneratedImages([]); const finalPrompt = `${artStyle}, ${prompt}`; const promises = Array.from({ length: batchSize }, () => { const currentSeed = seed || Math.floor(Math.random() * 1e9); let url = `https://image.pollinations.ai/prompt/${encodeURIComponent(finalPrompt)}?model=${model}&width=${width}&height=${height}&quality=${quality}&seed=${currentSeed}&nologo=true&safe=false`; if (apiKey) url += `&apikey=${apiKey}`; return fetch(url).then(res => res.ok ? { url: res.url, seed: currentSeed, prompt: finalPrompt, date: new Date().toISOString() } : Promise.reject(new Error(`Gagal membuat gambar (status: ${res.status})`))); }); try { const results = await Promise.all(promises); setGeneratedImages(results); setGenerationHistory(prev => [...results, ...prev]); setCoins(c => Math.max(0, c - results.length)); showToast(`Berhasil! Sisa koin: ${coins - results.length}`, 'success'); } catch (err) { showToast(err.message, 'error'); } };
+  const handleGenerateAudio = async () => { setGeneratedAudio(null); try { const res = await fetch(`https://text.pollinations.ai/${encodeURIComponent(prompt)}?model=openai-audio&voice=${audioVoice}`); if (!res.ok) throw new Error(`Gagal membuat audio (status: ${res.status})`); const blob = await res.blob(); setGeneratedAudio(URL.createObjectURL(blob)); setCoins(c => Math.max(0, c - 1)); showToast(`Audio berhasil dibuat! Sisa koin: ${coins - 1}`, 'success'); } catch (err) { showToast(err.message, 'error'); } };
+  const handleBuildImagePrompt = async () => { if (!promptCreator.subject.trim()) { showToast('Subjek tidak boleh kosong.', 'error'); return; } setIsBuildingPrompt(true); try { const userInput = `Main subject: ${promptCreator.subject}. Additional details: ${promptCreator.details || 'None'}.`; const res = await fetch('https://text.pollinations.ai/openai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'gpt-3.5-turbo', messages: [ { role: 'system', content: 'You are a prompt engineer who creates detailed, artistic prompts for image generation. Respond only with the final prompt.' }, { role: 'user', content: userInput }]}) }); if (!res.ok) throw new Error(`API Error: ${res.statusText}`); const data = await res.json(); const newPrompt = data.choices[0]?.message?.content; if (newPrompt) { setPrompt(newPrompt.trim()); showToast('Prompt gambar dikembangkan oleh AI!', 'success'); } else { throw new Error('Gagal memproses respons API.'); } } catch (err) { showToast(err.message, 'error'); } finally { setIsBuildingPrompt(false); } };
+  const handleBuildVideoPrompt = async () => { if (!videoParams.concept.trim()) { showToast('Konsep utama video tidak boleh kosong.', 'error'); return; } setIsBuildingPrompt(true); setGeneratedVideoPrompt(''); const allParams = Object.entries(videoParams).map(([key, value]) => (value ? `${key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}: ${value}` : null)).filter(Boolean).join('. '); try { const res = await fetch('https://text.pollinations.ai/openai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'gpt-3.5-turbo', messages: [ { role: 'system', content: 'You are a professional cinematographer. Based on these parameters, write a complete, coherent, and inspiring video prompt for a text-to-video AI. Combine all elements into a natural paragraph.' }, { role: 'user', content: allParams }]}) }); if (!res.ok) throw new Error(`API Error: ${res.statusText}`); const data = await res.json(); const videoPrompt = data.choices[0]?.message?.content; if (videoPrompt) { setGeneratedVideoPrompt(videoPrompt.trim()); showToast('Prompt video profesional berhasil dibuat!', 'success'); } else { throw new Error('Gagal memproses respons API.'); } } catch (err) { showToast(err.message, 'error'); } finally { setIsBuildingPrompt(false); } };
+  const handlePromptCreatorChange = (e, type) => { const { name, value } = e.target; if (type === 'image') setPromptCreator(p => ({ ...p, [name]: value })); };
+  const handleVideoParamsChange = (e) => { const { name, value, type } = e.target; setVideoParams(p => ({ ...p, [name]: type === 'number' ? Number(value) : value })); };
+  const fileToBase64 = (file) => new Promise((resolve, reject) => { const reader = new FileReader(); reader.readAsDataURL(file); reader.onload = () => resolve(reader.result); reader.onerror = (error) => reject(error); });
+  const handleAnalyzeImage = async () => { if (!imageForAnalysis) { showToast('Silakan pilih gambar untuk dianalisis.', 'error'); return; } setIsAnalyzing(true); setAnalyzedPrompt(''); try { const base64DataUrl = await fileToBase64(imageForAnalysis); const response = await fetch('/api/analyze-image', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ imageUrl: base64DataUrl }) }); if (!response.ok) { const errorResult = await response.json(); throw new Error(errorResult.error || 'Analisis gambar gagal.'); } const result = await response.json(); const description = result.choices[0]?.message?.content; if (!description) { throw new Error('Format respons dari API tidak dikenali.'); } setAnalyzedPrompt(description.trim()); showToast('Gambar berhasil dianalisis!', 'success'); } catch (error) { console.error("Image analysis error:", error); showToast(error.message, 'error'); } finally { setIsAnalyzing(false); } };
+  const handleReset = () => { setArtStyle('cinematic'); setModel('flux'); setQuality('hd'); setSizePreset('1024x1024'); setUseCustomSize(false); setBatchSize(1); setSeed(''); showToast('Pengaturan telah direset.', 'info'); };
   const handleOpenEditor = (image) => { setEditingImage(image); setIsEditorOpen(true); };
-
-  const handleDownload = (image, filter, watermark) => {
-      const img = new Image(); img.crossOrigin = 'anonymous'; img.src = image.url;
-      img.onload = () => {
-          const canvas = canvasRef.current; const ctx = canvas.getContext('2d');
-          canvas.width = img.width; canvas.height = img.height;
-          if (filter) ctx.filter = filter;
-          ctx.drawImage(img, 0, 0);
-          if (watermark?.text) {
-              ctx.filter = 'none'; ctx.fillStyle = watermark.color;
-              ctx.font = `${watermark.size}px Arial`; ctx.textAlign = 'right'; ctx.textBaseline = 'bottom';
-              ctx.fillText(watermark.text, canvas.width - 20, canvas.height - 20);
-          }
-          const link = document.createElement('a');
-          link.download = `ruangriung-ai-${Date.now()}.png`; link.href = canvas.toDataURL('image/png');
-          link.click(); showToast('Gambar diunduh...', 'success');
-      };
-      img.onerror = () => { showToast('Gagal memuat gambar untuk diunduh.', 'error'); };
-  };
-  
-  const handleClearHistory = () => {
-      setGenerationHistory([]); setSavedPrompts([]); setIsClearHistoryModalOpen(false);
-      showToast('Semua riwayat telah dihapus.', 'success');
-  };
-
-  const usePromptAndSeed = (p, s) => {
-      setPrompt(p); setSeed(String(s)); setActiveTab('image'); setIsEditorOpen(false);
-      showToast('Prompt & Seed dimuat.', 'success');
-  };
-
-  const handleCreateVariation = (image) => {
-      setPrompt(image.prompt); setSeed(''); setActiveTab('image');
-      setIsEditorOpen(false);
-      setTimeout(() => { handleGenerateImage(); }, 100);
-      showToast('Membuat variasi baru...', 'info');
-  };
-
+  const handleDownload = (image, filter, watermark) => { const img = new Image(); img.crossOrigin = 'anonymous'; img.src = image.url; img.onload = () => { const canvas = canvasRef.current; const ctx = canvas.getContext('2d'); canvas.width = img.width; canvas.height = img.height; if (filter) ctx.filter = filter; ctx.drawImage(img, 0, 0); if (watermark?.text) { ctx.filter = 'none'; ctx.fillStyle = watermark.color; ctx.font = `${watermark.size}px Arial`; ctx.textAlign = 'right'; ctx.textBaseline = 'bottom'; ctx.fillText(watermark.text, canvas.width - 20, canvas.height - 20); } const link = document.createElement('a'); link.download = `ruangriung-ai-${Date.now()}.png`; link.href = canvas.toDataURL('image/png'); link.click(); showToast('Gambar diunduh...', 'success'); }; img.onerror = () => { showToast('Gagal memuat gambar untuk diunduh.', 'error'); }; };
+  const handleClearHistory = () => { setGenerationHistory([]); setSavedPrompts([]); setIsClearHistoryModalOpen(false); showToast('Semua riwayat telah dihapus.', 'success'); };
+  const usePromptAndSeed = (p, s) => { setPrompt(p); setSeed(String(s)); setActiveTab('image'); setIsEditorOpen(false); showToast('Prompt & Seed dimuat.', 'success'); };
+  const handleCreateVariation = (image) => { setPrompt(image.prompt); setSeed(''); setActiveTab('image'); setIsEditorOpen(false); setTimeout(() => { handleGenerateImage(); }, 100); showToast('Membuat variasi baru...', 'info'); };
   const visualStyleOptions = ["Cinematic", "Anime", "Photorealistic", "Watercolor", "Pixel Art", "Cyberpunk", "Retro", "Futuristic"];
   const shotTypeOptions = ["Static", "Slow Pan", "Dolly", "Tracking", "Crane", "Steadycam", "Handheld", "Drone"];
   const cameraAngleOptions = ["Eye Level", "Low Angle", "High Angle", "Dutch Angle", "Overhead", "Point of View"];
@@ -446,7 +204,7 @@ export default function AIImageGenerator() {
         {isClearHistoryModalOpen && <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4"><div className="p-8 rounded-2xl w-full max-w-md" style={{ background: 'var(--bg-color)', boxShadow: 'var(--shadow-outset)' }}><h2 className="text-xl font-bold mb-4">Konfirmasi</h2><p className="mb-6">Yakin ingin menghapus semua riwayat & favorit?</p><div className="flex justify-end gap-4"><NeumorphicButton onClick={() => setIsClearHistoryModalOpen(false)}>Batal</NeumorphicButton><NeumorphicButton onClick={handleClearHistory} className="font-bold bg-red-500 text-white">Hapus</NeumorphicButton></div></div></div>}
         {isApiModalOpen && <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4"><div className="p-8 rounded-2xl w-full max-w-md" style={{ background: 'var(--bg-color)', boxShadow: 'var(--shadow-outset)' }}><div className="flex justify-between items-center mb-4"><h2 className="text-xl font-bold">API Key untuk {modelRequiringKey?.toUpperCase()}</h2><NeumorphicButton onClick={() => setIsApiModalOpen(false)} className="!p-2"><X size={20} /></NeumorphicButton></div><p className="mb-4 text-sm">Model ini memerlukan API key yang valid.</p><div className="relative w-full mb-4"><input type={showApiKey ? "text" : "password"} value={tempApiKey} onChange={(e) => setTempApiKey(e.target.value)} placeholder="Masukkan API Key Anda" className="w-full p-3 rounded-lg neumorphic-input pr-12"/><button type="button" onClick={() => setShowApiKey(!showApiKey)} className="absolute inset-y-0 right-0 pr-3 flex items-center">{showApiKey ? <EyeOff size={20} /> : <Eye size={20} />}</button></div><div className="flex justify-end gap-4"><NeumorphicButton onClick={() => setIsApiModalOpen(false)}>Batal</NeumorphicButton><NeumorphicButton onClick={handleApiKeySubmit} className="font-bold">Simpan</NeumorphicButton></div></div></div>}
         {isTurboModalOpen && <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4"><div className="p-8 rounded-2xl w-full max-w-md" style={{ background: 'var(--bg-color)', boxShadow: 'var(--shadow-outset)' }}><div className="flex justify-between items-center mb-4"><h2 className="text-xl font-bold">Password Model Turbo</h2><NeumorphicButton onClick={() => setIsTurboModalOpen(false)} className="!p-2"><X size={20} /></NeumorphicButton></div><p className="mb-4 text-sm">Gunakan password ini untuk mengakses model Turbo. Salin dan simpan di tempat aman.</p><div className="relative w-full mb-2"><input type="text" readOnly value={turboPassword} className="w-full p-3 rounded-lg neumorphic-input pr-12 font-mono"/><button type="button" onClick={() => {navigator.clipboard.writeText(turboPassword); showToast('Password disalin!', 'success')}} className="absolute inset-y-0 right-0 pr-3 flex items-center"><Copy size={20} /></button></div><p className="text-xs text-center mb-4">Berlaku selama: <span className="font-bold font-mono">{turboCountdown}</span></p><div className="flex justify-end gap-4"><NeumorphicButton onClick={() => {setModel('turbo'); setIsTurboModalOpen(false);}} className="font-bold w-full">Gunakan Model Turbo</NeumorphicButton></div></div></div>}
-
+        
         <div className="flex flex-col min-h-screen">
             <main className="flex-grow container mx-auto p-4 sm:p-6 lg:p-8">
                 <header className="flex flex-col gap-4 items-center text-center mb-8"><h1 className="text-3xl md:text-4xl font-bold">RuangRiung AI Generator</h1><div className="flex items-center gap-2 sm:gap-4 flex-wrap justify-center"><div className="flex items-center gap-2 sm:gap-4 p-2 rounded-xl" style={{boxShadow: 'var(--shadow-outset)'}}><div className="flex items-center gap-2 border-r border-transparent sm:border-[var(--shadow-dark)] dark:sm:border-[var(--shadow-light)] pr-2 sm:pr-3"><Coins size={20} className="text-yellow-500"/><span className="font-bold">{coins}</span></div><div className="flex items-center gap-2 pr-2 sm:pr-3"><Clock size={20} className="opacity-70"/><span className="font-mono text-sm font-semibold">{countdown}</span></div><NeumorphicButton onClick={() => setIsAdminModalOpen(true)} className="!p-2"><RefreshCw size={16}/></NeumorphicButton></div><NeumorphicButton onClick={() => setDarkMode(!darkMode)} className="!p-3">{darkMode ? <Sun /> : <Moon />}</NeumorphicButton></div></header>
@@ -482,7 +240,7 @@ export default function AIImageGenerator() {
                     </div>
                 </div>
             </main>
-            <footer className="text-center p-4 mt-8 border-t border-gray-500/20 text-sm opacity-70">
+           <footer className="text-center p-4 mt-8 border-t border-gray-500/20 text-sm opacity-70">
                 <p>&copy; {new Date().getFullYear()} RuangRiung AI Image Generator- Developed with ❤️ by Arif Tirtana</p>
             </footer>
         </div>
