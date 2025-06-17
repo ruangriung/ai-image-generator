@@ -5,7 +5,7 @@
 import { useMemo, useState, useEffect, useRef } from 'react';
 import { 
     Search, Minus, Plus, X, Layers, ImageDown, 
-    Repeat, Sparkles, ChevronUp, ChevronDown, ZoomIn 
+    Repeat, Sparkles, ChevronUp, ChevronDown, ZoomIn, ImageIcon as FileImage, Upload, Wand2
 } from 'lucide-react';
 
 // Komponen untuk bagian yang bisa ditutup/buka
@@ -132,4 +132,75 @@ export const ImageEditorModal = ({ image, onClose, onUsePromptAndSeed, onDownloa
       </div>
     </div>
   );
+};
+
+const compressImage = (file, maxWidth = 800, quality = 0.7) => new Promise((resolve, reject) => { const reader = new FileReader(); reader.readAsDataURL(file); reader.onload = event => { const img = new Image(); img.src = event.target.result; img.onload = () => { const canvas = document.createElement('canvas'); let { width, height } = img; if (width > height) { if (width > maxWidth) { height *= maxWidth / width; width = maxWidth; } } else { if (height > maxWidth) { width *= maxWidth / height; height = maxWidth; } } canvas.width = width; canvas.height = height; const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, width, height); resolve(canvas.toDataURL('image/jpeg', quality)); }; img.onerror = reject; }; reader.onerror = reject; });
+
+export const ImageAnalysisModal = ({ isOpen, onClose, onPromptGenerated, showToast }) => {
+    const [previewSrc, setPreviewSrc] = useState('');
+    const [analysisResult, setAnalysisResult] = useState('');
+    const [isAnalyzing, setIsAnalyzing] = useState(false);
+    const fileInputRef = useRef(null);
+
+    const handleFileChange = async (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            try {
+                const compressedImageSrc = await compressImage(file);
+                setPreviewSrc(compressedImageSrc);
+                setAnalysisResult('');
+            } catch (error) { showToast('Gagal memproses gambar.', 'error'); console.error(error); }
+        }
+    };
+
+    const handleAnalyze = async () => {
+        if (!previewSrc) { showToast('Silakan unggah gambar terlebih dahulu.', 'error'); return; }
+        setIsAnalyzing(true); setAnalysisResult('');
+        try {
+            const response = await fetch('/api/analyze-image', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ imageUrl: previewSrc })
+            });
+            if (!response.ok || !response.body) { const errorData = await response.json(); throw new Error(errorData.error || 'Analisis gagal.'); }
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            while (true) {
+                const { value, done } = await reader.read();
+                if (done) break;
+                const chunk = decoder.decode(value, { stream: true });
+                const lines = chunk.split('\n\n');
+                for (const line of lines) {
+                    if (line.startsWith("data: ")) {
+                        const dataStr = line.substring(6).trim();
+                        if (dataStr === "[DONE]") continue;
+                        try {
+                            const jsonData = JSON.parse(dataStr);
+                            const textChunk = jsonData?.choices?.[0]?.delta?.content;
+                            if (textChunk) { setAnalysisResult(prev => prev + textChunk); }
+                        } catch (e) { console.error("Error parsing stream chunk:", e); }
+                    }
+                }
+            }
+        } catch (error) { showToast(error.message, 'error'); setAnalysisResult('Gagal menganalisis gambar. Silakan coba lagi.'); } 
+        finally { setIsAnalyzing(false); }
+    };
+
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4 animate-fade-in">
+            <div className="p-6 rounded-2xl w-full max-w-2xl flex flex-col gap-4 neumorphic-card" style={{ background: 'var(--bg-color)' }}>
+                <div className="flex justify-between items-center"><h2 className="text-xl font-bold flex items-center gap-2"><FileImage size={22}/> Analisis Gambar untuk Prompt</h2><NeumorphicButton onClick={onClose} className="!p-2"><X size={20} /></NeumorphicButton></div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="p-4 rounded-lg flex flex-col items-center justify-center gap-3" style={{boxShadow:'var(--shadow-inset)'}}><input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden"/>{previewSrc ? (<img src={previewSrc} alt="Pratinjau Gambar" className="max-h-48 w-auto rounded-lg" />) : (<div className="text-center opacity-70"><FileImage size={48} className="mx-auto"/> <p>Pilih gambar</p></div>)}<NeumorphicButton onClick={() => fileInputRef.current.click()} className="w-full text-sm !p-2"><Upload size={16}/> {previewSrc ? 'Ganti Gambar' : 'Unggah Gambar'}</NeumorphicButton></div>
+                    <div className="p-4 rounded-lg flex flex-col" style={{boxShadow:'var(--shadow-inset)'}}><h4 className="font-semibold mb-2">Hasil Analisis</h4><div className="flex-grow min-h-[100px] text-sm overflow-y-auto pr-2">{isAnalyzing && <div className="flex items-center gap-2"><Spinner/> Menganalisis...</div>}{analysisResult && <p className="whitespace-pre-wrap">{analysisResult}</p>}{!isAnalyzing && !analysisResult && <p className="opacity-60">Deskripsi gambar akan muncul di sini.</p>}</div></div>
+                </div>
+                <div className="flex gap-4">
+                    {/* INI BAGIAN YANG DIPERBAIKI */}
+                    <NeumorphicButton onClick={handleAnalyze} loading={isAnalyzing} loadingText="Menganalisis..." className="w-full font-bold" disabled={!previewSrc}><Sparkles size={18}/> Analisis</NeumorphicButton>
+                    <NeumorphicButton onClick={() => onPromptGenerated(analysisResult)} className="w-full font-bold" disabled={!analysisResult || isAnalyzing}><Wand2 size={18}/> Gunakan Prompt Ini</NeumorphicButton>
+                </div>
+            </div>
+        </div>
+    );
 };

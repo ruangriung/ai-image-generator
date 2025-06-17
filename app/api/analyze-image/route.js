@@ -6,9 +6,9 @@ export async function POST(request) {
     try {
         const { imageUrl } = await request.json();
         if (!imageUrl) {
-            return NextResponse.json({ error: 'Data gambar tidak ditemukan' }, { status: 400 });
+            return new Response('Image data is missing', { status: 400 });
         }
-        
+
         const payload = {
             model: "openai",
             messages: [
@@ -20,26 +20,32 @@ export async function POST(request) {
                     ]
                 }
             ],
-            max_tokens: 500
+            stream: true // Aktifkan streaming
         };
-
-        const response = await fetch('https://text.pollinations.ai/openai', {
+        
+        const externalResponse = await fetch('https://text.pollinations.ai/openai', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
 
-        if (!response.ok) {
-            const errorText = await response.text();
+        if (!externalResponse.ok) {
+            const errorText = await externalResponse.text();
             console.error('External API Error:', errorText);
-            return NextResponse.json({ error: `API eksternal gagal: ${response.statusText}` }, { status: response.status });
+            return new Response(`External API failed: ${externalResponse.statusText}`, { status: externalResponse.status });
         }
-
-        const result = await response.json();
-        return NextResponse.json(result);
+        
+        // Kembalikan respons streaming langsung ke klien
+        return new Response(externalResponse.body, {
+            headers: { 
+                'Content-Type': 'text/event-stream',
+                'Cache-Control': 'no-cache',
+                'Connection': 'keep-alive',
+             }
+        });
 
     } catch (error) {
         console.error('Internal API Error:', error);
-        return NextResponse.json({ error: 'Gagal memproses permintaan di server.' }, { status: 500 });
+        return new Response('Failed to process the request on the server.', { status: 500 });
     }
 }
