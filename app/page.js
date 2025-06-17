@@ -342,7 +342,7 @@ export default function AIImageGenerator() {
 
         <main className="container mx-auto p-4 sm:p-6 lg:p-8">
             <header className="flex flex-col sm:flex-row gap-4 justify-between items-center mb-8">
-                <h1 className="text-3xl md:text-4xl font-bold">AI Generator</h1>
+                <h1 className="text-3xl md:text-4xl font-bold">Ruangriung AI Image Generator</h1>
                 <div className="flex items-center gap-2 sm:gap-4 flex-wrap justify-center">
                      <div className="flex items-center gap-2 sm:gap-4 p-2 rounded-xl" style={{boxShadow: 'var(--shadow-outset)'}}>
                         <div className="flex items-center gap-2 border-r border-transparent sm:border-[var(--shadow-dark)] dark:sm:border-[var(--shadow-light)] pr-2 sm:pr-3">
