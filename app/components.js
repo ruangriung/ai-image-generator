@@ -21,19 +21,22 @@ export const NeumorphicButton = ({ children, onClick, className = '', as = 'butt
   );
 };
 
-export const Toasts = ({toasts}) => {
-    return (
-        <div className="fixed bottom-5 right-5 z-[100] flex flex-col items-end space-y-2">
-            {toasts.map((toast) => {
-                const colors = { success: 'bg-green-500', error: 'bg-red-500', info: 'bg-blue-500' };
-                return (
-                    <div key={toast.id} className={`p-4 rounded-xl text-white shadow-lg animate-fade-in-up ${colors[toast.type]}`}>
-                        {toast.message}
-                    </div>
-                );
-            })}
-        </div>
-    )
+// Di dalam file app/components.js
+
+export const Toasts = ({ toasts }) => {
+  return (
+    // Mengubah posisi dari right-5 ke left-5
+    <div className="fixed bottom-5 left-5 z-[100] flex flex-col items-start space-y-2">
+      {toasts.map((toast) => {
+        const colors = { success: 'bg-green-500', error: 'bg-red-500', info: 'bg-blue-500' };
+        return (
+          <div key={toast.id} className={`p-4 rounded-xl text-white shadow-lg animate-fade-in-up ${colors[toast.type]}`}>
+            {toast.message}
+          </div>
+        );
+      })}
+    </div>
+  );
 };
 
 export const ImageEditorModal = ({ image, onClose, onUsePromptAndSeed, onDownload, onCreateVariation, onUpscale }) => {
