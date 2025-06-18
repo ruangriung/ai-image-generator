@@ -6,14 +6,13 @@ import {
     ImageDown, Bookmark, Trash2, History, Star, Upload,
     ChevronDown, ChevronUp, Sparkles, Image as ImageIcon, Video, Layers, Coins, Clock,
     Eye, EyeOff, Copy, AudioLines, SlidersHorizontal, Camera, CloudSun, KeyRound, Check,
-    MessageSquare // <-- TAMBAHKAN IKON INI
+    MessageSquare, Download
 } from 'lucide-react';
 
 import { Spinner, NeumorphicButton, Toasts, ImageEditorModal, CollapsibleSection, ImageAnalysisModal } from './components.js';
 import ChatbotAssistant from './ChatbotAssistant.js';
 
 export default function AIImageGenerator() {
-  // ... (semua state dan function Anda tetap sama, tidak perlu diubah)
   const [isMounted, setIsMounted] = useState(false);
   const [prompt, setPrompt] = useState('');
   const [model, setModel] = useState('flux');
@@ -50,25 +49,23 @@ export default function AIImageGenerator() {
   const [tempApiKey, setTempApiKey] = useState('');
   const [showApiKey, setShowApiKey] = useState(false);
   const [modelRequiringKey, setModelRequiringKey] = useState(null);
-  
   const [isTurboAuthModalOpen, setIsTurboAuthModalOpen] = useState(false);
   const [generatedTurboPassword, setGeneratedTurboPassword] = useState('');
   const [turboPasswordInput, setTurboPasswordInput] = useState('');
   const [turboCountdown, setTurboCountdown] = useState('');
-  
   const [coins, setCoins] = useState(500);
   const [countdown, setCountdown] = useState('');
   const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
   const [adminPassword, setAdminPassword] = useState('');
   const [showAdminPassword, setShowAdminPassword] = useState(false);
-  
   const [isClearHistoryModalOpen, setIsClearHistoryModalOpen] = useState(false);
   const [isMasterResetModalOpen, setIsMasterResetModalOpen] = useState(false);
-
   const [audioVoice, setAudioVoice] = useState('alloy');
   const [generatedAudio, setGeneratedAudio] = useState(null);
   const [generatedVideoPrompt, setGeneratedVideoPrompt] = useState('');
   const [showBackToTop, setShowBackToTop] = useState(false);
+  const [installPrompt, setInstallPrompt] = useState(null);
+  const [isBannerVisible, setIsBannerVisible] = useState(false);
 
   const canvasRef = useRef(null);
   
@@ -80,6 +77,20 @@ export default function AIImageGenerator() {
 
   useEffect(() => {
     setIsMounted(true);
+  }, []);
+
+  useEffect(() => {
+    const handler = (e) => {
+      e.preventDefault();
+      setInstallPrompt(e);
+      if (sessionStorage.getItem('pwaBannerClosed') !== 'true') {
+        setIsBannerVisible(true);
+      }
+    };
+    window.addEventListener('beforeinstallprompt', handler);
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handler);
+    };
   }, []);
 
   useEffect(() => {
@@ -132,7 +143,7 @@ export default function AIImageGenerator() {
             if(turboData.password && turboData.expiry){
                 const turboDiff = turboData.expiry - now;
                 if(turboDiff > 0){
-                    setTurboCountdown(`${String(Math.floor((turboDiff/(1000*60*60))%24)).padStart(2,'0')}:${String(Math.floor((turboDiff/1000/60)%60)).padStart(2,'0')}:${String(Math.floor((turboDiff/1000)%60)).padStart(2,'0')}`);
+                    setTurboCountdown(`${String(Math.floor((turboDiff/(1000*60*60))%24)).padStart(2,'0')}:${String(Math.floor((turboDiff/1000/60)%60)).padStart(2,'0')}:${String(Math.floor((diff/1000)%60)).padStart(2,'0')}`);
                 } else { 
                     setTurboCountdown("Kadaluarsa"); 
                     if (model === 'turbo') {
@@ -158,6 +169,19 @@ export default function AIImageGenerator() {
     document.documentElement.classList.toggle('dark', darkMode);
     localStorage.setItem('darkMode', darkMode ? 'true' : 'false');
   }, [darkMode]);
+
+  const handleInstallClick = async () => {
+    if (!installPrompt) return;
+    const result = await installPrompt.prompt();
+    console.log(`Install prompt was: ${result.outcome}`);
+    setInstallPrompt(null);
+    setIsBannerVisible(false);
+  };
+
+  const handleBannerClose = () => {
+    setIsBannerVisible(false);
+    sessionStorage.setItem('pwaBannerClosed', 'true');
+  };
 
   const scrollToTop = () => { window.scrollTo({ top: 0, behavior: 'smooth' }); };
   
@@ -285,29 +309,7 @@ export default function AIImageGenerator() {
       if (coinData) localStorage.setItem('aiGeneratorCoinsData', coinData);
       if (darkModePref) localStorage.setItem('darkMode', darkModePref);
 
-      setPrompt('');
-      setModel('flux');
-      setQuality('hd');
-      setSizePreset('1024x1024');
-      setUseCustomSize(false);
-      setCustomWidth(1024);
-      setCustomHeight(1024);
-      setSeed('');
-      setBatchSize(1);
-      setArtStyle('cinematic');
-      setGeneratedImages([]);
-      setLoading(false);
-      setIsEnhancing(false);
-      setIsBuildingPrompt(false);
-      setApiKey('');
-      setGenerationHistory([]);
-      setSavedPrompts([]);
-      setIsEditorOpen(false);
-      setEditingImage(null);
-      setIsAnalysisModalOpen(false);
-      setActiveTab('image');
-      setIsCreatorOpen(false);
-      setPromptCreator({ subject: '', details: '' });
+      setPrompt(''); setModel('flux'); setQuality('hd'); setSizePreset('1024x1024'); setUseCustomSize(false); setCustomWidth(1024); setCustomHeight(1024); setSeed(''); setBatchSize(1); setArtStyle('cinematic'); setGeneratedImages([]); setLoading(false); setIsEnhancing(false); setIsBuildingPrompt(false); setApiKey(''); setGenerationHistory([]); setSavedPrompts([]); setIsEditorOpen(false); setEditingImage(null); setIsAnalysisModalOpen(false); setActiveTab('image'); setIsCreatorOpen(false); setPromptCreator({ subject: '', details: '' });
       setVideoParams({
           concept: '', visualStyle: 'cinematic', duration: 10, aspectRatio: '16:9',
           fps: 24, cameraMovement: 'static', cameraAngle: 'eye-level', lensType: 'standard',
@@ -339,9 +341,7 @@ export default function AIImageGenerator() {
         canvas.width = mainImage.width;
         canvas.height = mainImage.height;
 
-        if (filter) {
-            ctx.filter = filter;
-        }
+        if (filter) ctx.filter = filter;
         ctx.drawImage(mainImage, 0, 0);
         ctx.filter = 'none';
 
@@ -376,10 +376,7 @@ export default function AIImageGenerator() {
                     ctx.drawImage(wmImage, x - wmWidth / 2, y - wmHeight / 2, wmWidth, wmHeight);
                     finalizeDownload();
                 };
-                wmImage.onerror = () => {
-                    showToast('Gagal memuat gambar watermark.', 'error');
-                    finalizeDownload();
-                };
+                wmImage.onerror = () => { showToast('Gagal memuat gambar watermark.', 'error'); finalizeDownload(); };
             } else {
                 finalizeDownload();
             }
@@ -387,16 +384,11 @@ export default function AIImageGenerator() {
             finalizeDownload();
         }
     };
-
-    mainImage.onerror = () => {
-        showToast('Gagal memuat gambar utama untuk diunduh.', 'error');
-    };
+    mainImage.onerror = () => { showToast('Gagal memuat gambar utama untuk diunduh.', 'error'); };
   };
   
   const handleClearHistory = () => { setGenerationHistory([]); setSavedPrompts([]); setIsClearHistoryModalOpen(false); showToast('Semua riwayat telah dihapus.', 'success'); };
-  
   const usePromptAndSeed = (p, s) => { setPrompt(p); setSeed(String(s)); setActiveTab('image'); setIsEditorOpen(false); showToast('Prompt & Seed dimuat.', 'success'); };
-  
   const handleCreateVariation = (image) => { setPrompt(image.prompt); setSeed(''); setActiveTab('image'); setIsEditorOpen(false); setTimeout(() => { handleGenerateImage(); }, 100); showToast('Membuat variasi baru...', 'info'); };
   
   const visualStyleOptions = ["Cinematic", "Anime", "Photorealistic", "Watercolor", "Pixel Art", "Cyberpunk", "Retro", "Futuristic"];
@@ -411,6 +403,19 @@ export default function AIImageGenerator() {
 
   return (
     <div className={`min-h-screen transition-colors duration-300 bg-[var(--bg-color)] text-[var(--text-color)]`}>
+        {isBannerVisible && (
+            <div className="fixed top-0 left-0 right-0 bg-blue-600 text-white p-3 flex items-center justify-center gap-4 z-50 shadow-lg animate-fade-in">
+                <span className="text-sm md:text-base">Install aplikasi untuk akses lebih cepat!</span>
+                <button onClick={handleInstallClick} className="bg-white text-blue-600 font-bold py-1 px-3 rounded-md flex items-center gap-2 text-sm hover:bg-gray-200 transition-colors">
+                    <Download size={16} />
+                    Install
+                </button>
+                <button onClick={handleBannerClose} className="absolute top-1/2 right-3 -translate-y-1/2 text-white/70 hover:text-white">
+                    <X size={20} />
+                </button>
+            </div>
+        )}
+
         <style jsx global>{`
             :root { --bg-color: #e0e0e0; --text-color: #313131; --shadow-light: #ffffff; --shadow-dark: #bebebe; --shadow-outset: 6px 6px 12px var(--shadow-dark), -6px -6px 12px var(--shadow-light); --shadow-inset: inset 6px 6px 12px var(--shadow-dark), inset -6px -6px 12px var(--shadow-light); }
             .dark { --bg-color: #3a3a3a; --text-color: #e0e0e0; --shadow-light: #464646; --shadow-dark: #2e2e2e; }
@@ -487,7 +492,7 @@ export default function AIImageGenerator() {
         {isMasterResetModalOpen && <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4 animate-fade-in"><div className="p-8 rounded-2xl w-full max-w-md" style={{ background: 'var(--bg-color)', boxShadow: 'var(--shadow-outset)' }}><h2 className="text-xl font-bold mb-4">Konfirmasi Reset Data</h2><p className="mb-2 text-sm">Anda yakin ingin menghapus semua data aplikasi dari browser ini? Tindakan ini tidak dapat diurungkan.</p><div className="text-sm p-3 my-4 rounded-lg" style={{boxShadow: 'var(--shadow-inset)'}}>Data yang akan dihapus:<ul className="list-disc list-inside mt-2 space-y-1"><li>Riwayat Generasi Gambar</li><li>Prompt Favorit</li><li>Kunci API yang Tersimpan</li><li>Password Turbo yang Tersimpan</li><li>Semua Pengaturan Pengguna</li></ul></div><div className="flex justify-end gap-4 mt-6"><NeumorphicButton onClick={() => setIsMasterResetModalOpen(false)}>Batal</NeumorphicButton><NeumorphicButton onClick={handleMasterReset} className="font-bold bg-red-500 text-white">Ya, Hapus Semua</NeumorphicButton></div></div></div>}
         
         <div className="flex flex-col min-h-screen">
-            <main className="flex-grow container mx-auto p-4 sm:p-6 lg:p-8">
+            <main className="flex-grow container mx-auto p-4 sm:p-6 lg:p-8 pt-20">
                 <header className="flex flex-col gap-4 items-center text-center mb-8"><h1 className="text-3xl md:text-4xl font-bold">RuangRiung AI Generator</h1><div className="flex items-center gap-2 sm:gap-4 flex-wrap justify-center"><div className="flex items-center gap-2 sm:gap-4 p-2 rounded-xl" style={{boxShadow: 'var(--shadow-outset)'}}><div className="flex items-center gap-2 border-r border-transparent sm:border-[var(--shadow-dark)] dark:sm:border-[var(--shadow-light)] pr-2 sm:pr-3"><Coins size={20} className="text-yellow-500"/><span className="font-bold">{coins}</span></div><div className="flex items-center gap-2 pr-2 sm:pr-3"><Clock size={20} className="opacity-70"/><span className="font-mono text-sm font-semibold">{countdown}</span></div><NeumorphicButton onClick={() => setIsAdminModalOpen(true)} className="!p-2"><Settings size={16}/></NeumorphicButton></div><NeumorphicButton onClick={() => setDarkMode(!darkMode)} className="!p-3">{darkMode ? <Sun /> : <Moon />}</NeumorphicButton></div></header>
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                     <div className="lg:col-span-4 space-y-6">
