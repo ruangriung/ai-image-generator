@@ -1,0 +1,20 @@
+{
+  "name": "Next.js RuangRiung Project",
+  // Gunakan image dasar yang sudah berisi Node.js versi 18
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:0-18",
+  
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "bradlc.vscode-tailwindcss"
+      ]
+    }
+  },
+
+  // Otomatis forward port 3000 saat server Next.js berjalan
+  "forwardPorts": [3000],
+
+  // Perintah yang dijalankan setelah Codespace dibuat
+  "postCreateCommand": "npm install"
+}
