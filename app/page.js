@@ -575,8 +575,17 @@ export default function AIImageGenerator() {
                 </div>
             </main>
             <footer className="text-center p-4 mt-8 border-t border-gray-500/20 text-sm opacity-70">
-                <p>&copy; {new Date().getFullYear()} RuangRiung AI Image Generator - Developed with ❤️ by Arif Tirtana</p>
-            </footer>
+    <p>&copy; {new Date().getFullYear()} RuangRiung AI Image Generator - Developed with ❤️ by{' '}
+      <a
+        href="https://ariftirtana.com"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="font-semibold text-indigo-400 hover:text-indigo-300 transition-colors"
+      >
+        Arif Tirtana
+      </a>
+    </p>
+</footer>
         </div>
         {showBackToTop && (
             <NeumorphicButton
