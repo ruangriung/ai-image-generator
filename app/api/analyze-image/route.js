@@ -1,5 +1,3 @@
-// Nama File: app/api/analyze-image/route.js
-
 import { NextResponse } from 'next/server';
 
 export async function POST(request) {
@@ -9,33 +7,36 @@ export async function POST(request) {
             return new Response('Image data is missing', { status: 400 });
         }
 
+        // Payload for the external API
         const payload = {
-            model: "openai",
+            model: "openai", // or another suitable model
             messages: [
                 {
                     role: "user",
                     content: [
-                        { type: "text", text: "Describe this image for a text-to-image prompt. Be descriptive and artistic, focus on visual details." },
+                        { type: "text", text: "Describe this image for a text-to-image prompt. Be descriptive and artistic, focus on visual details. Respond only with the prompt text." },
                         { type: "image_url", image_url: { url: imageUrl } }
                     ]
                 }
             ],
-            stream: true // Aktifkan streaming
+            stream: true // Enable streaming
         };
         
+        // Fetch from the external API
         const externalResponse = await fetch('https://text.pollinations.ai/openai', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
 
+        // Check if the external API call was successful
         if (!externalResponse.ok) {
             const errorText = await externalResponse.text();
             console.error('External API Error:', errorText);
             return new Response(`External API failed: ${externalResponse.statusText}`, { status: externalResponse.status });
         }
         
-        // Kembalikan respons streaming langsung ke klien
+        // Return the streaming response directly to the client
         return new Response(externalResponse.body, {
             headers: { 
                 'Content-Type': 'text/event-stream',
