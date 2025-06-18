@@ -32,7 +32,7 @@ export const metadata = {
     ],
   },
   icons: {
-    icon: '/logo.png',
+    icon: '/favicon.ico',
     apple: '/logo.png',
     shortcut: '/logo.png',
   },
