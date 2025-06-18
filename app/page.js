@@ -493,7 +493,7 @@ export default function AIImageGenerator() {
         
         <div className="flex flex-col min-h-screen">
             <main className="flex-grow container mx-auto p-4 sm:p-6 lg:p-8 pt-20">
-                <header className="flex flex-col gap-4 items-center text-center mb-8"><h1 className="text-3xl md:text-4xl font-bold flex items-center justify-center gap-3">
+                <header className="flex flex-col gap-4 items-center text-center mb-8"><h1 className="text-3xl md:text-4xl font-bold flex items-center justify-center gap-2">
   <Wand2 className="text-yellow-500" size={36} />
   <span>RuangRiung AI Generator</span>
 </h1><div className="flex items-center gap-2 sm:gap-4 flex-wrap justify-center"><div className="flex items-center gap-2 sm:gap-4 p-2 rounded-xl" style={{boxShadow: 'var(--shadow-outset)'}}><div className="flex items-center gap-2 border-r border-transparent sm:border-[var(--shadow-dark)] dark:sm:border-[var(--shadow-light)] pr-2 sm:pr-3"><Coins size={20} className="text-yellow-500"/><span className="font-bold">{coins}</span></div><div className="flex items-center gap-2 pr-2 sm:pr-3"><Clock size={20} className="opacity-70"/><span className="font-mono text-sm font-semibold">{countdown}</span></div><NeumorphicButton onClick={() => setIsAdminModalOpen(true)} className="!p-2"><Settings size={16}/></NeumorphicButton></div><NeumorphicButton onClick={() => setDarkMode(!darkMode)} className="!p-3">{darkMode ? <Sun /> : <Moon />}</NeumorphicButton></div></header>
