@@ -38,17 +38,17 @@ export const metadata = {
   },
   applicationName: 'RuangRiung AI Image Generator',
   appleWebApp: {
-    statusBarStyle: '#6c5ce7',
+    statusBarStyle: '#000000', // Warna status bar untuk aplikasi web di iOS
     capable: 'yes', // Menambahkan properti ini untuk iOS
   },
   msapplication: {
-    navbuttonColor: '#6c5ce7',
+    navbuttonColor: '#000000', // Warna tombol navigasi di Windows
   },
 };
 
 // Pengaturan Viewport, termasuk theme-color
 export const viewport = {
-  themeColor: '#6c5ce7',
+  themeColor: '#000000',
 };
 
 export default function RootLayout({ children }) {
