@@ -101,6 +101,14 @@ export default function AIImageGenerator() {
         if (savedState) {
             setPrompt(savedState.prompt || ''); setModel(savedState.model || 'flux'); setQuality(savedState.quality || 'hd'); setSizePreset(savedState.sizePreset || '1024x1024'); setApiKey(savedState.apiKey || ''); setGenerationHistory(savedState.generationHistory || []); setSavedPrompts(savedState.savedPrompts || []); setBatchSize(savedState.batchSize || 1); setSeed(savedState.seed || ''); setUseCustomSize(savedState.useCustomSize || false); setCustomWidth(savedState.customWidth || 1024); setCustomHeight(savedState.customHeight || 1024); setArtStyle(savedState.artStyle || 'cinematic');
         }
+        
+        // Memuat state koin saat komponen mount
+        const coinsDataString = localStorage.getItem('aiGeneratorCoinsData');
+        if (coinsDataString) {
+          const coinsData = JSON.parse(coinsDataString);
+          setCoins(coinsData.coins ?? 500);
+        }
+
     } catch (e) { console.error("Gagal memuat state:", e); }
   }, [isMounted]);
 
@@ -128,12 +136,12 @@ export default function AIImageGenerator() {
         const lastReset = coinsData.lastReset || 0;
         const nextReset = lastReset + 24 * 60 * 60 * 1000;
         const now = new Date().getTime();
+        
         if (nextReset - now < 0) {
           setCoins(500);
           localStorage.setItem('aiGeneratorCoinsData', JSON.stringify({ coins: 500, lastReset: now }));
-        } else {
-          setCoins(coinsData.coins ?? 500);
         }
+        
         const diff = nextReset - now > 0 ? nextReset - now : 0;
         setCountdown(`${String(Math.floor((diff/(1000*60*60))%24)).padStart(2,'0')}:${String(Math.floor((diff/1000/60)%60)).padStart(2,'0')}:${String(Math.floor((diff/1000)%60)).padStart(2,'0')}`);
         
