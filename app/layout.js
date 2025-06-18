@@ -5,19 +5,18 @@ const inter = Inter({ subsets: ['latin'] })
 
 // Metadata untuk SEO
 export const metadata = {
+  // BARIS BARU: Menambahkan tautan ke manifest.json
+  manifest: "/manifest.json",
+
   // Judul dan Deskripsi Utama
   title: 'RuangRiung AI Image Generator - Create Stunning Digital Art',
   description: 'Generate stunning AI art with multiple styles - from photorealistic to anime, cyberpunk to Studio Ghibli. Create professional photography, digital art, oil paintings and more with advanced AI image generation.',
   
-  // Keywords SEO
+  // ... sisa metadata Anda tetap sama
   keywords: 'AI image generator, pembuat gambar AI, seni digital AI, generator gambar Indonesia, RuangRiung, AI kreatif, text to image Indonesia, ai Indonesia, gambar AI realistis, ilustrasi AI, fotografi AI, seni AI Indonesia, gambar anime AI, AI artistik, teknologi kreatif, AI untuk desain, pembuat konten AI, AI lokal Indonesia, seni digital, gambar berkualitas tinggi, AI painting, generator gambar online, AI untuk UMKM, kreasi visual AI, AI untuk konten media sosial, gambar unik AI, AI untuk pemasaran, seni generatif, AI untuk bisnis, teknologi AI Indonesia, inovasi kreatif, AI untuk pengusaha',
-
-  // Verifikasi Google
   verification: {
     google: '3Mybm59m8--LyAZpVYIGHrVk1fSkYemj33bq5RBBdxA',
   },
-  
-  // Metadata untuk Open Graph (Social Media)
   openGraph: {
     title: 'RuangRiung AI Image Generator - Create Stunning Digital Art',
     description: 'Transform text into beautiful AI-generated artwork in various styles including photography, anime, digital painting and more.',
@@ -32,18 +31,15 @@ export const metadata = {
       },
     ],
   },
-  
-  // Ikon untuk browser dan perangkat
   icons: {
     icon: '/favicon.ico',
     apple: '/logo.png',
     shortcut: '/logo.png',
   },
-
-  // Metadata tambahan
   applicationName: 'RuangRiung AI Image Generator',
   appleWebApp: {
     statusBarStyle: '#6c5ce7',
+    capable: 'yes', // Menambahkan properti ini untuk iOS
   },
   msapplication: {
     navbuttonColor: '#6c5ce7',
