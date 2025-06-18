@@ -193,7 +193,7 @@ export default function AIImageGenerator() {
 
   const scrollToTop = () => { window.scrollTo({ top: 0, behavior: 'smooth' }); };
   
-  const handleAdminReset = () => { if (adminPassword === 'ruangriung') { setCoins(500); localStorage.setItem('aiGeneratorCoinsData', JSON.stringify({ coins: 500, lastReset: new Date().getTime() })); showToast('Koin berhasil direset ke 500!', 'success'); setIsAdminModalOpen(false); setAdminPassword(''); } else { showToast('Password admin salah.', 'error'); } };
+  const handleAdminReset = () => { if (adminPassword === process.env.NEXT_PUBLIC_ADMIN_PASSWORD) { setCoins(500); localStorage.setItem('aiGeneratorCoinsData', JSON.stringify({ coins: 500, lastReset: new Date().getTime() })); showToast('Koin berhasil direset ke 500!', 'success'); setIsAdminModalOpen(false); setAdminPassword(''); } else { showToast('Password admin salah.', 'error'); } };
   
   const handleGenerateModalPassword = () => {
       const randomChars = Array(5).fill(0).map(() => Math.floor(Math.random() * 10)).join('');
