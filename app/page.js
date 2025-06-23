@@ -23,7 +23,7 @@ export default function AIImageGenerator() {
   const [customHeight, setCustomHeight] = useState(1024);
   const [seed, setSeed] = useState('');
   const [batchSize, setBatchSize] = useState(1);
-  const [artStyle, setArtStyle] = useState('cinematic');
+  const [artStyle, setArtStyle] = useState('');
   const [generatedImages, setGeneratedImages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [isEnhancing, setIsEnhancing] = useState(false);
@@ -38,6 +38,7 @@ export default function AIImageGenerator() {
   const [isAnalysisModalOpen, setIsAnalysisModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('image');
   const [isCreatorOpen, setIsCreatorOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [promptCreator, setPromptCreator] = useState({ subject: '', details: '' });
   const [videoParams, setVideoParams] = useState({
       concept: '', visualStyle: 'cinematic', duration: 10, aspectRatio: '16:9',
@@ -63,6 +64,7 @@ export default function AIImageGenerator() {
   const [audioVoice, setAudioVoice] = useState('alloy');
   const [generatedAudio, setGeneratedAudio] = useState(null);
   const [generatedVideoPrompt, setGeneratedVideoPrompt] = useState('');
+  const [generatedImagePrompt, setGeneratedImagePrompt] = useState(''); // State untuk hasil prompt gambar
   const [showBackToTop, setShowBackToTop] = useState(false);
   const [installPrompt, setInstallPrompt] = useState(null);
   const [isBannerVisible, setIsBannerVisible] = useState(false);
@@ -99,10 +101,9 @@ export default function AIImageGenerator() {
     try {
         const savedState = JSON.parse(localStorage.getItem('aiImageGeneratorState_v18') || '{}');
         if (savedState) {
-            setPrompt(savedState.prompt || ''); setModel(savedState.model || 'flux'); setQuality(savedState.quality || 'hd'); setSizePreset(savedState.sizePreset || '1024x1024'); setApiKey(savedState.apiKey || ''); setGenerationHistory(savedState.generationHistory || []); setSavedPrompts(savedState.savedPrompts || []); setBatchSize(savedState.batchSize || 1); setSeed(savedState.seed || ''); setUseCustomSize(savedState.useCustomSize || false); setCustomWidth(savedState.customWidth || 1024); setCustomHeight(savedState.customHeight || 1024); setArtStyle(savedState.artStyle || 'cinematic');
+            setPrompt(savedState.prompt || ''); setModel(savedState.model || 'flux'); setQuality(savedState.quality || 'hd'); setSizePreset(savedState.sizePreset || '1024x1024'); setApiKey(savedState.apiKey || ''); setGenerationHistory(savedState.generationHistory || []); setSavedPrompts(savedState.savedPrompts || []); setBatchSize(savedState.batchSize || 1); setSeed(savedState.seed || ''); setUseCustomSize(savedState.useCustomSize || false); setCustomWidth(savedState.customWidth || 1024); setCustomHeight(savedState.customHeight || 1024); setArtStyle(savedState.artStyle || '');
         }
         
-        // Memuat state koin saat komponen mount
         const coinsDataString = localStorage.getItem('aiGeneratorCoinsData');
         if (coinsDataString) {
           const coinsData = JSON.parse(coinsDataString);
@@ -266,7 +267,7 @@ export default function AIImageGenerator() {
   
   const handleGenerateImage = async () => { 
     setGeneratedImages([]); 
-    const finalPrompt = `${artStyle}, ${prompt}`; 
+    const finalPrompt = `${artStyle} ${prompt}`; 
     const promises = Array.from({ length: batchSize }, () => { 
         const currentSeed = seed || Math.floor(Math.random() * 1e9); 
         let url = `https://image.pollinations.ai/prompt/${encodeURIComponent(finalPrompt)}?model=${model}&width=${width}&height=${height}&quality=${quality}&seed=${currentSeed}&nologo=true&safe=false&referrer=ruangriung.my.id`; 
@@ -299,13 +300,22 @@ export default function AIImageGenerator() {
     } 
   };
   
-  const handleBuildImagePrompt = async () => { if (!promptCreator.subject.trim()) { showToast('Subjek tidak boleh kosong.', 'error'); return; } setIsBuildingPrompt(true); try { const userInput = `Main subject: ${promptCreator.subject}. Additional details: ${promptCreator.details || 'None'}.`; const res = await fetch('https://text.pollinations.ai/openai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'gpt-3.5-turbo', messages: [ { role: 'system', content: 'You are a prompt engineer who creates detailed, artistic prompts for image generation. Respond only with the final prompt.' }, { role: 'user', content: userInput }]}) }); if (!res.ok) throw new Error(`API Error: ${res.statusText}`); const data = await res.json(); const newPrompt = data.choices[0]?.message?.content; if (newPrompt) { setPrompt(newPrompt.trim()); showToast('Prompt gambar dikembangkan oleh AI!', 'success'); } else { throw new Error('Gagal memproses respons API.'); } } catch (err) { showToast(err.message, 'error'); } finally { setIsBuildingPrompt(false); } };
+  const handleBuildImagePrompt = async () => { if (!promptCreator.subject.trim()) { showToast('Subjek tidak boleh kosong.', 'error'); return; } setIsBuildingPrompt(true); setGeneratedImagePrompt(''); setGeneratedVideoPrompt(''); try { const userInput = `Main subject: ${promptCreator.subject}. Additional details: ${promptCreator.details || 'None'}.`; const res = await fetch('https://text.pollinations.ai/openai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'gpt-3.5-turbo', messages: [ { role: 'system', content: 'You are a prompt engineer who creates detailed, artistic prompts for image generation. Respond only with the final prompt.' }, { role: 'user', content: userInput }]}) }); if (!res.ok) throw new Error(`API Error: ${res.statusText}`); const data = await res.json(); const newPrompt = data.choices[0]?.message?.content; if (newPrompt) { setGeneratedImagePrompt(newPrompt.trim()); showToast('Prompt gambar dikembangkan oleh AI!', 'success'); } else { throw new Error('Gagal memproses respons API.'); } } catch (err) { showToast(err.message, 'error'); } finally { setIsBuildingPrompt(false); } };
   
-  const handleBuildVideoPrompt = async () => { if (!videoParams.concept.trim()) { showToast('Konsep utama video tidak boleh kosong.', 'error'); return; } setIsBuildingPrompt(true); setGeneratedVideoPrompt(''); const allParams = Object.entries(videoParams).map(([key, value]) => (value ? `${key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}: ${value}` : null)).filter(Boolean).join('. '); try { const res = await fetch('https://text.pollinations.ai/openai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'gpt-3.5-turbo', messages: [ { role: 'system', content: 'You are a professional cinematographer. Based on these parameters, write a complete, coherent, and inspiring video prompt for a text-to-video AI. Combine all elements into a natural paragraph.' }, { role: 'user', content: allParams }]}) }); if (!res.ok) throw new Error(`API Error: ${res.statusText}`); const data = await res.json(); const videoPrompt = data.choices[0]?.message?.content; if (videoPrompt) { setGeneratedVideoPrompt(videoPrompt.trim()); showToast('Prompt video profesional berhasil dibuat!', 'success'); } else { throw new Error('Gagal memproses respons API.'); } } catch (err) { showToast(err.message, 'error'); } finally { setIsBuildingPrompt(false); } };
+  const handleBuildVideoPrompt = async () => { if (!videoParams.concept.trim()) { showToast('Konsep utama video tidak boleh kosong.', 'error'); return; } setIsBuildingPrompt(true); setGeneratedVideoPrompt(''); setGeneratedImagePrompt(''); const allParams = Object.entries(videoParams).map(([key, value]) => (value ? `${key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}: ${value}` : null)).filter(Boolean).join('. '); try { const res = await fetch('https://text.pollinations.ai/openai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'gpt-3.5-turbo', messages: [ { role: 'system', content: 'You are a professional cinematographer. Based on these parameters, write a complete, coherent, and inspiring video prompt for a text-to-video AI. Combine all elements into a natural paragraph.' }, { role: 'user', content: allParams }]}) }); if (!res.ok) throw new Error(`API Error: ${res.statusText}`); const data = await res.json(); const videoPrompt = data.choices[0]?.message?.content; if (videoPrompt) { setGeneratedVideoPrompt(videoPrompt.trim()); showToast('Prompt video profesional berhasil dibuat!', 'success'); } else { throw new Error('Gagal memproses respons API.'); } } catch (err) { showToast(err.message, 'error'); } finally { setIsBuildingPrompt(false); } };
   
   const handlePromptCreatorChange = (e, type) => { const { name, value } = e.target; if (type === 'image') setPromptCreator(p => ({ ...p, [name]: value })); };
   
   const handleVideoParamsChange = (e) => { const { name, value, type } = e.target; setVideoParams(p => ({ ...p, [name]: type === 'number' ? Number(value) : value })); };
+
+  const handleUseGeneratedPrompt = () => {
+    if (generatedImagePrompt) {
+        setPrompt(generatedImagePrompt);
+        setGeneratedImagePrompt('');
+        showToast('Prompt siap digunakan!', 'success');
+        setIsCreatorOpen(false); // Close the assistant after using the prompt
+    }
+  };
     
   const handleMasterReset = () => {
     try {
@@ -317,7 +327,7 @@ export default function AIImageGenerator() {
       if (coinData) localStorage.setItem('aiGeneratorCoinsData', coinData);
       if (darkModePref) localStorage.setItem('darkMode', darkModePref);
 
-      setPrompt(''); setModel('flux'); setQuality('hd'); setSizePreset('1024x1024'); setUseCustomSize(false); setCustomWidth(1024); setCustomHeight(1024); setSeed(''); setBatchSize(1); setArtStyle('cinematic'); setGeneratedImages([]); setLoading(false); setIsEnhancing(false); setIsBuildingPrompt(false); setApiKey(''); setGenerationHistory([]); setSavedPrompts([]); setIsEditorOpen(false); setEditingImage(null); setIsAnalysisModalOpen(false); setActiveTab('image'); setIsCreatorOpen(false); setPromptCreator({ subject: '', details: '' });
+      setPrompt(''); setModel('flux'); setQuality('hd'); setSizePreset('1024x1024'); setUseCustomSize(false); setCustomWidth(1024); setCustomHeight(1024); setSeed(''); setBatchSize(1); setArtStyle(''); setGeneratedImages([]); setLoading(false); setIsEnhancing(false); setIsBuildingPrompt(false); setApiKey(''); setGenerationHistory([]); setSavedPrompts([]); setIsEditorOpen(false); setEditingImage(null); setIsAnalysisModalOpen(false); setActiveTab('image'); setIsCreatorOpen(false); setPromptCreator({ subject: '', details: '' });
       setVideoParams({
           concept: '', visualStyle: 'cinematic', duration: 10, aspectRatio: '16:9',
           fps: 24, cameraMovement: 'static', cameraAngle: 'eye-level', lensType: 'standard',
@@ -326,6 +336,7 @@ export default function AIImageGenerator() {
       });
       setGeneratedAudio(null);
       setGeneratedVideoPrompt('');
+      setGeneratedImagePrompt('');
 
       showToast('Semua data aplikasi telah direset.', 'success');
       setIsMasterResetModalOpen(false);
@@ -399,6 +410,8 @@ export default function AIImageGenerator() {
   const usePromptAndSeed = (p, s) => { setPrompt(p); setSeed(String(s)); setActiveTab('image'); setIsEditorOpen(false); showToast('Prompt & Seed dimuat.', 'success'); };
   const handleCreateVariation = (image) => { setPrompt(image.prompt); setSeed(''); setActiveTab('image'); setIsEditorOpen(false); setTimeout(() => { handleGenerateImage(); }, 100); showToast('Membuat variasi baru...', 'info'); };
   
+  const finalGeneratedPrompt = generatedImagePrompt || generatedVideoPrompt;
+
   const visualStyleOptions = ["Cinematic", "Anime", "Photorealistic", "Watercolor", "Pixel Art", "Cyberpunk", "Retro", "Futuristic"];
   const shotTypeOptions = ["Static", "Slow Pan", "Dolly", "Tracking", "Crane", "Steadycam", "Handheld", "Drone"];
   const cameraAngleOptions = ["Eye Level", "Low Angle", "High Angle", "Dutch Angle", "Overhead", "Point of View"];
@@ -440,7 +453,7 @@ export default function AIImageGenerator() {
         <canvas ref={canvasRef} className="hidden"></canvas>
         
         {isEditorOpen && <ImageEditorModal image={editingImage} onClose={() => setIsEditorOpen(false)} onUsePromptAndSeed={usePromptAndSeed} onDownload={handleDownload} onCreateVariation={handleCreateVariation} showToast={showToast} />}
-        {isAnalysisModalOpen && <ImageAnalysisModal isOpen={isAnalysisModalOpen} onClose={() => setIsAnalysisModalOpen(false)} onPromptGenerated={(p) => { setPrompt(p); showToast("Prompt dari gambar berhasil digunakan!", "success"); setIsAnalysisModalOpen(false); }} showToast={showToast} />}
+        {isAnalysisModalOpen && <ImageAnalysisModal isOpen={isAnalysisModalOpen} onClose={() => setIsAnalysisModalOpen(false)} onPromptGenerated={(p) => { setGeneratedImagePrompt(p); showToast("Prompt dari gambar berhasil dibuat!", "success"); setIsAnalysisModalOpen(false); setIsCreatorOpen(true);}} showToast={showToast} />}
         
         {isAdminModalOpen && <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4"><div className="p-8 rounded-2xl w-full max-w-md" style={{ background: 'var(--bg-color)', boxShadow: 'var(--shadow-outset)' }}><div className="flex justify-between items-center mb-6"><h2 className="text-xl font-bold">Panel Admin</h2><NeumorphicButton onClick={() => setIsAdminModalOpen(false)} className="!p-2"><X size={20} /></NeumorphicButton></div><p className="mb-4 text-sm"> Masukkan password admin untuk mengakses fitur. atau hubungi Admin ruangriung di halaman <a style={{color:"#3b82f6"}} href="https://web.facebook.com/groups/1182261482811767/" target="_blank" rel="noopener noreferrer">Facebook RuangRiung</a>.
             </p><div className="relative w-full mb-4"><input type={showAdminPassword ? "text" : "password"} value={adminPassword} onChange={(e) => setAdminPassword(e.target.value)} placeholder="Password Admin" className="w-full p-3 rounded-lg neumorphic-input pr-12"/><button type="button" onClick={() => setShowAdminPassword(!showAdminPassword)} className="absolute inset-y-0 right-0 pr-3 flex items-center">{showAdminPassword ? <EyeOff size={20} /> : <Eye size={20} />}</button></div><div className="space-y-4"><NeumorphicButton onClick={handleAdminReset} className="font-bold w-full"><RefreshCw size={16}/> Reset Koin</NeumorphicButton></div></div></div>}
@@ -520,7 +533,7 @@ export default function AIImageGenerator() {
                         <div className="p-6 rounded-2xl h-fit space-y-4 neumorphic-card">
                             <div className="flex gap-2">
                                 <NeumorphicButton onClick={() => setActiveTab('image')} active={activeTab === 'image'} className="w-full"><ImageIcon size={16}/>Gambar</NeumorphicButton>
-                                <NeumorphicButton onClick={() => setActiveTab('video')} active={activeTab === 'video'} className="w-full"><Video size={16}/>Video</NeumorphicButton>
+                                <NeumorphicButton onClick={() => { setActiveTab('video'); setGeneratedVideoPrompt(''); setGeneratedImagePrompt(''); }} active={activeTab === 'video'} className="w-full"><Video size={16}/>Video</NeumorphicButton>
                                 <NeumorphicButton onClick={() => setActiveTab('audio')} active={activeTab === 'audio'} className="w-full"><AudioLines size={16}/>Audio</NeumorphicButton>
                             </div>
                             
@@ -530,8 +543,107 @@ export default function AIImageGenerator() {
                                     <textarea id="prompt-textarea" value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder="Ketik ide gambarmu di sini..." className="w-full p-3 rounded-lg neumorphic-input h-28 resize-none pr-10"/>
                                     <button aria-label="Hapus prompt" onClick={() => setPrompt('')} className="absolute top-2 right-2 text-gray-400 hover:text-gray-600"><X size={18}/></button>
                                 </div>
+                                <div className="space-y-2">
+                                  <NeumorphicButton onClick={() => setIsSettingsOpen(!isSettingsOpen)} className="w-full text-sm relative !p-3">
+                                    <span className="flex items-center justify-center gap-2">
+                                      <Settings size={16} />
+                                      Pengaturan
+                                    </span>
+                                    <span className="absolute right-3 top-1/2 -translate-y-1/2">
+                                      {isSettingsOpen ? <ChevronUp size={16}/> : <ChevronDown size={16}/>}
+                                    </span>
+                                  </NeumorphicButton>
+                                  {isSettingsOpen && (
+                                    <div className="p-4 rounded-lg space-y-4" style={{boxShadow: 'var(--shadow-inset)'}}>
+                                      <div>
+                                          <label htmlFor="art-style-select" className="font-semibold block mb-2 text-sm">Gaya Seni</label>
+                                          <select id="art-style-select" value={artStyle} onChange={(e) => setArtStyle(e.target.value)} className="w-full p-3 rounded-lg neumorphic-input bg-[var(--bg-color)]">
+                                              <option value="" disabled>-- Select art Style (Optional) --</option>
+                                              {/* ... (all option values remain the same) ... */}
+                                                <optgroup label="Ultra Realism"><option value="Hyper Realistic">Hyper Realistic</option><option value="photorealistic">8K Photorealistic</option><option value="cinematic realism">Cinematic Realism</option><option value="hyperdetailed">Hyperdetailed</option><option value="sci-fi realism">Sci-Fi Realism</option><option value="medical illustration">Medical Illustration</option></optgroup><optgroup label="Specialized Techniques"><option value="airbrush">Airbrush Art</option><option value="scratchboard">Scratchboard Art</option><option value="linocut print">Linocut Print</option><option value="woodblock print">Woodblock Print</option><option value="silkscreen">Silkscreen Printing</option><option value="engraving">Engraving</option><option value="mezzotint">Mezzotint</option><option value="lithography">Lithography</option><option value="etching">Etching</option><option value="drypoint">Drypoint</option></optgroup><optgroup label="Contemporary Styles"><option value="street art">Street Art</option><option value="graffiti">Graffiti</option><option value="stencil art">Stencil Art</option><option value="pop surrealism">Pop Surrealism</option><option value="lowbrow art">Lowbrow Art</option><option value="urban contemporary">Urban Contemporary</option><option value="outsider art">Outsider Art</option><option value="naive art">Naive Art</option><option value="folk art">Folk Art</option><option value="visionary art">Visionary Art</option></optgroup><optgroup label="Digital & Mixed Media"><option value="digital collage">Digital Collage</option><option value="mixed media">Mixed Media</option><option value="photo manipulation">Photo Manipulation</option><option value="vector art">Vector Art</option><option value="pixel art">Pixel Art</option><option value="vaporwave">Vaporwave Aesthetic</option><option value="synthwave">Synthwave</option><option value="outrun">Outrun Style</option><option value="cybergoth">Cybergoth</option><option value="y2k aesthetic">Y2K Aesthetic</option></optgroup><optgroup label="Illustration Styles"><option value="editorial illustration">Editorial Illustration</option><option value="scientific illustration">Scientific Illustration</option><option value="botanical illustration">Botanical Illustration</option><option value="medical illustration">Medical Illustration</option><option value="technical drawing">Technical Drawing</option><option value="infographic">Infographic Style</option><option value="comic book">Comic Book Style</option><option value="graphic novel">Graphic Novel</option><option value="storyboard">Storyboard Style</option><option value="concept art">Concept Art</option></optgroup><optgroup label="Regional & Ethnic Styles"><option value="african art">African Art</option><option value="aboriginal art">Aboriginal Art</option><option value="maori art">Maori Art</option><option value="native american">Native American Art</option><option value="aztec art">Aztec Art</option><option value="mayan art">Mayan Art</option><option value="inca art">Inca Art</option><option value="balinese art">Balinese Art</option><option value="javanese batik">Javanese Batik</option><option value="thai art">Thai Art</option></optgroup><optgroup label="Photography Styles"><option value="professional photography">Professional Photography</option><option value="casual photography">Casual Photography</option><option value="studio portrait">Studio Portrait (Ring Light)</option><option value="fujifilm pro">Fujifilm PRO</option><option value="kodak portra">Kodak Portra</option><option value="leica m">Leica M-Series</option><option value="street photography">Street Photography</option><option value="urban exploration">Urban Exploration</option><option value="fashion photography">Fashion Editorial</option><option value="product photography">Product Photography</option><option value="food photography">Food Photography</option><option value="macro photography">Macro Photography</option><option value="astrophotography">Astrophotography</option><option value="underwater">Underwater Photography</option><option value="drone photography">Drone Photography</option><option value="long exposure">Long Exposure</option><option value="tilt-shift">Tilt-Shift</option><option value="infrared">Infrared Photography</option></optgroup><optgroup label="Anime & Manga"><option value="anime">Modern Anime</option><option value="studio ghibli">Studio Ghibli</option><option value="makoto shinkai">Makoto Shinkai</option><option value="90s anime">90s Anime</option><option value="manga">Shonen Manga</option><option value="seinen manga">Seinen Manga</option><option value="webtoon">Webtoon</option><option value="manhwa">Korean Manhwa</option><option value="chibi">Chibi</option><option value="kawaii">Kawaii Style</option><option value="mecha anime">Mecha Anime</option><option value="shoujo anime">Shoujo Anime</option></optgroup><optgroup label="Digital Painting"><option value="digital painting">Digital Painting</option><option value="concept art">Concept Art</option><option value="character design">Character Design</option><option value="environment art">Environment Art</option><option value="matte painting">Matte Painting</option><option value="speedpainting">Speedpainting</option><option value="fantasy art">Fantasy Art</option><option value="dark fantasy">Dark Fantasy</option><option value="book illustration">Book Illustration</option><option value="children book">Children's Book</option></optgroup><optgroup label="Traditional Media"><option value="oil painting">Oil Painting</option><option value="watercolor">Watercolor</option><option value="gouache">Gouache</option><option value="acrylic painting">Acrylic Painting</option><option value="pastel">Pastel</option><option value="ink wash">Ink Wash</option><option value="fresco">Fresco</option><option value="tempera">Tempera</option><option value="renaissance">Renaissance</option><option value="baroque">Baroque</option><option value="rococo">Rococo</option><option value="impressionist">Impressionist</option><option value="post-impressionist">Post-Impressionist</option><option value="expressionist">Expressionist</option><option value="art nouveau">Art Nouveau</option><option value="art deco">Art Deco</option><option value="victorian">Victorian</option><option value="socialist realism">Socialist Realism</option></optgroup><optgroup label="Drawing Techniques"><option value="pencil sketch">Pencil Sketch</option><option value="charcoal sketch">Charcoal Sketch</option><option value="ink drawing">Ink Drawing</option><option value="ballpoint pen">Ballpoint Pen</option><option value="colored pencil">Colored Pencil</option><option value="marker drawing">Marker Drawing</option><option value="etching">Etching</option><option value="linocut">Linocut</option><option value="woodcut">Woodcut</option><option value="pointillism">Pointillism</option><option value="stippling">Stippling</option></optgroup><optgroup label="3D & CGI"><option value="3d render">3D Render</option><option value="blender">Blender</option><option value="unreal engine">Unreal Engine</option><option value="octane render">Octane Render</option><option value="redshift">Redshift</option><option value="arnold render">Arnold Render</option><option value="zbrush">ZBrush Sculpt</option><option value="claymation">Claymation</option><option value="stop motion">Stop Motion</option><option value="isometric">Isometric</option><option value="voxel art">Voxel Art</option></optgroup><optgroup label="Game Art Styles"><option value="low poly">Low Poly</option><option value="pixel art">Pixel Art</option><option value="ps1 graphics">PS1 Graphics</option><option value="ps2 graphics">PS2 Graphics</option><option value="n64 style">N64 Style</option><option value="arc system works">Arc System Works</option><option value="cel shaded">Cel-Shaded</option><option value="borderlands">Borderlands Style</option><option value="valorant style">Valorant Style</option><option value="overwatch style">Overwatch Style</option><option value="genshin impact">Genshin Impact</option><option value="honkai star rail">Honkai: Star Rail</option></optgroup><optgroup label="Cyberpunk & Futuristic"><option value="cyberpunk">Cyberpunk 2077</option><option value="cyberpunk anime">Cyberpunk Anime</option><option value="biopunk">Biopunk</option><option value="dieselpunk">Dieselpunk</option><option value="steampunk">Steampunk</option><option value="atompunk">Atompunk</option><option value="solarpunk">Solarpunk</option><option value="cassette futurism">Cassette Futurism</option><option value="retro futurism">Retro Futurism</option><option value="blade runner">Blade Runner</option><option value="ghost in the shell">Ghost in the Shell</option></optgroup><optgroup label="Cartoon & Comics"><option value="disney style">Disney</option><option value="pixar style">Pixar</option><option value="dreamworks">Dreamworks</option><option value="cartoon network">Cartoon Network</option><option value="adult swim">Adult Swim</option><option value="rick and morty">Rick and Morty</option><option value="calarts style">CalArts Style</option><option value="peanuts">Peanuts</option><option value="marvel comics">Marvel Comics</option><option value="dc comics">DC Comics</option><option value="european comics">European Comics</option><option value="french ligne claire">Ligne Claire</option></optgroup><optgroup label="Abstract & Experimental"><option value="abstract">Abstract</option><option value="cubism">Cubism</option><option value="surrealism">Surrealism</option><option value="dadaism">Dadaism</option><option value="bauhaus">Bauhaus</option><option value="constructivism">Constructivism</option><option value="psychedelic">Psychedelic</option><option value="fluid art">Fluid Art</option><option value="glitch art">Glitch Art</option><option value="fractal art">Fractal Art</option><option value="generative art">Generative Art</option><option value="data bending">Data Bending</option></optgroup><optgroup label="Special Effects"><option value="holographic">Holographic</option><option value="neon glow">Neon Glow</option><option value="chromatic aberration">Chromatic Aberration</option><option value="double exposure">Double Exposure</option><option value="light painting">Light Painting</option><option value="lens flare">Lens Flare</option><option value="vhs effect">VHS Effect</option><option value="crt screen">CRT Screen</option><option value="film grain">Film Grain</option><option value="cross processing">Cross Processing</option></optgroup><optgroup label="Cultural & Historical"><option value="ukiyo-e">Ukiyo-e</option><option value="chinese painting">Chinese Painting</option><option value="sumi-e">Sumi-e</option><option value="persian miniature">Persian Miniature</option><option value="medieval illuminated">Medieval Illuminated</option><option value="byzantine icon">Byzantine Icon</option><option value="tribal art">Tribal Art</option><option value="afrofuturism">Afrofuturism</option><option value="indigenous art">Indigenous Art</option><option value="soviet propaganda">Soviet Propaganda</option></optgroup>
+                                          </select>
+                                      </div>
+                                      
+                                      <div>
+                                          <label htmlFor="model-select" className="font-semibold block mb-2 text-sm">Model</label>
+                                          <select id="model-select" value={model} onChange={handleModelChange} className="w-full p-3 rounded-lg neumorphic-input bg-[var(--bg-color)]">
+                                              <option value="flux">Flux</option>
+                                              <option value="turbo">Turbo (Password)</option>
+                                              <option value="dalle3">DALL-E 3 (Key)</option>
+                                              <option value="stability">Stability (Key)</option>
+                                              <option value="ideogram">Ideogram (Key)</option>
+                                          </select>
+                                          {model === 'turbo' && turboCountdown && (
+                                              <div className="text-xs text-center mt-2 p-2 rounded-lg" style={{boxShadow:'var(--shadow-inset)'}}>
+                                                  {turboCountdown !== "Kadaluarsa" ? (
+                                                      <span>Sisa waktu Turbo: <span className="font-mono font-bold text-green-500">{turboCountdown}</span></span>
+                                                  ) : (
+                                                      <span>Sesi Turbo: <span className="font-mono font-bold text-red-500">{turboCountdown}</span></span>
+                                                  )}
+                                              </div>
+                                          )}
+                                      </div>
+
+                                      <div>
+                                          <label htmlFor="quality-select" className="font-semibold block mb-2 text-sm">Kualitas</label>
+                                          <select id="quality-select" value={quality} onChange={(e) => setQuality(e.target.value)} className="w-full p-3 rounded-lg neumorphic-input bg-[var(--bg-color)]">
+                                              <option value="standard">Standard</option>
+                                              <option value="hd">HD</option>
+                                              <option value="ultra">Ultra</option>
+                                          </select>
+                                      </div>
+                                      <div>
+                                          <div className="flex items-center justify-between mb-2">
+                                              <label htmlFor="size-preset-select" className="font-semibold text-sm">Ukuran</label>
+                                              <button onClick={() => setUseCustomSize(!useCustomSize)} className="text-sm font-medium">{useCustomSize ? 'Preset' : 'Kustom'}</button>
+                                          </div>
+                                          {!useCustomSize ? <select id="size-preset-select" value={sizePreset} onChange={(e) => setSizePreset(e.target.value)} className="w-full p-3 rounded-lg neumorphic-input bg-[var(--bg-color)]"><option value="1024x1024">1024x1024</option><option value="1024x1792">1024x1792</option><option value="1792x1024">1792x1024</option></select> : <div className="space-y-3 p-3 rounded-lg" style={{boxShadow: 'var(--shadow-inset)'}}><div><label className="text-sm">Width: {customWidth}px</label><input type="range" min="256" max="2048" step="64" value={customWidth} onChange={(e) => setCustomWidth(Number(e.target.value))} className="w-full"/></div><div><label className="text-sm">Height: {customHeight}px</label><input type="range" min="256" max="2048" step="64" value={customHeight} onChange={(e) => setCustomHeight(Number(e.target.value))} className="w-full"/></div></div>}
+                                      </div>
+                                      <div className="grid grid-cols-2 gap-4">
+                                          <div>
+                                              <label htmlFor="batch-input" className="font-semibold block mb-2 text-sm">Batch</label>
+                                              <input id="batch-input" type="number" min="1" max="10" value={batchSize} onChange={(e) => setBatchSize(Number(e.target.value))} className="w-full p-3 rounded-lg neumorphic-input"/>
+                                          </div>
+                                          <div>
+                                              <label htmlFor="seed-input" className="font-semibold block mb-2 text-sm">Seed</label>
+                                              <input id="seed-input" type="text" value={seed} onChange={(e) => setSeed(e.target.value)} placeholder="Acak" className="w-full p-3 rounded-lg neumorphic-input"/>
+                                          </div>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
                                 <NeumorphicButton onClick={() => setIsCreatorOpen(!isCreatorOpen)} className="w-full text-sm">{`Asisten Prompt Gambar`} {isCreatorOpen ? <ChevronUp size={16}/> : <ChevronDown size={16}/>}</NeumorphicButton>
-                                {isCreatorOpen && <div className="p-4 rounded-lg space-y-4" style={{boxShadow: 'var(--shadow-inset)'}}><div><label className="text-xs font-semibold block mb-1 flex items-center text-red-500 dark:text-red-400">Subjek (Wajib)<Star className="w-3 h-3 ml-1" fill="currentColor"/></label><input name="subject" value={promptCreator.subject} onChange={(e) => handlePromptCreatorChange(e, 'image')} placeholder="cth: seekor kucing astronot" className="w-full p-2 rounded-lg neumorphic-input text-sm" /></div><div><label className="text-xs font-semibold block mb-1">Detail Tambahan</label><textarea name="details" value={promptCreator.details} onChange={(e) => handlePromptCreatorChange(e, 'image')} placeholder="cth: hyperrealistic, 4k" className="w-full p-2 rounded-lg neumorphic-input text-sm h-20 resize-none" /></div><NeumorphicButton onClick={handleBuildImagePrompt} loading={isBuildingPrompt} loadingText="Membangun..." className="w-full text-sm !p-2">Kembangkan dengan AI</NeumorphicButton></div>}
+                                {isCreatorOpen && 
+                                    <div className="p-4 rounded-lg space-y-4" style={{boxShadow: 'var(--shadow-inset)'}}>
+                                        <div>
+                                            <label className="text-xs font-semibold block mb-1 items-center text-red-500 dark:text-red-400">Subjek (Wajib)<Star className="w-3 h-3 ml-1" fill="currentColor"/></label>
+                                            <input name="subject" value={promptCreator.subject} onChange={(e) => handlePromptCreatorChange(e, 'image')} placeholder="cth: seekor kucing astronot" className="w-full p-2 rounded-lg neumorphic-input text-sm" />
+                                        </div>
+                                        <div>
+                                            <label className="text-xs font-semibold block mb-1">Detail Tambahan</label>
+                                            <textarea name="details" value={promptCreator.details} onChange={(e) => handlePromptCreatorChange(e, 'image')} placeholder="cth: hyperrealistic, 4k" className="w-full p-2 rounded-lg neumorphic-input text-sm h-20 resize-none" />
+                                        </div>
+                                        <NeumorphicButton onClick={handleBuildImagePrompt} loading={isBuildingPrompt} loadingText="Membangun..." className="w-full text-sm !p-2">Kembangkan dengan AI</NeumorphicButton>
+                                        
+                                        {/* === FRAME HASIL PROMPT DIPINDAHKAN KE SINI === */}
+                                        {generatedImagePrompt && (
+                                            <div className="mt-4 pt-4 border-t border-[var(--shadow-dark)]/50 space-y-3 animate-fade-in">
+                                                <h4 className="text-md font-semibold">Hasil Prompt dari AI:</h4>
+                                                <div className="w-full p-3 rounded-lg text-sm" style={{boxShadow:'var(--shadow-inset)'}}>
+                                                    <p className="whitespace-pre-wrap">{generatedImagePrompt}</p>
+                                                </div>
+                                                <div className="flex gap-2">
+                                                    <NeumorphicButton onClick={() => {navigator.clipboard.writeText(generatedImagePrompt); showToast('Prompt disalin!', 'success')}} className="flex-1 !p-2 text-xs">
+                                                        <Copy size={14}/> Salin
+                                                    </NeumorphicButton>
+                                                    <NeumorphicButton onClick={handleUseGeneratedPrompt} className="flex-1 !p-2 text-xs font-semibold">
+                                                        <ChevronsRight size={14}/> Gunakan Prompt
+                                                    </NeumorphicButton>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                }
                                 
                                 <div className="flex flex-wrap gap-2">
                                     <NeumorphicButton onClick={handleEnhancePrompt} loading={isEnhancing} loadingText="Memproses..." className="flex-1 text-sm"><Wand2 size={16}/>Sempurnakan</NeumorphicButton>
@@ -554,88 +666,37 @@ export default function AIImageGenerator() {
                             {activeTab === 'video' && <div className="space-y-4"><label className="font-semibold block text-xl">Asisten Prompt Video</label><div><label className="text-sm font-semibold">Konsep Utama Video</label><textarea name="concept" value={videoParams.concept} onChange={handleVideoParamsChange} placeholder="Cth: Detektif cyberpunk di gang neon..." className="w-full p-3 mt-1 rounded-lg neumorphic-input h-28 resize-none"/></div><CollapsibleSection title="Basic Settings" icon={<SlidersHorizontal size={18}/>}><div className="grid grid-cols-2 gap-4"><div><label className="text-sm font-semibold">Gaya Visual</label><select name="visualStyle" value={videoParams.visualStyle} onChange={handleVideoParamsChange} className="w-full p-2 mt-1 rounded-lg neumorphic-input text-sm bg-[var(--bg-color)]">{visualStyleOptions.map(o=><option key={o} value={o.toLowerCase().replace(/ /g, "-")}>{o}</option>)}</select></div><div><label className="text-sm font-semibold">Durasi (s)</label><input type="number" name="duration" value={videoParams.duration} onChange={handleVideoParamsChange} className="w-full p-2 mt-1 rounded-lg neumorphic-input text-sm"/></div><div><label className="text-sm font-semibold">Aspek Rasio</label><select name="aspectRatio" value={videoParams.aspectRatio} onChange={handleVideoParamsChange} className="w-full p-2 mt-1 rounded-lg neumorphic-input text-sm bg-[var(--bg-color)]">{["16:9", "9:16", "1:1", "4:3", "21:9"].map(o=><option key={o} value={o}>{o}</option>)}</select></div><div><label className="text-sm font-semibold">Frame Rate</label><select name="fps" value={videoParams.fps} onChange={handleVideoParamsChange} className="w-full p-2 mt-1 rounded-lg neumorphic-input text-sm bg-[var(--bg-color)]">{[24, 30, 60, 120].map(o=><option key={o} value={o}>{o} fps</option>)}</select></div></div></CollapsibleSection><CollapsibleSection title="Cinematography" icon={<Camera size={18}/>}><div className="grid grid-cols-2 gap-4"><div><label className="text-sm font-semibold">Gerakan Kamera</label><select name="cameraMovement" value={videoParams.cameraMovement} onChange={handleVideoParamsChange} className="w-full p-2 mt-1 rounded-lg neumorphic-input text-sm bg-[var(--bg-color)]">{shotTypeOptions.map(o=><option key={o} value={o.toLowerCase().replace(/ /g, "-")}>{o}</option>)}</select></div><div><label className="text-sm font-semibold">Sudut Kamera</label><select name="cameraAngle" value={videoParams.cameraAngle} onChange={handleVideoParamsChange} className="w-full p-2 mt-1 rounded-lg neumorphic-input text-sm bg-[var(--bg-color)]">{cameraAngleOptions.map(o=><option key={o} value={o.toLowerCase().replace(/ /g, "-")}>{o}</option>)}</select></div><div><label className="text-sm font-semibold">Tipe Lensa</label><select name="lensType" value={videoParams.lensType} onChange={handleVideoParamsChange} className="w-full p-2 mt-1 rounded-lg neumorphic-input text-sm bg-[var(--bg-color)]">{lensTypeOptions.map(o=><option key={o} value={o.toLowerCase().replace(/ /g, "-")}>{o}</option>)}</select></div><div><label className="text-sm font-semibold">Depth of Field</label><select name="depthOfField" value={videoParams.depthOfField} onChange={handleVideoParamsChange} className="w-full p-2 mt-1 rounded-lg neumorphic-input text-sm bg-[var(--bg-color)]">{dofOptions.map(o=><option key={o} value={o.toLowerCase()}>{o}</option>)}</select></div></div></CollapsibleSection><CollapsibleSection title="Visual Effects" icon={<Sparkles size={18}/>}><div><label className="text-sm font-semibold">Film Grain ({videoParams.filmGrain}%)</label><input type="range" name="filmGrain" value={videoParams.filmGrain} onChange={handleVideoParamsChange} min="0" max="100" className="w-full"/></div><div><label className="text-sm font-semibold">Chromatic Aberration ({videoParams.chromaticAberration}%)</label><input type="range" name="chromaticAberration" value={videoParams.chromaticAberration} onChange={handleVideoParamsChange} min="0" max="100" className="w-full"/></div></CollapsibleSection><CollapsibleSection title="Mood & Atmosphere" icon={<CloudSun size={18}/>}><div className="grid grid-cols-2 gap-4"><div><label className="text-sm font-semibold">Waktu</label><select name="timeOfDay" value={videoParams.timeOfDay} onChange={handleVideoParamsChange} className="w-full p-2 mt-1 rounded-lg neumorphic-input text-sm bg-[var(--bg-color)]">{timeOfDayOptions.map(o=><option key={o} value={o.toLowerCase().replace(/ /g, "-")}>{o}</option>)}</select></div><div><label className="text-sm font-semibold">Cuaca</label><select name="weather" value={videoParams.weather} onChange={handleVideoParamsChange} className="w-full p-2 mt-1 rounded-lg neumorphic-input text-sm bg-[var(--bg-color)]">{weatherOptions.map(o=><option key={o} value={o.toLowerCase()}>{o}</option>)}</select></div></div></CollapsibleSection><NeumorphicButton onClick={handleBuildVideoPrompt} loading={isBuildingPrompt} loadingText="Membangun..." className="w-full !mt-6 font-bold text-lg"><Sparkles size={18}/>Buat Prompt Video</NeumorphicButton></div>}
                             {activeTab === 'audio' && <div className="space-y-4"><label className="font-semibold block text-xl">Teks untuk Audio</label><div className="relative"><textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder="Ketik kalimat untuk diubah jadi suara..." className="w-full p-3 rounded-lg neumorphic-input h-28 resize-none pr-10"/><button onClick={() => setPrompt('')} className="absolute top-2 right-2 text-gray-400 hover:text-gray-600"><X size={18}/></button></div><div><label className="font-semibold block mb-2">Pilih Suara</label><select value={audioVoice} onChange={(e) => setAudioVoice(e.target.value)} className="w-full p-3 rounded-lg neumorphic-input bg-[var(--bg-color)]"><option value="alloy">Alloy</option><option value="echo">Echo</option><option value="fable">Fable</option><option value="onyx">Onyx</option><option value="nova">Nova</option><option value="shimmer">Shimmer</option></select></div><NeumorphicButton onClick={handleGenerate} loading={loading} loadingText="Membuat Audio..." className="w-full font-bold text-lg"><Sparkles size={18}/>Generate</NeumorphicButton></div>}
                         </div>
-                        {activeTab === 'image' && <><div className="p-6 rounded-2xl h-fit space-y-6 neumorphic-card">
-                            <h2 className="text-xl font-bold flex items-center gap-2"><Settings size={22}/> Pengaturan</h2>
-                            <div>
-                                <label htmlFor="art-style-select" className="font-semibold block mb-2">Gaya Seni</label>
-                                <select id="art-style-select" value={artStyle} onChange={(e) => setArtStyle(e.target.value)} className="w-full p-3 rounded-lg neumorphic-input bg-[var(--bg-color)]">
-                                    <option value="photographic">Fotografi</option>
-                                    <option value="cinematic">Sinematik</option>
-                                    <option value="anime">Anime</option>
-                                    <option value="fantasy">Fantasi</option>
-                                    <option value="watercolor">Watercolor</option>
-                                    <option value="line_art">Line Art</option>
-                                    <option value="isometric">Isometric</option>
-                                    <option value="cyberpunk">Cyberpunk</option>
-                                </select>
-                            </div>
-                            
-                            <div>
-                                <label htmlFor="model-select" className="font-semibold block mb-2">Model</label>
-                                <select id="model-select" value={model} onChange={handleModelChange} className="w-full p-3 rounded-lg neumorphic-input bg-[var(--bg-color)]">
-                                    <option value="flux">Flux</option>
-                                    <option value="turbo">Turbo (Password)</option>
-                                    <option value="dalle3">DALL-E 3 (Key)</option>
-                                    <option value="stability">Stability (Key)</option>
-                                    <option value="ideogram">Ideogram (Key)</option>
-                                </select>
-                                {model === 'turbo' && turboCountdown && (
-                                    <div className="text-xs text-center mt-2 p-2 rounded-lg" style={{boxShadow:'var(--shadow-inset)'}}>
-                                        {turboCountdown !== "Kadaluarsa" ? (
-                                            <span>Sisa waktu Turbo: <span className="font-mono font-bold text-green-500">{turboCountdown}</span></span>
-                                        ) : (
-                                            <span>Sesi Turbo: <span className="font-mono font-bold text-red-500">{turboCountdown}</span></span>
-                                        )}
-                                    </div>
-                                )}
-                            </div>
-
-                            <div>
-                                <label htmlFor="quality-select" className="font-semibold block mb-2">Kualitas</label>
-                                <select id="quality-select" value={quality} onChange={(e) => setQuality(e.target.value)} className="w-full p-3 rounded-lg neumorphic-input bg-[var(--bg-color)]">
-                                    <option value="standard">Standard</option>
-                                    <option value="hd">HD</option>
-                                    <option value="ultra">Ultra</option>
-                                </select>
-                            </div>
-                            <div>
-                                <div className="flex items-center justify-between mb-2">
-                                    <label htmlFor="size-preset-select" className="font-semibold">Ukuran</label>
-                                    <button onClick={() => setUseCustomSize(!useCustomSize)} className="text-sm font-medium">{useCustomSize ? 'Preset' : 'Kustom'}</button>
-                                </div>
-                                {!useCustomSize ? <select id="size-preset-select" value={sizePreset} onChange={(e) => setSizePreset(e.target.value)} className="w-full p-3 rounded-lg neumorphic-input bg-[var(--bg-color)]"><option value="1024x1024">1024x1024</option><option value="1024x1792">1024x1792</option><option value="1792x1024">1792x1024</option></select> : <div className="space-y-3 p-3 rounded-lg" style={{boxShadow: 'var(--shadow-inset)'}}><div><label className="text-sm">Width: {customWidth}px</label><input type="range" min="256" max="2048" step="64" value={customWidth} onChange={(e) => setCustomWidth(Number(e.target.value))} className="w-full"/></div><div><label className="text-sm">Height: {customHeight}px</label><input type="range" min="256" max="2048" step="64" value={customHeight} onChange={(e) => setCustomHeight(Number(e.target.value))} className="w-full"/></div></div>}
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label htmlFor="batch-input" className="font-semibold block mb-2">Batch</label>
-                                    <input id="batch-input" type="number" min="1" max="10" value={batchSize} onChange={(e) => setBatchSize(Number(e.target.value))} className="w-full p-3 rounded-lg neumorphic-input"/>
-                                </div>
-                                <div>
-                                    <label htmlFor="seed-input" className="font-semibold block mb-2">Seed</label>
-                                    <input id="seed-input" type="text" value={seed} onChange={(e) => setSeed(e.target.value)} placeholder="Acak" className="w-full p-3 rounded-lg neumorphic-input"/>
-                                </div>
-                            </div>
-                            <NeumorphicButton onClick={() => setIsMasterResetModalOpen(true)} className="w-full text-red-500 font-semibold"><Trash2 size={16}/> Reset Semua Data</NeumorphicButton>
-                        </div>
                         <div className="p-6 rounded-2xl h-fit space-y-4 neumorphic-card">
                             <h3 className="font-bold text-lg">Buat Prompt dari Gambar</h3>
                             <NeumorphicButton onClick={() => setIsAnalysisModalOpen(true)} className="w-full"><Upload size={16} /> Analisis Gambar</NeumorphicButton>
-                        </div></>
-                        }
+                        </div>
                     </div>
                     <div className="lg:col-span-8 space-y-8">
                         <div className="p-6 rounded-2xl min-h-[50vh] flex flex-col justify-center items-center neumorphic-card">
                             <h2 className="text-2xl font-bold mb-4">{activeTab === 'image' ? 'Hasil Generasi Gambar' : (activeTab === 'video' ? 'Hasil Prompt Video' : 'Hasil Generasi Audio')}</h2>
                             {loading && <div className="text-center"><Spinner /><p className="mt-4">{activeTab === 'image' ? 'Membuat Gambar...' : (activeTab === 'video' ? 'Membuat Prompt...' : 'Membuat Audio...')}</p></div>}
+                            
+                            {/* Tampilan untuk prompt video tetap di sini */}
+                            {!loading && activeTab === 'video' && generatedVideoPrompt && (
+                                <div className="w-full p-4 rounded-lg text-left relative" style={{boxShadow:'var(--shadow-inset)'}}>
+                                    <button onClick={()=>{navigator.clipboard.writeText(generatedVideoPrompt); showToast('Prompt disalin!', 'success')}} className="absolute top-2 right-2 p-1.5 opacity-60 hover:opacity-100">
+                                        <Copy size={16}/>
+                                    </button>
+                                    <p className="whitespace-pre-wrap pr-8">{generatedVideoPrompt}</p>
+                                </div>
+                            )}
+
                             {!loading && activeTab === 'image' && generatedImages.length === 0 && <p className="text-gray-500">Hasil gambar akan muncul di sini.</p>}
                             {!loading && activeTab === 'image' && generatedImages.length > 0 && <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-6">{generatedImages.map((img, i) => (<div key={i} className="rounded-xl p-2 space-y-2 group relative" style={{boxShadow: 'var(--shadow-outset)'}}><img src={img.url} className="w-full h-auto rounded-lg"/><div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg"><button onClick={() => handleOpenEditor(img)} className="text-white font-bold py-2 px-4 rounded-lg bg-white/20 backdrop-blur-sm">Lihat & Edit</button></div><p className="text-xs text-center opacity-60">Seed: {img.seed}</p></div>))}</div>}
-                            {!loading && activeTab === 'video' && !generatedVideoPrompt && <p className="text-gray-500">Hasil prompt video akan muncul di sini.</p>}
-                            {!loading && activeTab === 'video' && generatedVideoPrompt && <div className="w-full p-4 rounded-lg text-left relative" style={{boxShadow:'var(--shadow-inset)'}}><button onClick={()=>{navigator.clipboard.writeText(generatedVideoPrompt); showToast('Prompt disalin!', 'success')}} className="absolute top-2 right-2 p-1.5 opacity-60 hover:opacity-100"><Copy size={16}/></button><p className="whitespace-pre-wrap pr-8">{generatedVideoPrompt}</p></div>}
+                            {!loading && activeTab === 'video' && !generatedVideoPrompt && <p className="text-gray-500">Gunakan asisten di sebelah kiri untuk membuat prompt video profesional.</p>}
                             {!loading && activeTab === 'audio' && !generatedAudio && <p className="text-gray-500">Hasil audio akan muncul di sini.</p>}
                             {!loading && activeTab === 'audio' && generatedAudio && <div className="w-full p-4 flex items-center gap-4"><audio controls src={generatedAudio} className="w-full"></audio><a href={generatedAudio} download="generated_audio.mp3"><NeumorphicButton className="!p-3"><ImageDown size={20}/></NeumorphicButton></a></div>}
                         </div>
                         <div className="p-6 rounded-2xl h-fit neumorphic-card">
-                            <div className="flex justify-between items-center mb-4"><h3 className="text-xl font-bold flex items-center gap-2"><History size={20}/> Riwayat & Favorit</h3><NeumorphicButton onClick={() => setIsClearHistoryModalOpen(true)} className="!p-2"><Trash2 size={16}/></NeumorphicButton></div>
+                             <div className="flex justify-between items-center mb-4">
+                                <h3 className="text-xl font-bold flex items-center gap-2"><History size={20}/> Riwayat & Favorit</h3>
+                                <NeumorphicButton onClick={() => setIsClearHistoryModalOpen(true)} className="!p-2" title="Hapus Riwayat & Favorit"><Trash2 size={16}/></NeumorphicButton>
+                            </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div><h4 className="font-semibold mb-2">Riwayat Gambar</h4><div className="max-h-96 overflow-y-auto space-y-2 pr-2">{generationHistory.length === 0 ? <p className="text-sm opacity-60">Kosong</p> : generationHistory.map((h) => (<div key={h.date} className="flex items-center gap-2 p-2 rounded-lg" style={{boxShadow:'var(--shadow-inset)'}}><img src={h.url} className="w-16 h-16 rounded-md object-cover cursor-pointer flex-shrink-0" onClick={() => handleOpenEditor(h)}/><p className="text-xs line-clamp-3 flex-grow cursor-pointer" onClick={() => handleOpenEditor(h)}>{h.prompt}</p><NeumorphicButton aria-label={`Hapus riwayat untuk prompt: ${h.prompt.substring(0, 30)}...`} onClick={() => setGenerationHistory(prev => prev.filter(item => item.date !== h.date))} className="!p-2 flex-shrink-0"><Trash2 size={14}/></NeumorphicButton></div>))}</div></div>
                                 <div><h4 className="font-semibold mb-2">Prompt Favorit</h4><div className="max-h-96 overflow-y-auto space-y-2 pr-2">{savedPrompts.length === 0 ? <p className="text-sm opacity-60">Kosong</p> : savedPrompts.map((p) => (<div key={p.date} className="flex items-center gap-2 p-2 rounded-lg" style={{boxShadow:'var(--shadow-inset)'}}><p className="text-sm flex-grow truncate">{p.prompt}</p><NeumorphicButton onClick={() => setPrompt(p.prompt)} className="!p-1.5"><ChevronsRight size={14}/></NeumorphicButton><NeumorphicButton aria-label={`Hapus favorit: ${p.prompt.substring(0, 30)}...`} onClick={() => setSavedPrompts(prev => prev.filter(sp => sp.date !== p.date))} className="!p-1.5"><Trash2 size={14}/></NeumorphicButton></div>))}</div></div>
@@ -644,6 +705,16 @@ export default function AIImageGenerator() {
                     </div>
                 </div>
             </main>
+
+            <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex justify-center mt-8">
+                 <NeumorphicButton
+                    onClick={() => setIsMasterResetModalOpen(true)}
+                    className="w-full max-w-md !text-red-500 !font-semibold"
+                >
+                    <Trash2 size={16}/> Reset Semua Data Aplikasi
+                </NeumorphicButton>
+            </div>
+
             <footer className="text-center p-4 mt-8 border-t border-gray-500/20 text-sm opacity-70">
                 <p>&copy; {new Date().getFullYear()} RuangRiung AI Image Generator - Developed with ❤️ by{' '}
                   <a
