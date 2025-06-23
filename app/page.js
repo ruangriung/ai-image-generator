@@ -64,10 +64,11 @@ export default function AIImageGenerator() {
   const [audioVoice, setAudioVoice] = useState('alloy');
   const [generatedAudio, setGeneratedAudio] = useState(null);
   const [generatedVideoPrompt, setGeneratedVideoPrompt] = useState('');
-  const [generatedImagePrompt, setGeneratedImagePrompt] = useState(''); // State untuk hasil prompt gambar
+  const [generatedImagePrompt, setGeneratedImagePrompt] = useState('');
   const [showBackToTop, setShowBackToTop] = useState(false);
   const [installPrompt, setInstallPrompt] = useState(null);
   const [isBannerVisible, setIsBannerVisible] = useState(false);
+  const [isAnnouncementModalOpen, setIsAnnouncementModalOpen] = useState(false);
 
   const canvasRef = useRef(null);
   
@@ -79,6 +80,14 @@ export default function AIImageGenerator() {
 
   useEffect(() => {
     setIsMounted(true);
+    const hasSeenModal = sessionStorage.getItem('hasSeenAnnouncement');
+    if (!hasSeenModal) {
+      const timer = setTimeout(() => {
+        setIsAnnouncementModalOpen(true);
+        sessionStorage.setItem('hasSeenAnnouncement', 'true');
+      }, 10000); // 10 detik
+      return () => clearTimeout(timer);
+    }
   }, []);
 
   useEffect(() => {
@@ -313,7 +322,7 @@ export default function AIImageGenerator() {
         setPrompt(generatedImagePrompt);
         setGeneratedImagePrompt('');
         showToast('Prompt siap digunakan!', 'success');
-        setIsCreatorOpen(false); // Close the assistant after using the prompt
+        setIsCreatorOpen(false);
     }
   };
     
@@ -424,6 +433,84 @@ export default function AIImageGenerator() {
 
   return (
     <div className={`min-h-screen transition-colors duration-300 bg-[var(--bg-color)] text-[var(--text-color)]`}>
+        {/* MODAL PENGUMUMAN BARU */}
+        {isAnnouncementModalOpen && (
+            <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-[200] p-4 animate-fade-in">
+                <div className="p-6 rounded-2xl w-full max-w-2xl flex flex-col gap-4 neumorphic-card" style={{ background: 'var(--bg-color)' }}>
+                    <div className="flex justify-between items-center mb-2">
+                        <h2 className="text-xl font-bold">🎉 Battle Video AI 2025 Dimulai! 🚀</h2>
+                        <NeumorphicButton onClick={() => setIsAnnouncementModalOpen(false)} className="!p-2"><X size={20} /></NeumorphicButton>
+                    </div>
+                    <div className="max-h-[70vh] overflow-y-auto pr-3 text-sm space-y-3">
+                        <p>Yo, Warga RuangRiung! 👋</p>
+                        <p>Nggak kerasa, Group RuangRiung AI Image udah setahun nemenin kita semua. Buat ngerayain ulang tahun pertama kita, kita mau ngadain battle seru-seruan yang pastinya pecah!</p>
+                        
+                        <div>
+                            <h3 className="font-bold">Kapan?</h3>
+                            <ul className="list-disc list-inside ml-4">
+                                <li><strong>Mulai:</strong> Senin, 23 Juni (Jam 10 Pagi)</li>
+                                <li><strong>Selesai:</strong> Minggu, 29 Juni (Jam 8 Malam)</li>
+                                <li><strong>Pengumuman Juara:</strong> Sabtu, 5 Juli (Jam 5 Sore)</li>
+                            </ul>
+                        </div>
+                        
+                        <div>
+                            <h3 className="font-bold">Temanya apa, nih?</h3>
+                            <p className="text-lg font-semibold text-center my-2 p-2 rounded-lg" style={{boxShadow: 'var(--shadow-inset)'}}>"IKLAN LUCU RUANG RIUNG" 🤣</p>
+                            <p>Bikin video iklan sekocak dan sekreatif mungkin tentang RuangRiung. Pokoknya, yang penting bikin ngakak!</p>
+                        </div>
+
+                        <div>
+                            <h3 className="font-bold">Yang Dinilai Apa Aja?</h3>
+                            <ul className="list-disc list-inside ml-4 space-y-1">
+                                <li><strong>Nyambung sama Tema:</strong> Videonya harus soal iklan lucu RuangRiung, ya!</li>
+                                <li><strong>Kreatif & Unik:</strong> Idemu harus out-of-the-box, jangan yang biasa-biasa aja.</li>
+                                <li><strong>Kualitas Oke:</strong> Gambar & suara harus jernih, editingnya juga rapi.</li>
+                                <li><strong>Ceritanya Ngalir:</strong> Bikin cerita yang asyik, lucu, dan bikin orang nonton sampai habis.</li>
+                                <li><strong>Ajak-Ajak! (Call to Action):</strong> Ada pesan dan ajakan yang jelas buat penonton.</li>
+                                <li><strong>Branding Tipis-Tipis:</strong> Munculin tulisan "RUANGRIUNG AI IMAGE" di video dengan gaya yang elegan.</li>
+                                <li><strong>WAJIB LUCU:</strong> Ini yang paling penting. Minimal bisa bikin kita semua senyum-senyum sendiri!</li>
+                            </ul>
+                        </div>
+
+                        <div>
+                            <h3 className="font-bold">Syarat Ikutan, Gampang Kok!</h3>
+                            <ul className="list-disc list-inside ml-4 space-y-1">
+                                <li>Pastikan kamu sudah gabung di grup Facebook <strong>RUANGRIUNG AI IMAGE</strong>.</li>
+                                <li>Wajib ada tulisan "RUANGRIUNG AI IMAGE" di dalam videomu.</li>
+                                <li>Durasi minimal <strong>16 detik</strong>.</li>
+                                <li>Posting videomu di grup, lalu <strong>share postingan ini ke beranda Facebook-mu</strong> (sertakan screenshot-nya, ya!).</li>
+                                <li>Tag minimal 5 temanmu.</li>
+                                <li>Bebas pakai aplikasi atau generator video apa aja.</li>
+                                <li>Dilarang keras ada unsur SARA, pornografi, dan politik.</li>
+                                <li>Satu orang boleh kirim maksimal 2 video.</li>
+                                <li>Jangan lupa pakai hashtag resmi: <strong>#ultah1thnruangriung</strong></li>
+                                <li>Keputusan juri itu final dan nggak bisa diganggu gugat.</li>
+                            </ul>
+                        </div>
+
+                         <div>
+                            <h3 className="font-bold">Total Hadiah Jutaan Rupiah!</h3>
+                            <ul className="list-disc list-inside ml-4">
+                                <li>Juara 1: <strong>Rp 300.000,-</strong></li>
+                                <li>Juara 2: <strong>Rp 200.000,-</strong></li>
+                                <li>Juara 3: <strong>Rp 150.000,-</strong></li>
+                                <li>Juara 4 & 5: Masing-masing <strong>Rp 100.000,-</strong></li>
+                            </ul>
+                        </div>
+
+                        <a href="https://web.facebook.com/groups/1182261482811767/" target="_blank" rel="noopener noreferrer" className="block w-full">
+                           <NeumorphicButton className="w-full font-bold">
+                             Gabung Grup Sekarang
+                           </NeumorphicButton>
+                        </a>
+                        
+                        <p className="text-center">Tunggu apa lagi? Yuk, langsung gaskeun dan tunjukkin kreativitas liarmu di sini!<br/>Salam hangat,<br/>Tim RuangRiung AI<br/>@sorotan</p>
+                    </div>
+                </div>
+            </div>
+        )}
+
         {isBannerVisible && (
             <div className="fixed top-0 left-0 right-0 bg-blue-600 text-white p-3 flex items-center justify-center gap-4 z-50 shadow-lg animate-fade-in">
                 <span className="text-sm md:text-base">Install aplikasi untuk akses lebih cepat!</span>
@@ -559,7 +646,7 @@ export default function AIImageGenerator() {
                                           <label htmlFor="art-style-select" className="font-semibold block mb-2 text-sm">Gaya Seni</label>
                                           <select id="art-style-select" value={artStyle} onChange={(e) => setArtStyle(e.target.value)} className="w-full p-3 rounded-lg neumorphic-input bg-[var(--bg-color)]">
                                               <option value="" disabled>-- Select art Style (Optional) --</option>
-                                              {/* ... (all option values remain the same) ... */}
+                                              {/* ... Opsi gaya seni ... */}
                                                 <optgroup label="Ultra Realism"><option value="Hyper Realistic">Hyper Realistic</option><option value="photorealistic">8K Photorealistic</option><option value="cinematic realism">Cinematic Realism</option><option value="hyperdetailed">Hyperdetailed</option><option value="sci-fi realism">Sci-Fi Realism</option><option value="medical illustration">Medical Illustration</option></optgroup><optgroup label="Specialized Techniques"><option value="airbrush">Airbrush Art</option><option value="scratchboard">Scratchboard Art</option><option value="linocut print">Linocut Print</option><option value="woodblock print">Woodblock Print</option><option value="silkscreen">Silkscreen Printing</option><option value="engraving">Engraving</option><option value="mezzotint">Mezzotint</option><option value="lithography">Lithography</option><option value="etching">Etching</option><option value="drypoint">Drypoint</option></optgroup><optgroup label="Contemporary Styles"><option value="street art">Street Art</option><option value="graffiti">Graffiti</option><option value="stencil art">Stencil Art</option><option value="pop surrealism">Pop Surrealism</option><option value="lowbrow art">Lowbrow Art</option><option value="urban contemporary">Urban Contemporary</option><option value="outsider art">Outsider Art</option><option value="naive art">Naive Art</option><option value="folk art">Folk Art</option><option value="visionary art">Visionary Art</option></optgroup><optgroup label="Digital & Mixed Media"><option value="digital collage">Digital Collage</option><option value="mixed media">Mixed Media</option><option value="photo manipulation">Photo Manipulation</option><option value="vector art">Vector Art</option><option value="pixel art">Pixel Art</option><option value="vaporwave">Vaporwave Aesthetic</option><option value="synthwave">Synthwave</option><option value="outrun">Outrun Style</option><option value="cybergoth">Cybergoth</option><option value="y2k aesthetic">Y2K Aesthetic</option></optgroup><optgroup label="Illustration Styles"><option value="editorial illustration">Editorial Illustration</option><option value="scientific illustration">Scientific Illustration</option><option value="botanical illustration">Botanical Illustration</option><option value="medical illustration">Medical Illustration</option><option value="technical drawing">Technical Drawing</option><option value="infographic">Infographic Style</option><option value="comic book">Comic Book Style</option><option value="graphic novel">Graphic Novel</option><option value="storyboard">Storyboard Style</option><option value="concept art">Concept Art</option></optgroup><optgroup label="Regional & Ethnic Styles"><option value="african art">African Art</option><option value="aboriginal art">Aboriginal Art</option><option value="maori art">Maori Art</option><option value="native american">Native American Art</option><option value="aztec art">Aztec Art</option><option value="mayan art">Mayan Art</option><option value="inca art">Inca Art</option><option value="balinese art">Balinese Art</option><option value="javanese batik">Javanese Batik</option><option value="thai art">Thai Art</option></optgroup><optgroup label="Photography Styles"><option value="professional photography">Professional Photography</option><option value="casual photography">Casual Photography</option><option value="studio portrait">Studio Portrait (Ring Light)</option><option value="fujifilm pro">Fujifilm PRO</option><option value="kodak portra">Kodak Portra</option><option value="leica m">Leica M-Series</option><option value="street photography">Street Photography</option><option value="urban exploration">Urban Exploration</option><option value="fashion photography">Fashion Editorial</option><option value="product photography">Product Photography</option><option value="food photography">Food Photography</option><option value="macro photography">Macro Photography</option><option value="astrophotography">Astrophotography</option><option value="underwater">Underwater Photography</option><option value="drone photography">Drone Photography</option><option value="long exposure">Long Exposure</option><option value="tilt-shift">Tilt-Shift</option><option value="infrared">Infrared Photography</option></optgroup><optgroup label="Anime & Manga"><option value="anime">Modern Anime</option><option value="studio ghibli">Studio Ghibli</option><option value="makoto shinkai">Makoto Shinkai</option><option value="90s anime">90s Anime</option><option value="manga">Shonen Manga</option><option value="seinen manga">Seinen Manga</option><option value="webtoon">Webtoon</option><option value="manhwa">Korean Manhwa</option><option value="chibi">Chibi</option><option value="kawaii">Kawaii Style</option><option value="mecha anime">Mecha Anime</option><option value="shoujo anime">Shoujo Anime</option></optgroup><optgroup label="Digital Painting"><option value="digital painting">Digital Painting</option><option value="concept art">Concept Art</option><option value="character design">Character Design</option><option value="environment art">Environment Art</option><option value="matte painting">Matte Painting</option><option value="speedpainting">Speedpainting</option><option value="fantasy art">Fantasy Art</option><option value="dark fantasy">Dark Fantasy</option><option value="book illustration">Book Illustration</option><option value="children book">Children's Book</option></optgroup><optgroup label="Traditional Media"><option value="oil painting">Oil Painting</option><option value="watercolor">Watercolor</option><option value="gouache">Gouache</option><option value="acrylic painting">Acrylic Painting</option><option value="pastel">Pastel</option><option value="ink wash">Ink Wash</option><option value="fresco">Fresco</option><option value="tempera">Tempera</option><option value="renaissance">Renaissance</option><option value="baroque">Baroque</option><option value="rococo">Rococo</option><option value="impressionist">Impressionist</option><option value="post-impressionist">Post-Impressionist</option><option value="expressionist">Expressionist</option><option value="art nouveau">Art Nouveau</option><option value="art deco">Art Deco</option><option value="victorian">Victorian</option><option value="socialist realism">Socialist Realism</option></optgroup><optgroup label="Drawing Techniques"><option value="pencil sketch">Pencil Sketch</option><option value="charcoal sketch">Charcoal Sketch</option><option value="ink drawing">Ink Drawing</option><option value="ballpoint pen">Ballpoint Pen</option><option value="colored pencil">Colored Pencil</option><option value="marker drawing">Marker Drawing</option><option value="etching">Etching</option><option value="linocut">Linocut</option><option value="woodcut">Woodcut</option><option value="pointillism">Pointillism</option><option value="stippling">Stippling</option></optgroup><optgroup label="3D & CGI"><option value="3d render">3D Render</option><option value="blender">Blender</option><option value="unreal engine">Unreal Engine</option><option value="octane render">Octane Render</option><option value="redshift">Redshift</option><option value="arnold render">Arnold Render</option><option value="zbrush">ZBrush Sculpt</option><option value="claymation">Claymation</option><option value="stop motion">Stop Motion</option><option value="isometric">Isometric</option><option value="voxel art">Voxel Art</option></optgroup><optgroup label="Game Art Styles"><option value="low poly">Low Poly</option><option value="pixel art">Pixel Art</option><option value="ps1 graphics">PS1 Graphics</option><option value="ps2 graphics">PS2 Graphics</option><option value="n64 style">N64 Style</option><option value="arc system works">Arc System Works</option><option value="cel shaded">Cel-Shaded</option><option value="borderlands">Borderlands Style</option><option value="valorant style">Valorant Style</option><option value="overwatch style">Overwatch Style</option><option value="genshin impact">Genshin Impact</option><option value="honkai star rail">Honkai: Star Rail</option></optgroup><optgroup label="Cyberpunk & Futuristic"><option value="cyberpunk">Cyberpunk 2077</option><option value="cyberpunk anime">Cyberpunk Anime</option><option value="biopunk">Biopunk</option><option value="dieselpunk">Dieselpunk</option><option value="steampunk">Steampunk</option><option value="atompunk">Atompunk</option><option value="solarpunk">Solarpunk</option><option value="cassette futurism">Cassette Futurism</option><option value="retro futurism">Retro Futurism</option><option value="blade runner">Blade Runner</option><option value="ghost in the shell">Ghost in the Shell</option></optgroup><optgroup label="Cartoon & Comics"><option value="disney style">Disney</option><option value="pixar style">Pixar</option><option value="dreamworks">Dreamworks</option><option value="cartoon network">Cartoon Network</option><option value="adult swim">Adult Swim</option><option value="rick and morty">Rick and Morty</option><option value="calarts style">CalArts Style</option><option value="peanuts">Peanuts</option><option value="marvel comics">Marvel Comics</option><option value="dc comics">DC Comics</option><option value="european comics">European Comics</option><option value="french ligne claire">Ligne Claire</option></optgroup><optgroup label="Abstract & Experimental"><option value="abstract">Abstract</option><option value="cubism">Cubism</option><option value="surrealism">Surrealism</option><option value="dadaism">Dadaism</option><option value="bauhaus">Bauhaus</option><option value="constructivism">Constructivism</option><option value="psychedelic">Psychedelic</option><option value="fluid art">Fluid Art</option><option value="glitch art">Glitch Art</option><option value="fractal art">Fractal Art</option><option value="generative art">Generative Art</option><option value="data bending">Data Bending</option></optgroup><optgroup label="Special Effects"><option value="holographic">Holographic</option><option value="neon glow">Neon Glow</option><option value="chromatic aberration">Chromatic Aberration</option><option value="double exposure">Double Exposure</option><option value="light painting">Light Painting</option><option value="lens flare">Lens Flare</option><option value="vhs effect">VHS Effect</option><option value="crt screen">CRT Screen</option><option value="film grain">Film Grain</option><option value="cross processing">Cross Processing</option></optgroup><optgroup label="Cultural & Historical"><option value="ukiyo-e">Ukiyo-e</option><option value="chinese painting">Chinese Painting</option><option value="sumi-e">Sumi-e</option><option value="persian miniature">Persian Miniature</option><option value="medieval illuminated">Medieval Illuminated</option><option value="byzantine icon">Byzantine Icon</option><option value="tribal art">Tribal Art</option><option value="afrofuturism">Afrofuturism</option><option value="indigenous art">Indigenous Art</option><option value="soviet propaganda">Soviet Propaganda</option></optgroup>
                                           </select>
                                       </div>
@@ -568,6 +655,7 @@ export default function AIImageGenerator() {
                                           <label htmlFor="model-select" className="font-semibold block mb-2 text-sm">Model</label>
                                           <select id="model-select" value={model} onChange={handleModelChange} className="w-full p-3 rounded-lg neumorphic-input bg-[var(--bg-color)]">
                                               <option value="flux">Flux</option>
+                                              <option value="gptimage">GPT Image</option>
                                               <option value="turbo">Turbo (Password)</option>
                                               <option value="dalle3">DALL-E 3 (Key)</option>
                                               <option value="stability">Stability (Key)</option>
@@ -625,7 +713,6 @@ export default function AIImageGenerator() {
                                         </div>
                                         <NeumorphicButton onClick={handleBuildImagePrompt} loading={isBuildingPrompt} loadingText="Membangun..." className="w-full text-sm !p-2">Kembangkan dengan AI</NeumorphicButton>
                                         
-                                        {/* === FRAME HASIL PROMPT DIPINDAHKAN KE SINI === */}
                                         {generatedImagePrompt && (
                                             <div className="mt-4 pt-4 border-t border-[var(--shadow-dark)]/50 space-y-3 animate-fade-in">
                                                 <h4 className="text-md font-semibold">Hasil Prompt dari AI:</h4>
@@ -676,7 +763,6 @@ export default function AIImageGenerator() {
                             <h2 className="text-2xl font-bold mb-4">{activeTab === 'image' ? 'Hasil Generasi Gambar' : (activeTab === 'video' ? 'Hasil Prompt Video' : 'Hasil Generasi Audio')}</h2>
                             {loading && <div className="text-center"><Spinner /><p className="mt-4">{activeTab === 'image' ? 'Membuat Gambar...' : (activeTab === 'video' ? 'Membuat Prompt...' : 'Membuat Audio...')}</p></div>}
                             
-                            {/* Tampilan untuk prompt video tetap di sini */}
                             {!loading && activeTab === 'video' && generatedVideoPrompt && (
                                 <div className="w-full p-4 rounded-lg text-left relative" style={{boxShadow:'var(--shadow-inset)'}}>
                                     <button onClick={()=>{navigator.clipboard.writeText(generatedVideoPrompt); showToast('Prompt disalin!', 'success')}} className="absolute top-2 right-2 p-1.5 opacity-60 hover:opacity-100">
