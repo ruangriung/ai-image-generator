@@ -1,5 +1,6 @@
 import { Inter } from 'next/font/google';
 import './globals.css';
+import { SpeedInsights } from "@vercel/speed-insights/next"; // <-- 1. TAMBAHKAN BARIS INI
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -53,7 +54,10 @@ export default function RootLayout({ children }) {
         {/* TAMBAHKAN BARIS INI UNTUK IKON FONT AWESOME */}
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossOrigin="anonymous" referrerPolicy="no-referrer" />
       </head>
-      <body className={inter.className}>{children}</body>
+      <body className={inter.className}>
+        {children}
+        <SpeedInsights /> {/* <-- 2. TAMBAHKAN BARIS INI */}
+      </body>
     </html>
   )
 }
