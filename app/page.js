@@ -94,7 +94,6 @@ export default function AIImageGenerator() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 model: 'gpt-3.5-turbo',
-                // **PERBAIKAN: Tambahkan seed acak untuk menghindari cache**
                 seed: Math.floor(Math.random() * 1000000), 
                 messages: [{
                     role: 'system',
@@ -681,19 +680,19 @@ export default function AIImageGenerator() {
                                 <div className="space-y-2">
                                   <div className="flex justify-between items-center">
                                     <h4 className="font-semibold text-sm">Butuh Inspirasi?</h4>
-                                    <button onClick={fetchAiSuggestions} disabled={isFetchingSuggestions} className="p-1 rounded-full transition-all hover:bg-gray-500/20">
+                                    <button onClick={fetchAiSuggestions} disabled={isFetchingSuggestions} className="p-1 rounded-full transition-all hover:bg-gray-500/20 disabled:opacity-50 disabled:cursor-not-allowed">
                                       {isFetchingSuggestions ? <Spinner/> : <RefreshCw size={14}/>}
                                     </button>
                                   </div>
                                   <div className="flex flex-col gap-2">
                                     {aiSuggestions.map((suggestion, index) => (
-                                      <div 
+                                      <button 
                                         key={index}
                                         onClick={() => setPrompt(suggestion)}
-                                        className="text-xs p-2 rounded-lg cursor-pointer transition-all hover:bg-gray-500/10"
+                                        className="text-xs text-left p-2 rounded-lg cursor-pointer transition-all neumorphic-input hover:bg-gray-500/10"
                                       >
                                         {suggestion}
-                                      </div>
+                                      </button>
                                     ))}
                                   </div>
                                 </div>
