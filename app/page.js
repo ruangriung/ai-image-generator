@@ -68,10 +68,9 @@ export default function AIImageGenerator() {
   const [showBackToTop, setShowBackToTop] = useState(false);
   const [installPrompt, setInstallPrompt] = useState(null);
   const [isBannerVisible, setIsBannerVisible] = useState(false);
-  const [isAnnouncementModalOpen, setIsAnnouncementModalOpen] = useState(false);
   const [aiSuggestions, setAiSuggestions] = useState([]);
   const [isFetchingSuggestions, setIsFetchingSuggestions] = useState(false);
-  const [isSuggestionsOpen, setIsSuggestionsOpen] = useState(false); // State untuk toggle
+  const [isSuggestionsOpen, setIsSuggestionsOpen] = useState(false);
 
   const canvasRef = useRef(null);
 
@@ -481,83 +480,6 @@ export default function AIImageGenerator() {
 
   return (
     <div className={`min-h-screen transition-colors duration-300 bg-[var(--bg-color)] text-[var(--text-color)]`}>
-        {isAnnouncementModalOpen && (
-            <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-[200] p-4 animate-fade-in">
-                <div className="p-6 rounded-2xl w-full max-w-2xl flex flex-col gap-4 neumorphic-card" style={{ background: 'var(--bg-color)' }}>
-                    <div className="flex justify-between items-center mb-2">
-                        <h2 className="text-xl font-bold">🎉 Battle Video AI 2025 Dimulai! 🚀</h2>
-                        <NeumorphicButton onClick={() => setIsAnnouncementModalOpen(false)} className="!p-2"><X size={20} /></NeumorphicButton>
-                    </div>
-                    <div className="max-h-[70vh] overflow-y-auto pr-3 text-sm space-y-3">
-                        <p>Yo, Warga RuangRiung! 👋</p>
-                        <p>Nggak kerasa, Group RuangRiung AI Image udah setahun nemenin kita semua. Buat ngerayain ulang tahun pertama kita, kita mau ngadain battle seru-seruan yang pastinya pecah!</p>
-                        
-                        <div>
-                            <h3 className="font-bold">Kapan?</h3>
-                            <ul className="list-disc list-inside ml-4">
-                                <li><strong>Mulai:</strong> Senin, 23 Juni (Jam 10 Pagi)</li>
-                                <li><strong>Selesai:</strong> Minggu, 29 Juni (Jam 8 Malam)</li>
-                                <li><strong>Pengumuman Juara:</strong> Sabtu, 5 Juli (Jam 5 Sore)</li>
-                            </ul>
-                        </div>
-                        
-                        <div>
-                            <h3 className="font-bold">Temanya apa, nih?</h3>
-                            <p className="text-lg font-semibold text-center my-2 p-2 rounded-lg" style={{boxShadow: 'var(--shadow-inset)'}}>"IKLAN LUCU RUANG RIUNG" 🤣</p>
-                            <p>Bikin video iklan sekocak dan sekreatif mungkin tentang RuangRiung. Pokoknya, yang penting bikin ngakak!</p>
-                        </div>
-
-                        <div>
-                            <h3 className="font-bold">Yang Dinilai Apa Aja?</h3>
-                            <ul className="list-disc list-inside ml-4 space-y-1">
-                                <li><strong>Nyambung sama Tema:</strong> Videonya harus soal iklan lucu RuangRiung, ya!</li>
-                                <li><strong>Kreatif & Unik:</strong> Idemu harus out-of-the-box, jangan yang biasa-biasa aja.</li>
-                                <li><strong>Kualitas Oke:</strong> Gambar & suara harus jernih, editingnya juga rapi.</li>
-                                <li><strong>Ceritanya Ngalir:</strong> Bikin cerita yang asyik, lucu, dan bikin orang nonton sampai habis.</li>
-                                <li><strong>Ajak-Ajak! (Call to Action):</strong> Ada pesan dan ajakan yang jelas buat penonton.</li>
-                                <li><strong>Branding Tipis-Tipis:</strong> Munculin tulisan "RUANGRIUNG AI IMAGE" di video dengan gaya yang elegan.</li>
-                                <li><strong>WAJIB LUCU:</strong> Ini yang paling penting. Minimal bisa bikin kita semua senyum-senyum sendiri!</li>
-                            </ul>
-                        </div>
-
-                        <div>
-                            <h3 className="font-bold">Syarat Ikutan, Gampang Kok!</h3>
-                            <ul className="list-disc list-inside ml-4 space-y-1">
-                                <li>Pastikan kamu sudah gabung di grup Facebook <strong>RUANGRIUNG AI IMAGE</strong>.</li>
-                                <li>Wajib ada tulisan "RUANGRIUNG AI IMAGE" di dalam videomu.</li>
-                                <li>Durasi minimal <strong>16 detik</strong>.</li>
-                                <li>Posting videomu di grup, lalu <strong>share postingan ini ke beranda Facebook-mu</strong> (sertakan screenshot-nya, ya!).</li>
-                                <li>Tag minimal 5 temanmu.</li>
-                                <li>Bebas pakai aplikasi atau generator video apa aja.</li>
-                                <li>Dilarang keras ada unsur SARA, pornografi, dan politik.</li>
-                                <li>Satu orang boleh kirim maksimal 2 video.</li>
-                                <li>Jangan lupa pakai hashtag resmi: <strong>#ultah1thnruangriung</strong></li>
-                                <li>Keputusan juri itu final dan nggak bisa diganggu gugat.</li>
-                            </ul>
-                        </div>
-
-                         <div>
-                            <h3 className="font-bold">Total Hadiah Jutaan Rupiah!</h3>
-                            <ul className="list-disc list-inside ml-4">
-                                <li>Juara 1: <strong>Rp 300.000,-</strong></li>
-                                <li>Juara 2: <strong>Rp 200.000,-</strong></li>
-                                <li>Juara 3: <strong>Rp 150.000,-</strong></li>
-                                <li>Juara 4 & 5: Masing-masing <strong>Rp 100.000,-</strong></li>
-                            </ul>
-                        </div>
-
-                        <a href="https://web.facebook.com/groups/1182261482811767/" target="_blank" rel="noopener noreferrer" className="block w-full">
-                           <NeumorphicButton className="w-full font-bold">
-                             Gabung Grup Sekarang
-                           </NeumorphicButton>
-                        </a>
-                        
-                        <p className="text-center">Tunggu apa lagi? Yuk, langsung gaskeun dan tunjukkin kreativitas liarmu di sini!<br/>Salam hangat,<br/>Tim RuangRiung AI<br/>@sorotan</p>
-                    </div>
-                </div>
-            </div>
-        )}
-
         {isBannerVisible && (
             <div className="fixed top-0 left-0 right-0 bg-blue-600 text-white p-3 flex items-center justify-center gap-4 z-50 shadow-lg animate-fade-in">
                 <span className="text-sm md:text-base">Install aplikasi untuk akses lebih cepat!</span>
@@ -677,32 +599,24 @@ export default function AIImageGenerator() {
                                     <textarea id="prompt-textarea" value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder="Ketik ide gambarmu di sini..." className="w-full p-3 rounded-lg neumorphic-input h-28 resize-none pr-10"/>
                                     <button aria-label="Hapus prompt" onClick={() => setPrompt('')} className="absolute top-2 right-2 text-gray-400 hover:text-gray-600"><X size={18}/></button>
                                 </div>
-
-                                {/* **PERUBAHAN DI SINI** */}
-                                <div className="space-y-2">
-                                  <div className="flex justify-between items-center cursor-pointer" onClick={() => setIsSuggestionsOpen(!isSuggestionsOpen)}>
-                                    <h4 className="font-semibold text-sm">Butuh Inspirasi?</h4>
-                                    <div className='flex items-center gap-2'>
-                                      <button onClick={(e) => { e.stopPropagation(); fetchAiSuggestions(); }} disabled={isFetchingSuggestions} className="p-1 rounded-full transition-all hover:bg-gray-500/20 disabled:opacity-50 disabled:cursor-not-allowed">
+                                
+                                <CollapsibleSection title="Butuh Inspirasi?" icon={<Wand2 size={16}/>}>
+                                  <div className="space-y-2">
+                                      <button onClick={fetchAiSuggestions} disabled={isFetchingSuggestions} className="w-full text-sm p-2 rounded-lg flex items-center justify-center gap-2" style={{boxShadow: 'var(--shadow-outset)'}}>
                                         {isFetchingSuggestions ? <Spinner/> : <RefreshCw size={14}/>}
+                                        {isFetchingSuggestions ? 'Memuat...' : 'Muat Saran Baru'}
                                       </button>
-                                      {isSuggestionsOpen ? <ChevronUp size={16}/> : <ChevronDown size={16}/>}
-                                    </div>
-                                  </div>
-                                  {isSuggestionsOpen && (
-                                    <div className="flex flex-col gap-2 pt-2 border-t border-gray-500/20">
                                       {aiSuggestions.map((suggestion, index) => (
-                                        <button 
+                                        <div 
                                           key={index}
                                           onClick={() => setPrompt(suggestion)}
-                                          className="text-xs text-left p-2 rounded-lg cursor-pointer transition-all hover:bg-gray-500/10 neumorphic-input"
+                                          className="text-xs p-2 rounded-lg cursor-pointer transition-all hover:bg-gray-500/10 neumorphic-input"
                                         >
                                           {suggestion}
-                                        </button>
+                                        </div>
                                       ))}
-                                    </div>
-                                  )}
-                                </div>
+                                  </div>
+                                </CollapsibleSection>
                                 
                                 <div className="space-y-2">
                                   <NeumorphicButton onClick={() => setIsSettingsOpen(!isSettingsOpen)} className="w-full text-sm relative !p-3">
