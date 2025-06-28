@@ -94,6 +94,8 @@ export default function AIImageGenerator() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 model: 'gpt-3.5-turbo',
+                // **PERBAIKAN: Tambahkan seed acak untuk menghindari cache**
+                seed: Math.floor(Math.random() * 1000000), 
                 messages: [{
                     role: 'system',
                     content: 'You are a creative prompt generator. Generate 3 diverse, creative, and detailed prompts for an AI image generator. Each prompt must be on a new line. Do not number them.'
