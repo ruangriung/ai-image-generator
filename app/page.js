@@ -677,18 +677,21 @@ export default function AIImageGenerator() {
                                 </div>
 
                                 <div className="space-y-2">
-                                  <h4 className="font-semibold text-sm">Butuh Inspirasi?</h4>
-                                  {isFetchingSuggestions && <div className="text-sm opacity-70 flex items-center gap-2"><Spinner/> Memuat saran...</div>}
+                                  <div className="flex justify-between items-center">
+                                    <h4 className="font-semibold text-sm">Butuh Inspirasi?</h4>
+                                    <button onClick={fetchAiSuggestions} disabled={isFetchingSuggestions} className="p-1 rounded-full transition-all hover:bg-gray-500/20">
+                                      {isFetchingSuggestions ? <Spinner/> : <RefreshCw size={14}/>}
+                                    </button>
+                                  </div>
                                   <div className="flex flex-col gap-2">
                                     {aiSuggestions.map((suggestion, index) => (
-                                      <button 
+                                      <div 
                                         key={index}
                                         onClick={() => setPrompt(suggestion)}
-                                        className="text-xs text-left p-2 rounded-lg transition-all hover:scale-105"
-                                        style={{boxShadow: 'var(--shadow-outset)'}}
+                                        className="text-xs p-2 rounded-lg cursor-pointer transition-all hover:bg-gray-500/10"
                                       >
                                         {suggestion}
-                                      </button>
+                                      </div>
                                     ))}
                                   </div>
                                 </div>
