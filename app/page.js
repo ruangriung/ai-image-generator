@@ -1,12 +1,12 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { 
-    Sun, Moon, Settings, X, Wand2, RefreshCw, ChevronsRight, 
+import {
+    Sun, Moon, Settings, X, Wand2, RefreshCw, ChevronsRight,
     ImageDown, Bookmark, Trash2, History, Star, Upload,
     ChevronDown, ChevronUp, Sparkles, Image as ImageIcon, Video, Layers, Coins, Clock,
     Eye, EyeOff, Copy, AudioLines, SlidersHorizontal, Camera, CloudSun, KeyRound, Check,
-    MessageSquare, Download
+    MessageSquare, Download, Dices
 } from 'lucide-react';
 
 import { Spinner, NeumorphicButton, Toasts, ImageEditorModal, CollapsibleSection, ImageAnalysisModal } from './components.js';
@@ -69,6 +69,10 @@ export default function AIImageGenerator() {
   const [installPrompt, setInstallPrompt] = useState(null);
   const [isBannerVisible, setIsBannerVisible] = useState(false);
   const [isAnnouncementModalOpen, setIsAnnouncementModalOpen] = useState(false);
+  
+  // State untuk menyimpan prompt dari AI
+  const [aiSuggestions, setAiSuggestions] = useState([]);
+  const [isFetchingSuggestions, setIsFetchingSuggestions] = useState(false);
 
   const canvasRef = useRef(null);
   
@@ -78,12 +82,67 @@ export default function AIImageGenerator() {
     return { width: w, height: h };
   }, [useCustomSize, customWidth, customHeight, sizePreset]);
 
+  // Fungsi untuk mengambil saran prompt dari AI
+  const fetchAiSuggestions = useCallback(async () => {
+    setIsFetchingSuggestions(true);
+    setAiSuggestions([]);
+    try {
+        const res = await fetch('https://text.pollinations.ai/openai', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                model: 'gpt-3.5-turbo',
+                messages: [{
+                    role: 'system',
+                    content: 'You are a creative prompt generator. Generate 3 diverse, creative, and detailed prompts for an AI image generator. Each prompt must be on a new line. Do not number them.'
+                }, {
+                    role: 'user',
+                    content: 'Give me 3 creative prompts.'
+                }]
+            })
+        });
+        if (!res.ok) throw new Error('Failed to fetch suggestions');
+        const data = await res.json();
+        const suggestionsText = data.choices[0]?.message?.content;
+        if (suggestionsText) {
+            const suggestions = suggestionsText.split('\n').filter(p => p.trim() !== '');
+            setAiSuggestions(suggestions);
+        } else {
+            throw new Error('No suggestions in response');
+        }
+    } catch (err) {
+        showToast('Gagal memuat saran prompt AI.', 'error');
+        // Fallback ke prompt statis jika gagal
+        setAiSuggestions([
+            "A majestic lion wearing a crown in a futuristic city",
+            "A serene japanese garden with a koi pond and cherry blossoms",
+            "An astronaut playing a guitar on the moon, with Earth in the background",
+        ]);
+    } finally {
+        setIsFetchingSuggestions(false);
+    }
+  }, [showToast]);
+
+  // Panggil fungsi fetch saat komponen pertama kali dimuat
+  useEffect(() => {
+    if (isMounted) {
+        fetchAiSuggestions();
+    }
+  }, [isMounted, fetchAiSuggestions]);
+
+  // Fungsi untuk tombol acak, sekarang memilih dari saran AI
+  const handleRandomPrompt = () => {
+    if (aiSuggestions.length === 0) {
+      showToast('Saran prompt sedang dimuat, coba lagi sesaat.', 'info');
+      return;
+    }
+    const randomIndex = Math.floor(Math.random() * aiSuggestions.length);
+    setPrompt(aiSuggestions[randomIndex]);
+    showToast('Prompt acak telah dimuat!', 'success');
+  };
+  
   useEffect(() => {
     setIsMounted(true);
-    // const timer = setTimeout(() => {
-    //   setIsAnnouncementModalOpen(true);
-    // }, 10000);
-    // return () => clearTimeout(timer);
   }, []);
 
   useEffect(() => {
@@ -625,6 +684,25 @@ export default function AIImageGenerator() {
                                     <textarea id="prompt-textarea" value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder="Ketik ide gambarmu di sini..." className="w-full p-3 rounded-lg neumorphic-input h-28 resize-none pr-10"/>
                                     <button aria-label="Hapus prompt" onClick={() => setPrompt('')} className="absolute top-2 right-2 text-gray-400 hover:text-gray-600"><X size={18}/></button>
                                 </div>
+
+                                {/* Bagian Saran Prompt AI */}
+                                <div className="space-y-2">
+                                  <h4 className="font-semibold text-sm">Butuh Inspirasi?</h4>
+                                  {isFetchingSuggestions && <div className="text-sm opacity-70">Memuat saran...</div>}
+                                  <div className="flex flex-wrap gap-2">
+                                    {aiSuggestions.map((suggestion, index) => (
+                                      <button 
+                                        key={index}
+                                        onClick={() => setPrompt(suggestion)}
+                                        className="text-xs p-2 rounded-lg"
+                                        style={{boxShadow: 'var(--shadow-outset)'}}
+                                      >
+                                        {suggestion.substring(0, 40)}...
+                                      </button>
+                                    ))}
+                                  </div>
+                                </div>
+
                                 <div className="space-y-2">
                                   <NeumorphicButton onClick={() => setIsSettingsOpen(!isSettingsOpen)} className="w-full text-sm relative !p-3">
                                     <span className="flex items-center justify-center gap-2">
@@ -727,6 +805,7 @@ export default function AIImageGenerator() {
                                 }
                                 
                                 <div className="flex flex-wrap gap-2">
+                                    <NeumorphicButton onClick={handleRandomPrompt} className="flex-1 text-sm"><Dices size={16}/>Acak</NeumorphicButton>
                                     <NeumorphicButton onClick={handleEnhancePrompt} loading={isEnhancing} loadingText="Memproses..." className="flex-1 text-sm"><Wand2 size={16}/>Sempurnakan</NeumorphicButton>
                                     <NeumorphicButton onClick={() => { if (!prompt.trim()) { showToast('Prompt kosong tidak bisa disimpan', 'error'); return; } if (savedPrompts.some(p => p.prompt === prompt.trim())) { showToast('Prompt ini sudah ada di favorit.', 'info'); return; } setSavedPrompts(p => [{prompt: prompt.trim(), date: new Date().toISOString()}, ...p]); showToast('Prompt disimpan!', 'success'); }} className="flex-1 text-sm"><Bookmark size={16}/> Simpan</NeumorphicButton>
                                 </div>
