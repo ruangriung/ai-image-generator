@@ -78,13 +78,13 @@ export default function AIImageGenerator() {
     return { width: w, height: h };
   }, [useCustomSize, customWidth, customHeight, sizePreset]);
 
-  useEffect(() => {
-    setIsMounted(true);
-    const timer = setTimeout(() => {
-      setIsAnnouncementModalOpen(true);
-    }, 10000);
-    return () => clearTimeout(timer);
-  }, []);
+  // useEffect(() => {
+  //   setIsMounted(true);
+  //   const timer = setTimeout(() => {
+  //     setIsAnnouncementModalOpen(true);
+  //   }, 10000);
+  //   return () => clearTimeout(timer);
+  // }, []);
 
   useEffect(() => {
     const handler = (e) => {
