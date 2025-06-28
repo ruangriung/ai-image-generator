@@ -71,6 +71,7 @@ export default function AIImageGenerator() {
   const [isAnnouncementModalOpen, setIsAnnouncementModalOpen] = useState(false);
   const [aiSuggestions, setAiSuggestions] = useState([]);
   const [isFetchingSuggestions, setIsFetchingSuggestions] = useState(false);
+  const [isSuggestionsOpen, setIsSuggestionsOpen] = useState(false); // State untuk toggle
 
   const canvasRef = useRef(null);
 
@@ -677,24 +678,30 @@ export default function AIImageGenerator() {
                                     <button aria-label="Hapus prompt" onClick={() => setPrompt('')} className="absolute top-2 right-2 text-gray-400 hover:text-gray-600"><X size={18}/></button>
                                 </div>
 
+                                {/* **PERUBAHAN DI SINI** */}
                                 <div className="space-y-2">
-                                  <div className="flex justify-between items-center">
+                                  <div className="flex justify-between items-center cursor-pointer" onClick={() => setIsSuggestionsOpen(!isSuggestionsOpen)}>
                                     <h4 className="font-semibold text-sm">Butuh Inspirasi?</h4>
-                                    <button onClick={fetchAiSuggestions} disabled={isFetchingSuggestions} className="p-1 rounded-full transition-all hover:bg-gray-500/20 disabled:opacity-50 disabled:cursor-not-allowed">
-                                      {isFetchingSuggestions ? <Spinner/> : <RefreshCw size={14}/>}
-                                    </button>
-                                  </div>
-                                  <div className="flex flex-col gap-2">
-                                    {aiSuggestions.map((suggestion, index) => (
-                                      <button 
-                                        key={index}
-                                        onClick={() => setPrompt(suggestion)}
-                                        className="text-xs text-left p-2 rounded-lg cursor-pointer transition-all neumorphic-input hover:bg-gray-500/10"
-                                      >
-                                        {suggestion}
+                                    <div className='flex items-center gap-2'>
+                                      <button onClick={(e) => { e.stopPropagation(); fetchAiSuggestions(); }} disabled={isFetchingSuggestions} className="p-1 rounded-full transition-all hover:bg-gray-500/20 disabled:opacity-50 disabled:cursor-not-allowed">
+                                        {isFetchingSuggestions ? <Spinner/> : <RefreshCw size={14}/>}
                                       </button>
-                                    ))}
+                                      {isSuggestionsOpen ? <ChevronUp size={16}/> : <ChevronDown size={16}/>}
+                                    </div>
                                   </div>
+                                  {isSuggestionsOpen && (
+                                    <div className="flex flex-col gap-2 pt-2 border-t border-gray-500/20">
+                                      {aiSuggestions.map((suggestion, index) => (
+                                        <button 
+                                          key={index}
+                                          onClick={() => setPrompt(suggestion)}
+                                          className="text-xs text-left p-2 rounded-lg cursor-pointer transition-all hover:bg-gray-500/10 neumorphic-input"
+                                        >
+                                          {suggestion}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  )}
                                 </div>
                                 
                                 <div className="space-y-2">
