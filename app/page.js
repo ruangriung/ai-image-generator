@@ -327,7 +327,24 @@ export default function AIImageGenerator() {
     const finalPrompt = `${artStyle} ${prompt}`; 
     const promises = Array.from({ length: batchSize }, () => { 
         const currentSeed = seed || Math.floor(Math.random() * 1e9); 
-        let url = `https://image.pollinations.ai/prompt/${encodeURIComponent(finalPrompt)}?model=${model}&width=${width}&height=${height}&quality=${quality}&seed=${currentSeed}&nologo=true&safe=false&referrer=ruangriung.my.id`; 
+        
+        // --- PERUBAHAN LOGIKA UKURAN GAMBAR ---
+        let url;
+        if (model === 'gptimage') {
+            const aspectRatio = width / height;
+            let gptSize;
+            if (aspectRatio > 1) {
+                gptSize = '1792x1024'; // Lanskap
+            } else if (aspectRatio < 1) {
+                gptSize = '1024x1792'; // Potret
+            } else {
+                gptSize = '1024x1024'; // Persegi
+            }
+            url = `https://image.pollinations.ai/prompt/${encodeURIComponent(finalPrompt)}?model=${model}&size=${gptSize}&quality=${quality}&seed=${currentSeed}&nologo=true&safe=false&referrer=ruangriung.my.id`;
+        } else {
+            url = `https://image.pollinations.ai/prompt/${encodeURIComponent(finalPrompt)}?model=${model}&width=${width}&height=${height}&quality=${quality}&seed=${currentSeed}&nologo=true&safe=false&referrer=ruangriung.my.id`; 
+        }
+
         if (apiKey) url += `&apikey=${apiKey}`; 
         return fetch(url).then(res => res.ok ? { url: res.url, seed: currentSeed, prompt: finalPrompt, date: new Date().toISOString() } : Promise.reject(new Error(`Gagal membuat gambar (status: ${res.status})`))); 
     }); 
@@ -357,14 +374,11 @@ export default function AIImageGenerator() {
     } 
   };
   
-  // --- FUNGSI BARU UNTUK TOMBOL VARIAN ---
   const handleGenerateVariation = (basePrompt) => {
     showToast('Membuat variasi baru...', 'info');
     setPrompt(basePrompt);
-    setSeed(''); // Mengosongkan seed untuk mendapatkan hasil acak baru
+    setSeed('');
     setActiveTab('image');
-    
-    // Memberi sedikit jeda agar state sempat diperbarui sebelum generate
     setTimeout(() => {
         handleGenerate();
     }, 100);
@@ -794,7 +808,6 @@ export default function AIImageGenerator() {
 
                             {!loading && activeTab === 'image' && generatedImages.length === 0 && <p className="text-gray-500">Hasil gambar akan muncul di sini.</p>}
                             
-                            {/* --- PERUBAHAN PADA AREA HASIL GAMBAR --- */}
                             {!loading && activeTab === 'image' && generatedImages.length > 0 && (
                                 <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-6">
                                     {generatedImages.map((img, i) => (
@@ -816,7 +829,6 @@ export default function AIImageGenerator() {
                                     ))}
                                 </div>
                             )}
-                            {/* --- AKHIR PERUBAHAN --- */}
 
                             {!loading && activeTab === 'video' && !generatedVideoPrompt && <p className="text-gray-500">Gunakan asisten di sebelah kiri untuk membuat prompt video profesional.</p>}
                             {!loading && activeTab === 'audio' && !generatedAudio && <p className="text-gray-500">Hasil audio akan muncul di sini.</p>}
