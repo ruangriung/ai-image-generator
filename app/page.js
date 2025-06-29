@@ -9,7 +9,6 @@ import {
     MessageSquare, Download, Dices, Maximize2
 } from 'lucide-react';
 
-// Impor komponen baru
 import { Spinner, NeumorphicButton, Toasts, ImageEditorModal, CollapsibleSection, ImageAnalysisModal, PromptEditModal } from './components.js';
 import ChatbotAssistant from './ChatbotAssistant.js';
 
@@ -72,7 +71,7 @@ export default function AIImageGenerator() {
   const [aiSuggestions, setAiSuggestions] = useState([]);
   const [isFetchingSuggestions, setIsFetchingSuggestions] = useState(false);
   const [isSuggestionsOpen, setIsSuggestionsOpen] = useState(false);
-  const [isPromptModalOpen, setIsPromptModalOpen] = useState(false); // <-- STATE BARU UNTUK MODAL
+  const [isPromptModalOpen, setIsPromptModalOpen] = useState(false);
 
   const canvasRef = useRef(null);
 
@@ -358,6 +357,19 @@ export default function AIImageGenerator() {
     } 
   };
   
+  // --- FUNGSI BARU UNTUK TOMBOL VARIAN ---
+  const handleGenerateVariation = (basePrompt) => {
+    showToast('Membuat variasi baru...', 'info');
+    setPrompt(basePrompt);
+    setSeed(''); // Mengosongkan seed untuk mendapatkan hasil acak baru
+    setActiveTab('image');
+    
+    // Memberi sedikit jeda agar state sempat diperbarui sebelum generate
+    setTimeout(() => {
+        handleGenerate();
+    }, 100);
+  };
+
   const handleBuildImagePrompt = async () => { if (!promptCreator.subject.trim()) { showToast('Subjek tidak boleh kosong.', 'error'); return; } setIsBuildingPrompt(true); setGeneratedImagePrompt(''); setGeneratedVideoPrompt(''); try { const userInput = `Main subject: ${promptCreator.subject}. Additional details: ${promptCreator.details || 'None'}.`; const res = await fetch('https://text.pollinations.ai/openai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'gpt-3.5-turbo', messages: [ { role: 'system', content: 'You are a prompt engineer who creates detailed, artistic prompts for image generation. Respond only with the final prompt.' }, { role: 'user', content: userInput }]}) }); if (!res.ok) throw new Error(`API Error: ${res.statusText}`); const data = await res.json(); const newPrompt = data.choices[0]?.message?.content; if (newPrompt) { setGeneratedImagePrompt(newPrompt.trim()); showToast('Prompt gambar dikembangkan oleh AI!', 'success'); } else { throw new Error('Gagal memproses respons API.'); } } catch (err) { showToast(err.message, 'error'); } finally { setIsBuildingPrompt(false); } };
   
   const handleBuildVideoPrompt = async () => { if (!videoParams.concept.trim()) { showToast('Konsep utama video tidak boleh kosong.', 'error'); return; } setIsBuildingPrompt(true); setGeneratedVideoPrompt(''); setGeneratedImagePrompt(''); const allParams = Object.entries(videoParams).map(([key, value]) => (value ? `${key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}: ${value}` : null)).filter(Boolean).join('. '); try { const res = await fetch('https://text.pollinations.ai/openai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'gpt-3.5-turbo', messages: [ { role: 'system', content: 'You are a professional cinematographer. Based on these parameters, write a complete, coherent, and inspiring video prompt for a text-to-video AI. Combine all elements into a natural paragraph.' }, { role: 'user', content: allParams }]}) }); if (!res.ok) throw new Error(`API Error: ${res.statusText}`); const data = await res.json(); const videoPrompt = data.choices[0]?.message?.content; if (videoPrompt) { setGeneratedVideoPrompt(videoPrompt.trim()); showToast('Prompt video profesional berhasil dibuat!', 'success'); } else { throw new Error('Gagal memproses respons API.'); } } catch (err) { showToast(err.message, 'error'); } finally { setIsBuildingPrompt(false); } };
@@ -466,7 +478,6 @@ export default function AIImageGenerator() {
   
   const handleClearHistory = () => { setGenerationHistory([]); setSavedPrompts([]); setIsClearHistoryModalOpen(false); showToast('Semua riwayat telah dihapus.', 'success'); };
   const usePromptAndSeed = (p, s) => { setPrompt(p); setSeed(String(s)); setActiveTab('image'); setIsEditorOpen(false); showToast('Prompt & Seed dimuat.', 'success'); };
-  const handleCreateVariation = (image) => { setPrompt(image.prompt); setSeed(''); setActiveTab('image'); setIsEditorOpen(false); setTimeout(() => { handleGenerateImage(); }, 100); showToast('Membuat variasi baru...', 'info'); };
   
   const finalGeneratedPrompt = generatedImagePrompt || generatedVideoPrompt;
 
@@ -510,10 +521,9 @@ export default function AIImageGenerator() {
         <Toasts toasts={toasts} />
         <canvas ref={canvasRef} className="hidden"></canvas>
         
-        {isEditorOpen && <ImageEditorModal image={editingImage} onClose={() => setIsEditorOpen(false)} onUsePromptAndSeed={usePromptAndSeed} onDownload={handleDownload} onCreateVariation={handleCreateVariation} showToast={showToast} />}
+        {isEditorOpen && <ImageEditorModal image={editingImage} onClose={() => setIsEditorOpen(false)} onUsePromptAndSeed={usePromptAndSeed} onDownload={handleDownload} onCreateVariation={handleGenerateVariation} showToast={showToast} />}
         {isAnalysisModalOpen && <ImageAnalysisModal isOpen={isAnalysisModalOpen} onClose={() => setIsAnalysisModalOpen(false)} onPromptGenerated={(p) => { setGeneratedImagePrompt(p); showToast("Prompt dari gambar berhasil dibuat!", "success"); setIsAnalysisModalOpen(false); setIsCreatorOpen(true);}} showToast={showToast} />}
         
-        {/* --- RENDER MODAL BARU --- */}
         <PromptEditModal
             isOpen={isPromptModalOpen}
             onClose={() => setIsPromptModalOpen(false)}
@@ -611,9 +621,8 @@ export default function AIImageGenerator() {
                                         value={prompt}
                                         onChange={(e) => setPrompt(e.target.value)}
                                         placeholder="Ketik ide gambarmu di sini..."
-                                        className="w-full p-3 rounded-lg neumorphic-input resize-none pr-10 h-28" // <-- KEMBALI KE TINGGI TETAP
+                                        className="w-full p-3 rounded-lg neumorphic-input resize-none pr-10 h-28"
                                     />
-                                    {/* --- FUNGSI TOMBOL EXPAND DIGANTI UNTUK MEMBUKA MODAL --- */}
                                     <button
                                         aria-label="Perluas prompt di modal"
                                         onClick={() => setIsPromptModalOpen(true)}
@@ -784,7 +793,31 @@ export default function AIImageGenerator() {
                             )}
 
                             {!loading && activeTab === 'image' && generatedImages.length === 0 && <p className="text-gray-500">Hasil gambar akan muncul di sini.</p>}
-                            {!loading && activeTab === 'image' && generatedImages.length > 0 && <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-6">{generatedImages.map((img, i) => (<div key={i} className="rounded-xl p-2 space-y-2 group relative" style={{boxShadow: 'var(--shadow-outset)'}}><img src={img.url} className="w-full h-auto rounded-lg"/><div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg"><button onClick={() => handleOpenEditor(img)} className="text-white font-bold py-2 px-4 rounded-lg bg-white/20 backdrop-blur-sm">Lihat & Edit</button></div><p className="text-xs text-center opacity-60">Seed: {img.seed}</p></div>))}</div>}
+                            
+                            {/* --- PERUBAHAN PADA AREA HASIL GAMBAR --- */}
+                            {!loading && activeTab === 'image' && generatedImages.length > 0 && (
+                                <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                    {generatedImages.map((img, i) => (
+                                    <div key={i} className="rounded-xl p-2 space-y-3 flex flex-col" style={{boxShadow: 'var(--shadow-outset)'}}>
+                                        <div className="group relative">
+                                            <img src={img.url} className="w-full h-auto rounded-lg"/>
+                                            <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg">
+                                                <button onClick={() => handleOpenEditor(img)} className="text-white font-bold py-2 px-4 rounded-lg bg-white/20 backdrop-blur-sm">Lihat & Edit</button>
+                                            </div>
+                                        </div>
+                                        <p className="text-xs text-center opacity-60">Seed: {img.seed}</p>
+                                        <NeumorphicButton
+                                            onClick={() => handleGenerateVariation(img.prompt)}
+                                            className="w-full !p-2 text-sm mt-auto"
+                                        >
+                                            <RefreshCw size={14}/> Varian
+                                        </NeumorphicButton>
+                                    </div>
+                                    ))}
+                                </div>
+                            )}
+                            {/* --- AKHIR PERUBAHAN --- */}
+
                             {!loading && activeTab === 'video' && !generatedVideoPrompt && <p className="text-gray-500">Gunakan asisten di sebelah kiri untuk membuat prompt video profesional.</p>}
                             {!loading && activeTab === 'audio' && !generatedAudio && <p className="text-gray-500">Hasil audio akan muncul di sini.</p>}
                             {!loading && activeTab === 'audio' && generatedAudio && <div className="w-full p-4 flex items-center gap-4"><audio controls src={generatedAudio} className="w-full"></audio><a href={generatedAudio} download="generated_audio.mp3"><NeumorphicButton className="!p-3"><ImageDown size={20}/></NeumorphicButton></a></div>}
