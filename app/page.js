@@ -6,10 +6,11 @@ import {
     ImageDown, Bookmark, Trash2, History, Star, Upload,
     ChevronDown, ChevronUp, Sparkles, Image as ImageIcon, Video, Layers, Coins, Clock,
     Eye, EyeOff, Copy, AudioLines, SlidersHorizontal, Camera, CloudSun, KeyRound, Check,
-    MessageSquare, Download, Dices, Maximize2, Minimize2
+    MessageSquare, Download, Dices, Maximize2
 } from 'lucide-react';
 
-import { Spinner, NeumorphicButton, Toasts, ImageEditorModal, CollapsibleSection, ImageAnalysisModal } from './components.js';
+// Impor komponen baru
+import { Spinner, NeumorphicButton, Toasts, ImageEditorModal, CollapsibleSection, ImageAnalysisModal, PromptEditModal } from './components.js';
 import ChatbotAssistant from './ChatbotAssistant.js';
 
 export default function AIImageGenerator() {
@@ -71,7 +72,7 @@ export default function AIImageGenerator() {
   const [aiSuggestions, setAiSuggestions] = useState([]);
   const [isFetchingSuggestions, setIsFetchingSuggestions] = useState(false);
   const [isSuggestionsOpen, setIsSuggestionsOpen] = useState(false);
-  const [isPromptExpanded, setIsPromptExpanded] = useState(false);
+  const [isPromptModalOpen, setIsPromptModalOpen] = useState(false); // <-- STATE BARU UNTUK MODAL
 
   const canvasRef = useRef(null);
 
@@ -512,6 +513,14 @@ export default function AIImageGenerator() {
         {isEditorOpen && <ImageEditorModal image={editingImage} onClose={() => setIsEditorOpen(false)} onUsePromptAndSeed={usePromptAndSeed} onDownload={handleDownload} onCreateVariation={handleCreateVariation} showToast={showToast} />}
         {isAnalysisModalOpen && <ImageAnalysisModal isOpen={isAnalysisModalOpen} onClose={() => setIsAnalysisModalOpen(false)} onPromptGenerated={(p) => { setGeneratedImagePrompt(p); showToast("Prompt dari gambar berhasil dibuat!", "success"); setIsAnalysisModalOpen(false); setIsCreatorOpen(true);}} showToast={showToast} />}
         
+        {/* --- RENDER MODAL BARU --- */}
+        <PromptEditModal
+            isOpen={isPromptModalOpen}
+            onClose={() => setIsPromptModalOpen(false)}
+            value={prompt}
+            onSave={(newPrompt) => setPrompt(newPrompt)}
+        />
+
         {isAdminModalOpen && <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4"><div className="p-8 rounded-2xl w-full max-w-md" style={{ background: 'var(--bg-color)', boxShadow: 'var(--shadow-outset)' }}><div className="flex justify-between items-center mb-6"><h2 className="text-xl font-bold">Panel Admin</h2><NeumorphicButton onClick={() => setIsAdminModalOpen(false)} className="!p-2"><X size={20} /></NeumorphicButton></div><p className="mb-4 text-sm"> Masukkan password admin untuk mengakses fitur. atau hubungi Admin ruangriung di halaman <a style={{color:"#3b82f6"}} href="https://web.facebook.com/groups/1182261482811767/" target="_blank" rel="noopener noreferrer">Facebook RuangRiung</a>.
             </p><div className="relative w-full mb-4"><input type={showAdminPassword ? "text" : "password"} value={adminPassword} onChange={(e) => setAdminPassword(e.target.value)} placeholder="Password Admin" className="w-full p-3 rounded-lg neumorphic-input pr-12"/><button type="button" onClick={() => setShowAdminPassword(!showAdminPassword)} className="absolute inset-y-0 right-0 pr-3 flex items-center">{showAdminPassword ? <EyeOff size={20} /> : <Eye size={20} />}</button></div><div className="space-y-4"><NeumorphicButton onClick={handleAdminReset} className="font-bold w-full"><RefreshCw size={16}/> Reset Koin</NeumorphicButton></div></div></div>}
         
@@ -602,24 +611,15 @@ export default function AIImageGenerator() {
                                         value={prompt}
                                         onChange={(e) => setPrompt(e.target.value)}
                                         placeholder="Ketik ide gambarmu di sini..."
-                                        className={`w-full p-3 rounded-lg neumorphic-input resize-none pl-10 pr-10 transition-all duration-300 ${isPromptExpanded ? 'h-40' : 'h-20'}`}
+                                        className="w-full p-3 rounded-lg neumorphic-input resize-none pr-10 h-28" // <-- KEMBALI KE TINGGI TETAP
                                     />
-                                    {/* --- TOMBOL HAPUS (KIRI) --- */}
-                                    <button 
-                                      aria-label="Hapus prompt" 
-                                      onClick={() => setPrompt('')} 
-                                      className="absolute top-2 left-2 text-gray-400 hover:text-gray-600"
-                                    >
-                                        <X size={18}/>
-                                    </button>
-                                    
-                                    {/* --- TOMBOL EXPAND (KANAN) --- */}
+                                    {/* --- FUNGSI TOMBOL EXPAND DIGANTI UNTUK MEMBUKA MODAL --- */}
                                     <button
-                                        aria-label={isPromptExpanded ? "Perkecil prompt" : "Perluas prompt"}
-                                        onClick={() => setIsPromptExpanded(!isPromptExpanded)}
-                                        className="absolute top-2 right-2 text-gray-400 hover:text-gray-600"
+                                        aria-label="Perluas prompt di modal"
+                                        onClick={() => setIsPromptModalOpen(true)}
+                                        className="absolute bottom-2 right-2 text-gray-400 hover:text-gray-600"
                                     >
-                                        {isPromptExpanded ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
+                                        <Maximize2 size={18} />
                                     </button>
                                 </div>
                                 
