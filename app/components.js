@@ -357,3 +357,51 @@ export const ImageAnalysisModal = ({ isOpen, onClose, onPromptGenerated, showToa
         </div>
     );
 };
+// ... (kode komponen lainnya di atas)
+
+export const PromptEditModal = ({ isOpen, onClose, value, onSave }) => {
+    const [text, setText] = useState(value);
+    const textareaRef = useRef(null);
+
+    useEffect(() => {
+        setText(value);
+    }, [value]);
+
+    useEffect(() => {
+        if (isOpen && textareaRef.current) {
+            textareaRef.current.style.height = 'auto';
+            textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+        }
+    }, [isOpen, text]);
+
+    const handleSave = () => {
+        onSave(text);
+        onClose();
+    };
+
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4 animate-fade-in">
+            <div className="p-6 rounded-2xl w-full max-w-lg flex flex-col gap-4 neumorphic-card" style={{ background: 'var(--bg-color)' }}>
+                <div className="flex justify-between items-center">
+                    <h2 className="text-xl font-bold">Edit Prompt</h2>
+                    <NeumorphicButton onClick={onClose} className="!p-2"><X size={20} /></NeumorphicButton>
+                </div>
+                <div className="relative w-full">
+                    <textarea
+                        ref={textareaRef}
+                        value={text}
+                        onChange={(e) => setText(e.target.value)}
+                        className="w-full p-3 rounded-lg neumorphic-input resize-none overflow-hidden min-h-[150px]"
+                        placeholder="Ketik ide gambarmu di sini..."
+                    />
+                </div>
+                <div className="flex justify-end gap-4">
+                    <NeumorphicButton onClick={onClose}>Batal</NeumorphicButton>
+                    <NeumorphicButton onClick={handleSave} className="font-bold">Simpan</NeumorphicButton>
+                </div>
+            </div>
+        </div>
+    );
+};
