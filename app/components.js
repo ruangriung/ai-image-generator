@@ -185,7 +185,6 @@ export const ImageEditorModal = ({ image, onClose, onUsePromptAndSeed, onDownloa
         <div ref={imageContainerRef} className="flex-grow h-full overflow-hidden rounded-lg flex items-center justify-center relative neumorphic-card" style={{ boxShadow: 'var(--shadow-inset)' }}>
           <img src={image.url} alt="Editing image" onMouseDown={handleMouseDown} style={{ transform: `translate(${position.x}px, ${position.y}px) scale(${zoom})`, filter: finalFilter, transition: 'filter 0.2s', cursor: isDragging ? 'grabbing' : 'grab', maxWidth: '100%', maxHeight: '100%' }} />
            
-           {/* Watermark Preview */}
            {(watermark.text || watermark.imageUrl) && (
              <div
                ref={watermarkRef}
@@ -219,13 +218,11 @@ export const ImageEditorModal = ({ image, onClose, onUsePromptAndSeed, onDownloa
         <div className="w-80 h-full flex flex-col gap-4">
           <div className="flex justify-between items-center"><h2 className="text-xl font-bold">Editor</h2><NeumorphicButton onClick={onClose} className="!p-2"><X size={20} /></NeumorphicButton></div>
           <div className="flex flex-col gap-4 p-4 rounded-xl neumorphic-card flex-grow overflow-y-auto">
-            {/* Zoom and Filter */}
             <CollapsibleSection title="Zoom & Filter" icon={<ZoomIn size={18}/>} defaultOpen={true}>
                  <div><label className="font-semibold text-sm">Zoom</label><div className="flex items-center gap-2 p-2 rounded-xl mt-1" style={{boxShadow: 'var(--shadow-outset)'}}><NeumorphicButton onClick={() => setZoom(z => Math.max(0.5, z - 0.1))} className="w-full !p-2"><Minus size={16}/></NeumorphicButton><NeumorphicButton onClick={() => {setZoom(1); setPosition({x:0, y:0})}} className="w-full !p-2"><Search size={16}/></NeumorphicButton><NeumorphicButton onClick={() => setZoom(z => Math.min(5, z + 0.1))} className="w-full !p-2"><Plus size={16}/></NeumorphicButton></div></div>
                 <div><label className="font-semibold text-sm">Filter Dasar</label><select onChange={(e) => setBaseFilter(e.target.value)} value={baseFilter} className="w-full p-3 mt-1 rounded-lg neumorphic-input bg-[var(--bg-color)]"><option value="none">Normal</option><option value="grayscale(100%)">Grayscale</option><option value="sepia(100%)">Sepia</option><option value="invert(100%)">Invert</option><option value="hue-rotate(90deg)">Alien</option><option value="brightness(1.5)">Terang</option></select></div>
             </CollapsibleSection>
             
-            {/* Watermark Section */}
             <CollapsibleSection title="Watermark" icon={<Move size={18}/>} defaultOpen={true}>
               <div className="flex gap-2 w-full">
                   <NeumorphicButton active={watermark.type === 'text'} onClick={() => setWatermark(w => ({...w, type: 'text'}))} className="w-full text-sm !p-2"><Text size={16}/>Teks</NeumorphicButton>
@@ -274,7 +271,7 @@ export const ImageEditorModal = ({ image, onClose, onUsePromptAndSeed, onDownloa
             <div className="flex-grow"></div>
             <div className="space-y-3 pt-4 border-t border-[var(--shadow-dark)]">
                <NeumorphicButton onClick={() => onUsePromptAndSeed(image.prompt, image.seed)} className="w-full text-sm !p-2"><Layers/>Gunakan Prompt & Seed</NeumorphicButton>
-               <NeumorphicButton onClick={() => onCreateVariation(image)} className="w-full text-sm !p-2"><Repeat size={16}/> Buat Variasi</NeumorphicButton>
+               <NeumorphicButton onClick={() => onCreateVariation(image.prompt)} className="w-full text-sm !p-2"><Repeat size={16}/> Buat Variasi</NeumorphicButton>
                <NeumorphicButton onClick={() => onDownload(image, finalFilter, watermark)} className="w-full text-sm !p-2 font-bold"><ImageDown/>Unduh Gambar</NeumorphicButton>
             </div>
           </div>
@@ -286,6 +283,7 @@ export const ImageEditorModal = ({ image, onClose, onUsePromptAndSeed, onDownloa
 
 const compressImage = (file, maxWidth = 800, quality = 0.7) => new Promise((resolve, reject) => { const reader = new FileReader(); reader.readAsDataURL(file); reader.onload = event => { const img = new Image(); img.src = event.target.result; img.onload = () => { const canvas = document.createElement('canvas'); let { width, height } = img; if (width > height) { if (width > maxWidth) { height *= maxWidth / width; width = maxWidth; } } else { if (height > maxWidth) { width *= maxWidth / height; height = maxWidth; } } canvas.width = width; canvas.height = height; const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, width, height); resolve(canvas.toDataURL('image/jpeg', quality)); }; img.onerror = reject; }; reader.onerror = reject; });
 
+// --- PERBAIKAN PADA MODAL ANALISIS GAMBAR ---
 export const ImageAnalysisModal = ({ isOpen, onClose, onPromptGenerated, showToast }) => {
     const [previewSrc, setPreviewSrc] = useState('');
     const [analysisResult, setAnalysisResult] = useState('');
@@ -343,13 +341,31 @@ export const ImageAnalysisModal = ({ isOpen, onClose, onPromptGenerated, showToa
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4 animate-fade-in">
-            <div className="p-6 rounded-2xl w-full max-w-2xl flex flex-col gap-4 neumorphic-card" style={{ background: 'var(--bg-color)' }}>
-                <div className="flex justify-between items-center"><h2 className="text-xl font-bold flex items-center gap-2"><FileImage size={22}/> Analisis Gambar untuk Prompt</h2><NeumorphicButton onClick={onClose} className="!p-2"><X size={20} /></NeumorphicButton></div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="p-4 rounded-lg flex flex-col items-center justify-center gap-3" style={{boxShadow:'var(--shadow-inset)'}}><input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden"/>{previewSrc ? (<img src={previewSrc} alt="Pratinjau Gambar" className="max-h-48 w-auto rounded-lg" />) : (<div className="text-center opacity-70"><FileImage size={48} className="mx-auto"/> <p>Pilih gambar</p></div>)}<NeumorphicButton onClick={() => fileInputRef.current.click()} className="w-full text-sm !p-2"><Upload size={16}/> {previewSrc ? 'Ganti Gambar' : 'Unggah Gambar'}</NeumorphicButton></div>
-                    <div className="p-4 rounded-lg flex flex-col" style={{boxShadow:'var(--shadow-inset)'}}><h4 className="font-semibold mb-2">Hasil Analisis</h4><div className="flex-grow min-h-[100px] text-sm overflow-y-auto pr-2">{isAnalyzing && <div className="flex items-center gap-2"><Spinner/> Menganalisis...</div>}{analysisResult && <p className="whitespace-pre-wrap">{analysisResult}</p>}{!isAnalyzing && !analysisResult && <p className="opacity-60">Deskripsi gambar akan muncul di sini.</p>}</div></div>
+            <div className="p-6 rounded-2xl w-full max-w-2xl flex flex-col gap-4 neumorphic-card" style={{ background: 'var(--bg-color)', maxHeight: '90vh' }}>
+                <div className="flex-shrink-0 flex justify-between items-center">
+                    <h2 className="text-xl font-bold flex items-center gap-2"><FileImage size={22}/> Analisis Gambar untuk Prompt</h2>
+                    <NeumorphicButton onClick={onClose} className="!p-2"><X size={20} /></NeumorphicButton>
                 </div>
-                <div className="flex gap-4">
+                
+                <div className="flex-grow overflow-y-auto pr-2 space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="p-4 rounded-lg flex flex-col items-center justify-center gap-3" style={{boxShadow:'var(--shadow-inset)'}}>
+                            <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden"/>
+                            {previewSrc ? (<img src={previewSrc} alt="Pratinjau Gambar" className="max-h-48 w-auto rounded-lg" />) : (<div className="text-center opacity-70"><FileImage size={48} className="mx-auto"/> <p>Pilih gambar</p></div>)}
+                            <NeumorphicButton onClick={() => fileInputRef.current.click()} className="w-full text-sm !p-2"><Upload size={16}/> {previewSrc ? 'Ganti Gambar' : 'Unggah Gambar'}</NeumorphicButton>
+                        </div>
+                        <div className="p-4 rounded-lg flex flex-col" style={{boxShadow:'var(--shadow-inset)'}}>
+                            <h4 className="font-semibold mb-2">Hasil Analisis</h4>
+                            <div className="flex-grow min-h-[100px] text-sm overflow-y-auto pr-2">
+                                {isAnalyzing && <div className="flex items-center gap-2"><Spinner/> Menganalisis...</div>}
+                                {analysisResult && <p className="whitespace-pre-wrap">{analysisResult}</p>}
+                                {!isAnalyzing && !analysisResult && <p className="opacity-60">Deskripsi gambar akan muncul di sini.</p>}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="flex-shrink-0 flex gap-4 pt-4 border-t border-[var(--shadow-dark)]/20">
                     <NeumorphicButton onClick={handleAnalyze} loading={isAnalyzing} loadingText="Menganalisis..." className="w-full font-bold" disabled={!previewSrc}><Sparkles size={18}/> Analisis</NeumorphicButton>
                     <NeumorphicButton onClick={() => onPromptGenerated(analysisResult)} className="w-full font-bold" disabled={!analysisResult || isAnalyzing}><Wand2 size={18}/> Gunakan Prompt Ini</NeumorphicButton>
                 </div>
@@ -357,7 +373,7 @@ export const ImageAnalysisModal = ({ isOpen, onClose, onPromptGenerated, showToa
         </div>
     );
 };
-// ... (kode komponen lainnya di atas)
+// --- AKHIR PERBAIKAN ---
 
 export const PromptEditModal = ({ isOpen, onClose, value, onSave }) => {
     const [text, setText] = useState(value);
