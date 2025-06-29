@@ -73,6 +73,16 @@ export default function AIImageGenerator() {
   const [isSuggestionsOpen, setIsSuggestionsOpen] = useState(false);
 
   const canvasRef = useRef(null);
+  const promptTextareaRef = useRef(null); // <-- TAMBAHKAN BARIS INI
+
+  // Efek untuk menyesuaikan tinggi textarea prompt secara dinamis
+  useEffect(() => {
+    const textarea = promptTextareaRef.current;
+    if (textarea) {
+        textarea.style.height = 'auto'; // Reset tinggi untuk menghitung ulang
+        textarea.style.height = `${textarea.scrollHeight}px`;
+    }
+  }, [prompt]);
 
   const { width, height } = useMemo(() => {
     if (useCustomSize) return { width: customWidth, height: customHeight };
@@ -596,7 +606,17 @@ export default function AIImageGenerator() {
                             {activeTab === 'image' && <div className='space-y-4'>
                                 <label htmlFor="prompt-textarea" className="font-semibold block text-xl">Prompt Gambar</label>
                                 <div className="relative">
-                                    <textarea id="prompt-textarea" value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder="Ketik ide gambarmu di sini..." className="w-full p-3 rounded-lg neumorphic-input h-28 resize-none pr-10"/>
+                                    {/* --- PERUBAHAN PADA TEXTAREA --- */}
+                                    <textarea
+                                        ref={promptTextareaRef}
+                                        id="prompt-textarea"
+                                        value={prompt}
+                                        onChange={(e) => setPrompt(e.target.value)}
+                                        placeholder="Ketik ide gambarmu di sini..."
+                                        className="w-full p-3 rounded-lg neumorphic-input resize-none overflow-hidden pr-10"
+                                        rows="3" // Tinggi awal
+                                    />
+                                    {/* --- AKHIR PERUBAHAN --- */}
                                     <button aria-label="Hapus prompt" onClick={() => setPrompt('')} className="absolute top-2 right-2 text-gray-400 hover:text-gray-600"><X size={18}/></button>
                                 </div>
                                 
