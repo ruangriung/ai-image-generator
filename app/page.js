@@ -6,7 +6,7 @@ import {
     ImageDown, Bookmark, Trash2, History, Star, Upload,
     ChevronDown, ChevronUp, Sparkles, Image as ImageIcon, Video, Layers, Coins, Clock,
     Eye, EyeOff, Copy, AudioLines, SlidersHorizontal, Camera, CloudSun, KeyRound, Check,
-    MessageSquare, Download, Dices
+    MessageSquare, Download, Dices, Maximize2, Minimize2
 } from 'lucide-react';
 
 import { Spinner, NeumorphicButton, Toasts, ImageEditorModal, CollapsibleSection, ImageAnalysisModal } from './components.js';
@@ -71,18 +71,9 @@ export default function AIImageGenerator() {
   const [aiSuggestions, setAiSuggestions] = useState([]);
   const [isFetchingSuggestions, setIsFetchingSuggestions] = useState(false);
   const [isSuggestionsOpen, setIsSuggestionsOpen] = useState(false);
+  const [isPromptExpanded, setIsPromptExpanded] = useState(false);
 
   const canvasRef = useRef(null);
-  const promptTextareaRef = useRef(null); // <-- TAMBAHKAN BARIS INI
-
-  // Efek untuk menyesuaikan tinggi textarea prompt secara dinamis
-  useEffect(() => {
-    const textarea = promptTextareaRef.current;
-    if (textarea) {
-        textarea.style.height = 'auto'; // Reset tinggi untuk menghitung ulang
-        textarea.style.height = `${textarea.scrollHeight}px`;
-    }
-  }, [prompt]);
 
   const { width, height } = useMemo(() => {
     if (useCustomSize) return { width: customWidth, height: customHeight };
@@ -606,18 +597,30 @@ export default function AIImageGenerator() {
                             {activeTab === 'image' && <div className='space-y-4'>
                                 <label htmlFor="prompt-textarea" className="font-semibold block text-xl">Prompt Gambar</label>
                                 <div className="relative">
-                                    {/* --- PERUBAHAN PADA TEXTAREA --- */}
                                     <textarea
-                                        ref={promptTextareaRef}
                                         id="prompt-textarea"
                                         value={prompt}
                                         onChange={(e) => setPrompt(e.target.value)}
                                         placeholder="Ketik ide gambarmu di sini..."
-                                        className="w-full p-3 rounded-lg neumorphic-input resize-none overflow-hidden pr-10"
-                                        rows="3" // Tinggi awal
+                                        className={`w-full p-3 rounded-lg neumorphic-input resize-none pl-10 pr-10 transition-all duration-300 ${isPromptExpanded ? 'h-40' : 'h-20'}`}
                                     />
-                                    {/* --- AKHIR PERUBAHAN --- */}
-                                    <button aria-label="Hapus prompt" onClick={() => setPrompt('')} className="absolute top-2 right-2 text-gray-400 hover:text-gray-600"><X size={18}/></button>
+                                    {/* --- TOMBOL HAPUS (KIRI) --- */}
+                                    <button 
+                                      aria-label="Hapus prompt" 
+                                      onClick={() => setPrompt('')} 
+                                      className="absolute top-2 left-2 text-gray-400 hover:text-gray-600"
+                                    >
+                                        <X size={18}/>
+                                    </button>
+                                    
+                                    {/* --- TOMBOL EXPAND (KANAN) --- */}
+                                    <button
+                                        aria-label={isPromptExpanded ? "Perkecil prompt" : "Perluas prompt"}
+                                        onClick={() => setIsPromptExpanded(!isPromptExpanded)}
+                                        className="absolute top-2 right-2 text-gray-400 hover:text-gray-600"
+                                    >
+                                        {isPromptExpanded ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
+                                    </button>
                                 </div>
                                 
                                 <CollapsibleSection title="Butuh Inspirasi?" icon={<Wand2 size={16}/>}>
