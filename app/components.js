@@ -62,19 +62,23 @@ export const Toasts = ({ toasts }) => {
 };
 
 export const ImageEditorModal = ({ image, onClose, onUsePromptAndSeed, onDownload, onCreateVariation, showToast }) => {
-  const [zoom, setZoom] = useState(1);
+  // --- START: Logika Zoom Baru ---
+  const [zoomLevel, setZoomLevel] = useState(1);
+  const [imagePosition, setImagePosition] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const startDragPos = useRef({ x: 0, y: 0 });
+  // --- END: Logika Zoom Baru ---
+
   const [baseFilter, setBaseFilter] = useState('none');
   const [enhancements, setEnhancements] = useState({ sharpness: false, hdr: false, colorBoost: false });
-  const [isDragging, setIsDragging] = useState(false);
-  const [position, setPosition] = useState({ x: 0, y: 0 });
   
   const [watermark, setWatermark] = useState({
-      type: 'text', // 'text' or 'image'
+      type: 'text',
       text: '',
       color: '#ffffff',
-      size: 8, // in percentage of image width
+      size: 8,
       opacity: 0.7,
-      position: { x: 50, y: 50 }, // in percentage
+      position: { x: 50, y: 50 },
       imageUrl: null,
       imageFile: null,
   });
@@ -82,7 +86,44 @@ export const ImageEditorModal = ({ image, onClose, onUsePromptAndSeed, onDownloa
   const [isDraggingWatermark, setIsDraggingWatermark] = useState(false);
   const watermarkRef = useRef(null);
   const imageContainerRef = useRef(null);
-  const startPos = useRef({ x: 0, y: 0 });
+
+  // --- START: Handler Zoom & Pan Baru ---
+  useEffect(() => {
+    // Reset zoom dan posisi saat gambar berubah
+    setZoomLevel(1);
+    setImagePosition({ x: 0, y: 0 });
+  }, [image]);
+
+  const handleZoomIn = () => setZoomLevel(prev => Math.min(prev + 0.2, 5));
+  const handleZoomOut = () => setZoomLevel(prev => Math.max(prev - 0.2, 0.5));
+  const handleResetZoom = () => {
+    setZoomLevel(1);
+    setImagePosition({ x: 0, y: 0 });
+  };
+
+  const handleMouseDown = (e) => {
+    if (e.target.closest('.watermark-control')) return; // Abaikan jika mengklik watermark
+    e.preventDefault();
+    setIsDragging(true);
+    startDragPos.current = {
+      x: e.clientX - imagePosition.x,
+      y: e.clientY - imagePosition.y,
+    };
+  };
+
+  const handleMouseMove = useCallback((e) => {
+    if (isDragging) {
+      setImagePosition({
+        x: e.clientX - startDragPos.current.x,
+        y: e.clientY - startDragPos.current.y,
+      });
+    }
+  }, [isDragging]);
+
+  const handleMouseUp = useCallback(() => {
+    setIsDragging(false);
+  }, []);
+  // --- END: Handler Zoom & Pan Baru ---
 
   const finalFilter = useMemo(() => {
     const filters = [];
@@ -92,11 +133,6 @@ export const ImageEditorModal = ({ image, onClose, onUsePromptAndSeed, onDownloa
     if (enhancements.colorBoost) filters.push('saturate(1.2)');
     return filters.join(' ');
   }, [baseFilter, enhancements]);
-
-  // Main image drag handlers
-  const handleMouseDown = (e) => { setIsDragging(true); startPos.current = { x: e.clientX - position.x, y: e.clientY - position.y }; };
-  const handleMouseUp = useCallback(() => setIsDragging(false), []);
-  const handleMouseMove = useCallback((e) => { if (!isDragging) return; setPosition({ x: e.clientX - startPos.current.x, y: e.clientY - startPos.current.y }); }, [isDragging]);
 
   // Watermark drag handlers
   const handleWatermarkMouseDown = (e) => {
@@ -145,7 +181,7 @@ export const ImageEditorModal = ({ image, onClose, onUsePromptAndSeed, onDownloa
     window.addEventListener('mouseup', handleWatermarkMouseUp);
     
     window.addEventListener('touchmove', handleWatermarkTouchMove);
-    window.addEventListener('touchend', handleWatermarkMouseUp); // Use same mouseup for touchend
+    window.addEventListener('touchend', handleWatermarkMouseUp);
 
     return () => { 
         window.removeEventListener('mousemove', handleMouseMove); 
@@ -157,7 +193,7 @@ export const ImageEditorModal = ({ image, onClose, onUsePromptAndSeed, onDownloa
         window.removeEventListener('touchmove', handleWatermarkTouchMove);
         window.removeEventListener('touchend', handleWatermarkMouseUp);
     };
-  }, [isDragging, handleMouseMove, handleMouseUp, handleWatermarkMouseMove, handleWatermarkMouseUp, handleWatermarkTouchMove]);
+  }, [isDragging, handleMouseMove, handleMouseUp, isDraggingWatermark, handleWatermarkMouseMove, handleWatermarkMouseUp, handleWatermarkTouchMove]);
 
   const handleWatermarkImageUpload = (e) => {
     const file = e.target.files[0];
@@ -180,17 +216,30 @@ export const ImageEditorModal = ({ image, onClose, onUsePromptAndSeed, onDownloa
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 p-4 animate-fade-in">
       <div className="p-4 rounded-2xl w-full max-w-6xl h-[90vh] flex gap-4 neumorphic-card" style={{ background: 'var(--bg-color)' }}>
-        <div ref={imageContainerRef} className="flex-grow h-full overflow-hidden rounded-lg flex items-center justify-center relative neumorphic-card" style={{ boxShadow: 'var(--shadow-inset)' }}>
-          <img src={image.url} alt="Editing image" onMouseDown={handleMouseDown} style={{ transform: `translate(${position.x}px, ${position.y}px) scale(${zoom})`, filter: finalFilter, transition: 'filter 0.2s', cursor: isDragging ? 'grabbing' : 'grab', maxWidth: '100%', maxHeight: '100%' }} />
+        <div ref={imageContainerRef} className="flex-grow h-full overflow-hidden rounded-lg flex items-center justify-center relative neumorphic-card" style={{ boxShadow: 'var(--shadow-inset)', cursor: isDragging ? 'grabbing' : (zoomLevel > 1 ? 'grab' : 'default') }}>
+          <img 
+             src={image.url} 
+             alt="Editing image" 
+             onMouseDown={handleMouseDown} 
+             style={{ 
+               transform: `scale(${zoomLevel}) translate(${imagePosition.x / zoomLevel}px, ${imagePosition.y / zoomLevel}px)`,
+               filter: finalFilter, 
+               transition: isDragging ? 'none' : 'transform 0.1s ease-out, filter 0.2s', 
+               maxWidth: '100%', 
+               maxHeight: '100%',
+               userSelect: 'none',
+             }}
+             draggable="false"
+          />
            
            {(watermark.text || watermark.imageUrl) && (
              <div
                ref={watermarkRef}
                onMouseDown={handleWatermarkMouseDown}
                onTouchStart={handleWatermarkTouchStart}
-               className="absolute"
+               className="absolute watermark-control"
                style={{
                  left: `${watermark.position.x}%`,
                  top: `${watermark.position.y}%`,
@@ -203,8 +252,6 @@ export const ImageEditorModal = ({ image, onClose, onUsePromptAndSeed, onDownloa
                  fontWeight: 'bold',
                  textShadow: '0 0 2px black, 0 0 2px black',
                  WebkitUserSelect: 'none',
-                 MozUserSelect: 'none',
-                 msUserSelect: 'none',
                  userSelect: 'none',
                }}
              >
@@ -214,13 +261,35 @@ export const ImageEditorModal = ({ image, onClose, onUsePromptAndSeed, onDownloa
                )}
              </div>
            )}
+          
+           {/* --- START: Kontrol Zoom Baru --- */}
+           <div className={`absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 p-2 rounded-xl bg-black/30 text-white`}>
+               <button onClick={handleZoomOut} className="p-2 rounded-lg hover:bg-black/50 transition-colors"><Minus size={16}/></button>
+               <button onClick={handleResetZoom} className="p-2 rounded-lg hover:bg-black/50 transition-colors"><Search size={16}/></button>
+               <button onClick={handleZoomIn} className="p-2 rounded-lg hover:bg-black/50 transition-colors"><Plus size={16}/></button>
+           </div>
+           {/* --- END: Kontrol Zoom Baru --- */}
         </div>
+
         <div className="w-80 h-full flex flex-col gap-4">
-          <div className="flex justify-between items-center"><h2 className="text-xl font-bold">Editor</h2><NeumorphicButton onClick={onClose} className="!p-2"><X size={20} /></NeumorphicButton></div>
+          <div className="flex justify-between items-center">
+             <h2 className="text-xl font-bold">Editor</h2>
+             <NeumorphicButton onClick={onClose} className="!p-2"><X size={20} /></NeumorphicButton>
+          </div>
           <div className="flex flex-col gap-4 p-4 rounded-xl neumorphic-card flex-grow overflow-y-auto">
-            <CollapsibleSection title="Zoom & Filter" icon={<ZoomIn size={18}/>} defaultOpen={true}>
-                 <div><label className="font-semibold text-sm">Zoom</label><div className="flex items-center gap-2 p-2 rounded-xl mt-1" style={{boxShadow: 'var(--shadow-outset)'}}><NeumorphicButton onClick={() => setZoom(z => Math.max(0.5, z - 0.1))} className="w-full !p-2"><Minus size={16}/></NeumorphicButton><NeumorphicButton onClick={() => {setZoom(1); setPosition({x:0, y:0})}} className="w-full !p-2"><Search size={16}/></NeumorphicButton><NeumorphicButton onClick={() => setZoom(z => Math.min(5, z + 0.1))} className="w-full !p-2"><Plus size={16}/></NeumorphicButton></div></div>
-                <div><label className="font-semibold text-sm">Filter Dasar</label><select onChange={(e) => setBaseFilter(e.target.value)} value={baseFilter} className="w-full p-3 mt-1 rounded-lg neumorphic-input bg-[var(--bg-color)]"><option value="none">Normal</option><option value="grayscale(100%)">Grayscale</option><option value="sepia(100%)">Sepia</option><option value="invert(100%)">Invert</option><option value="hue-rotate(90deg)">Alien</option><option value="brightness(1.5)">Terang</option></select></div>
+            {/* Hapus kontrol zoom lama dari sini */}
+            <CollapsibleSection title="Filter" icon={<Sparkles size={18}/>} defaultOpen={true}>
+                 <div>
+                    <label className="font-semibold text-sm">Filter Dasar</label>
+                    <select onChange={(e) => setBaseFilter(e.target.value)} value={baseFilter} className="w-full p-3 mt-1 rounded-lg neumorphic-input bg-[var(--bg-color)]">
+                        <option value="none">Normal</option>
+                        <option value="grayscale(100%)">Grayscale</option>
+                        <option value="sepia(100%)">Sepia</option>
+                        <option value="invert(100%)">Invert</option>
+                        <option value="hue-rotate(90deg)">Alien</option>
+                        <option value="brightness(1.5)">Terang</option>
+                    </select>
+                </div>
             </CollapsibleSection>
             
             <CollapsibleSection title="Watermark" icon={<Move size={18}/>} defaultOpen={true}>
@@ -280,8 +349,6 @@ export const ImageEditorModal = ({ image, onClose, onUsePromptAndSeed, onDownloa
     </div>
   );
 };
-
-const compressImage = (file, maxWidth = 800, quality = 0.7) => new Promise((resolve, reject) => { const reader = new FileReader(); reader.readAsDataURL(file); reader.onload = event => { const img = new Image(); img.src = event.target.result; img.onload = () => { const canvas = document.createElement('canvas'); let { width, height } = img; if (width > height) { if (width > maxWidth) { height *= maxWidth / width; width = maxWidth; } } else { if (height > maxWidth) { width *= maxWidth / height; height = maxWidth; } } canvas.width = width; canvas.height = height; const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, width, height); resolve(canvas.toDataURL('image/jpeg', quality)); }; img.onerror = reject; }; reader.onerror = reject; });
 
 // --- PERBAIKAN PADA MODAL ANALISIS GAMBAR ---
 export const ImageAnalysisModal = ({ isOpen, onClose, onPromptGenerated, showToast }) => {
