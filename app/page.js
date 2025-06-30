@@ -9,7 +9,13 @@ import {
     MessageSquare, Download, Dices, Maximize2
 } from 'lucide-react';
 
-import { Spinner, NeumorphicButton, Toasts, ImageEditorModal, CollapsibleSection, ImageAnalysisModal, PromptEditModal } from './components.js';
+import { 
+    Spinner, NeumorphicButton, Toasts, 
+    // ImageEditorModal Dihapus
+    InlineImageEditor, // Komponen Baru
+    GeneratedContentDisplay, // Komponen yang dimodifikasi
+    CollapsibleSection, ImageAnalysisModal, PromptEditModal 
+} from './components.js';
 import ChatbotAssistant from './ChatbotAssistant.js';
 
 export default function AIImageGenerator() {
@@ -32,8 +38,10 @@ export default function AIImageGenerator() {
   const [darkMode, setDarkMode] = useState(false);
   const [generationHistory, setGenerationHistory] = useState([]);
   const [savedPrompts, setSavedPrompts] = useState([]);
-  const [isEditorOpen, setIsEditorOpen] = useState(false);
-  const [editingImage, setEditingImage] = useState(null);
+  
+  // Mengganti isEditorOpen dengan editingImage
+  const [editingImage, setEditingImage] = useState(null); 
+
   const [toasts, setToasts] = useState([]);
   const [isAnalysisModalOpen, setIsAnalysisModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('image');
@@ -70,7 +78,6 @@ export default function AIImageGenerator() {
   const [isBannerVisible, setIsBannerVisible] = useState(false);
   const [aiSuggestions, setAiSuggestions] = useState([]);
   const [isFetchingSuggestions, setIsFetchingSuggestions] = useState(false);
-  const [isSuggestionsOpen, setIsSuggestionsOpen] = useState(false);
   const [isPromptModalOpen, setIsPromptModalOpen] = useState(false);
 
   const canvasRef = useRef(null);
@@ -317,6 +324,7 @@ export default function AIImageGenerator() {
     if (activeTab === 'video') { showToast('Gunakan tombol "Buat Prompt Video" di dalam Asisten.', 'info'); return; } 
     if (!prompt.trim()) { showToast('Prompt tidak boleh kosong.', 'error'); return; } 
     setLoading(true); 
+    setEditingImage(null); // Tutup editor saat generate baru
     if (activeTab === 'image') await handleGenerateImage(); 
     else if (activeTab === 'audio') await handleGenerateAudio(); 
     setLoading(false); 
@@ -328,17 +336,16 @@ export default function AIImageGenerator() {
     const promises = Array.from({ length: batchSize }, () => { 
         const currentSeed = seed || Math.floor(Math.random() * 1e9); 
         
-        // --- PERUBAHAN LOGIKA UKURAN GAMBAR ---
         let url;
         if (model === 'gptimage') {
             const aspectRatio = width / height;
             let gptSize;
             if (aspectRatio > 1) {
-                gptSize = '1792x1024'; // Lanskap
+                gptSize = '1792x1024';
             } else if (aspectRatio < 1) {
-                gptSize = '1024x1792'; // Potret
+                gptSize = '1024x1792';
             } else {
-                gptSize = '1024x1024'; // Persegi
+                gptSize = '1024x1024';
             }
             url = `https://image.pollinations.ai/prompt/${encodeURIComponent(finalPrompt)}?model=${model}&size=${gptSize}&quality=${quality}&seed=${currentSeed}&nologo=true&safe=false&referrer=ruangriung.my.id`;
         } else {
@@ -374,16 +381,6 @@ export default function AIImageGenerator() {
     } 
   };
   
-  const handleGenerateVariation = (basePrompt) => {
-    showToast('Membuat variasi baru...', 'info');
-    setPrompt(basePrompt);
-    setSeed('');
-    setActiveTab('image');
-    setTimeout(() => {
-        handleGenerate();
-    }, 100);
-  };
-
   const handleBuildImagePrompt = async () => { if (!promptCreator.subject.trim()) { showToast('Subjek tidak boleh kosong.', 'error'); return; } setIsBuildingPrompt(true); setGeneratedImagePrompt(''); setGeneratedVideoPrompt(''); try { const userInput = `Main subject: ${promptCreator.subject}. Additional details: ${promptCreator.details || 'None'}.`; const res = await fetch('https://text.pollinations.ai/openai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'gpt-3.5-turbo', messages: [ { role: 'system', content: 'You are a prompt engineer who creates detailed, artistic prompts for image generation. Respond only with the final prompt.' }, { role: 'user', content: userInput }]}) }); if (!res.ok) throw new Error(`API Error: ${res.statusText}`); const data = await res.json(); const newPrompt = data.choices[0]?.message?.content; if (newPrompt) { setGeneratedImagePrompt(newPrompt.trim()); showToast('Prompt gambar dikembangkan oleh AI!', 'success'); } else { throw new Error('Gagal memproses respons API.'); } } catch (err) { showToast(err.message, 'error'); } finally { setIsBuildingPrompt(false); } };
   
   const handleBuildVideoPrompt = async () => { if (!videoParams.concept.trim()) { showToast('Konsep utama video tidak boleh kosong.', 'error'); return; } setIsBuildingPrompt(true); setGeneratedVideoPrompt(''); setGeneratedImagePrompt(''); const allParams = Object.entries(videoParams).map(([key, value]) => (value ? `${key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}: ${value}` : null)).filter(Boolean).join('. '); try { const res = await fetch('https://text.pollinations.ai/openai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'gpt-3.5-turbo', messages: [ { role: 'system', content: 'You are a professional cinematographer. Based on these parameters, write a complete, coherent, and inspiring video prompt for a text-to-video AI. Combine all elements into a natural paragraph.' }, { role: 'user', content: allParams }]}) }); if (!res.ok) throw new Error(`API Error: ${res.statusText}`); const data = await res.json(); const videoPrompt = data.choices[0]?.message?.content; if (videoPrompt) { setGeneratedVideoPrompt(videoPrompt.trim()); showToast('Prompt video profesional berhasil dibuat!', 'success'); } else { throw new Error('Gagal memproses respons API.'); } } catch (err) { showToast(err.message, 'error'); } finally { setIsBuildingPrompt(false); } };
@@ -411,7 +408,7 @@ export default function AIImageGenerator() {
       if (coinData) localStorage.setItem('aiGeneratorCoinsData', coinData);
       if (darkModePref) localStorage.setItem('darkMode', darkModePref);
 
-      setPrompt(''); setModel('flux'); setQuality('hd'); setSizePreset('1024x1024'); setUseCustomSize(false); setCustomWidth(1024); setCustomHeight(1024); setSeed(''); setBatchSize(1); setArtStyle(''); setGeneratedImages([]); setLoading(false); setIsEnhancing(false); setIsBuildingPrompt(false); setApiKey(''); setGenerationHistory([]); setSavedPrompts([]); setIsEditorOpen(false); setEditingImage(null); setIsAnalysisModalOpen(false); setActiveTab('image'); setIsCreatorOpen(false); setPromptCreator({ subject: '', details: '' });
+      setPrompt(''); setModel('flux'); setQuality('hd'); setSizePreset('1024x1024'); setUseCustomSize(false); setCustomWidth(1024); setCustomHeight(1024); setSeed(''); setBatchSize(1); setArtStyle(''); setGeneratedImages([]); setLoading(false); setIsEnhancing(false); setIsBuildingPrompt(false); setApiKey(''); setGenerationHistory([]); setSavedPrompts([]); setEditingImage(null); setIsAnalysisModalOpen(false); setActiveTab('image'); setIsCreatorOpen(false); setPromptCreator({ subject: '', details: '' });
       setVideoParams({
           concept: '', visualStyle: 'cinematic', duration: 10, aspectRatio: '16:9',
           fps: 24, cameraMovement: 'static', cameraAngle: 'eye-level', lensType: 'standard',
@@ -431,8 +428,30 @@ export default function AIImageGenerator() {
     }
   };
 
-  const handleOpenEditor = (image) => { setEditingImage(image); setIsEditorOpen(true); };
+  const handleClearHistory = () => { setGenerationHistory([]); setSavedPrompts([]); setIsClearHistoryModalOpen(false); showToast('Semua riwayat telah dihapus.', 'success'); };
   
+  // Fungsi-fungsi yang di-pass ke editor inline
+  const handleUsePromptAndSeed = (p, s) => {
+    setPrompt(p);
+    setSeed(String(s));
+    setActiveTab('image');
+    setEditingImage(null); // Tutup editor setelah digunakan
+    showToast('Prompt & Seed dimuat.', 'success');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleCreateVariation = (basePrompt) => {
+    showToast('Membuat variasi baru...', 'info');
+    setPrompt(basePrompt);
+    setSeed('');
+    setActiveTab('image');
+    setEditingImage(null); // Tutup editor
+    setTimeout(() => {
+        handleGenerate();
+    }, 100);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const handleDownload = (image, filter, watermark) => {
     const mainImage = new Image();
     mainImage.crossOrigin = 'anonymous';
@@ -489,20 +508,7 @@ export default function AIImageGenerator() {
     };
     mainImage.onerror = () => { showToast('Gagal memuat gambar utama untuk diunduh.', 'error'); };
   };
-  
-  const handleClearHistory = () => { setGenerationHistory([]); setSavedPrompts([]); setIsClearHistoryModalOpen(false); showToast('Semua riwayat telah dihapus.', 'success'); };
-  const usePromptAndSeed = (p, s) => { setPrompt(p); setSeed(String(s)); setActiveTab('image'); setIsEditorOpen(false); showToast('Prompt & Seed dimuat.', 'success'); };
-  
-  const finalGeneratedPrompt = generatedImagePrompt || generatedVideoPrompt;
 
-  const visualStyleOptions = ["Cinematic", "Anime", "Photorealistic", "Watercolor", "Pixel Art", "Cyberpunk", "Retro", "Futuristic"];
-  const shotTypeOptions = ["Static", "Slow Pan", "Dolly", "Tracking", "Crane", "Steadycam", "Handheld", "Drone"];
-  const cameraAngleOptions = ["Eye Level", "Low Angle", "High Angle", "Dutch Angle", "Overhead", "Point of View"];
-  const lensTypeOptions = ["Standard (50mm)", "Wide Angle (24mm)", "Telephoto (85mm+)", "Fisheye", "Anamorphic", "Macro"];
-  const dofOptions = ["Shallow", "Medium", "Deep"];
-  const timeOfDayOptions = ["Golden Hour", "Blue Hour", "Midday", "Night", "Sunrise", "Sunset", "Twilight"];
-  const weatherOptions = ["Clear", "Cloudy", "Rainy", "Foggy", "Snowy", "Stormy"];
-  
   if (!isMounted) return <div className="min-h-screen flex items-center justify-center bg-gray-100"><Spinner/></div>;
 
   return (
@@ -535,15 +541,8 @@ export default function AIImageGenerator() {
         <Toasts toasts={toasts} />
         <canvas ref={canvasRef} className="hidden"></canvas>
         
-        {isEditorOpen && <ImageEditorModal image={editingImage} onClose={() => setIsEditorOpen(false)} onUsePromptAndSeed={usePromptAndSeed} onDownload={handleDownload} onCreateVariation={handleGenerateVariation} showToast={showToast} />}
-        {isAnalysisModalOpen && <ImageAnalysisModal isOpen={isAnalysisModalOpen} onClose={() => setIsAnalysisModalOpen(false)} onPromptGenerated={(p) => { setGeneratedImagePrompt(p); showToast("Prompt dari gambar berhasil dibuat!", "success"); setIsAnalysisModalOpen(false); setIsCreatorOpen(true);}} showToast={showToast} />}
-        
-        <PromptEditModal
-            isOpen={isPromptModalOpen}
-            onClose={() => setIsPromptModalOpen(false)}
-            value={prompt}
-            onSave={(newPrompt) => setPrompt(newPrompt)}
-        />
+        <ImageAnalysisModal isOpen={isAnalysisModalOpen} onClose={() => setIsAnalysisModalOpen(false)} onPromptGenerated={(p) => { setGeneratedImagePrompt(p); showToast("Prompt dari gambar berhasil dibuat!", "success"); setIsAnalysisModalOpen(false); setIsCreatorOpen(true);}} showToast={showToast} />
+        <PromptEditModal isOpen={isPromptModalOpen} onClose={() => setIsPromptModalOpen(false)} value={prompt} onSave={(newPrompt) => setPrompt(newPrompt)} />
 
         {isAdminModalOpen && <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4"><div className="p-8 rounded-2xl w-full max-w-md" style={{ background: 'var(--bg-color)', boxShadow: 'var(--shadow-outset)' }}><div className="flex justify-between items-center mb-6"><h2 className="text-xl font-bold">Panel Admin</h2><NeumorphicButton onClick={() => setIsAdminModalOpen(false)} className="!p-2"><X size={20} /></NeumorphicButton></div><p className="mb-4 text-sm"> Masukkan password admin untuk mengakses fitur. atau hubungi Admin ruangriung di halaman <a style={{color:"#3b82f6"}} href="https://web.facebook.com/groups/1182261482811767/" target="_blank" rel="noopener noreferrer">Facebook RuangRiung</a>.
             </p><div className="relative w-full mb-4"><input type={showAdminPassword ? "text" : "password"} value={adminPassword} onChange={(e) => setAdminPassword(e.target.value)} placeholder="Password Admin" className="w-full p-3 rounded-lg neumorphic-input pr-12"/><button type="button" onClick={() => setShowAdminPassword(!showAdminPassword)} className="absolute inset-y-0 right-0 pr-3 flex items-center">{showAdminPassword ? <EyeOff size={20} /> : <Eye size={20} />}</button></div><div className="space-y-4"><NeumorphicButton onClick={handleAdminReset} className="font-bold w-full"><RefreshCw size={16}/> Reset Koin</NeumorphicButton></div></div></div>}
@@ -784,7 +783,7 @@ export default function AIImageGenerator() {
                                 <NeumorphicButton onClick={handleGenerate} loading={loading} loadingText="Membuat Gambar..." className="w-full font-bold text-lg"><Sparkles size={18}/>Generate</NeumorphicButton>
                             </div>}
 
-                            {activeTab === 'video' && <div className="space-y-4"><label className="font-semibold block text-xl">Asisten Prompt Video</label><div><label className="text-sm font-semibold">Konsep Utama Video</label><textarea name="concept" value={videoParams.concept} onChange={handleVideoParamsChange} placeholder="Cth: Detektif cyberpunk di gang neon..." className="w-full p-3 mt-1 rounded-lg neumorphic-input h-28 resize-none"/></div><CollapsibleSection title="Basic Settings" icon={<SlidersHorizontal size={18}/>}><div className="grid grid-cols-2 gap-4"><div><label className="text-sm font-semibold">Gaya Visual</label><select name="visualStyle" value={videoParams.visualStyle} onChange={handleVideoParamsChange} className="w-full p-2 mt-1 rounded-lg neumorphic-input text-sm bg-[var(--bg-color)]">{visualStyleOptions.map(o=><option key={o} value={o.toLowerCase().replace(/ /g, "-")}>{o}</option>)}</select></div><div><label className="text-sm font-semibold">Durasi (s)</label><input type="number" name="duration" value={videoParams.duration} onChange={handleVideoParamsChange} className="w-full p-2 mt-1 rounded-lg neumorphic-input text-sm"/></div><div><label className="text-sm font-semibold">Aspek Rasio</label><select name="aspectRatio" value={videoParams.aspectRatio} onChange={handleVideoParamsChange} className="w-full p-2 mt-1 rounded-lg neumorphic-input text-sm bg-[var(--bg-color)]">{["16:9", "9:16", "1:1", "4:3", "21:9"].map(o=><option key={o} value={o}>{o}</option>)}</select></div><div><label className="text-sm font-semibold">Frame Rate</label><select name="fps" value={videoParams.fps} onChange={handleVideoParamsChange} className="w-full p-2 mt-1 rounded-lg neumorphic-input text-sm bg-[var(--bg-color)]">{[24, 30, 60, 120].map(o=><option key={o} value={o}>{o} fps</option>)}</select></div></div></CollapsibleSection><CollapsibleSection title="Cinematography" icon={<Camera size={18}/>}><div className="grid grid-cols-2 gap-4"><div><label className="text-sm font-semibold">Gerakan Kamera</label><select name="cameraMovement" value={videoParams.cameraMovement} onChange={handleVideoParamsChange} className="w-full p-2 mt-1 rounded-lg neumorphic-input text-sm bg-[var(--bg-color)]">{shotTypeOptions.map(o=><option key={o} value={o.toLowerCase().replace(/ /g, "-")}>{o}</option>)}</select></div><div><label className="text-sm font-semibold">Sudut Kamera</label><select name="cameraAngle" value={videoParams.cameraAngle} onChange={handleVideoParamsChange} className="w-full p-2 mt-1 rounded-lg neumorphic-input text-sm bg-[var(--bg-color)]">{cameraAngleOptions.map(o=><option key={o} value={o.toLowerCase().replace(/ /g, "-")}>{o}</option>)}</select></div><div><label className="text-sm font-semibold">Tipe Lensa</label><select name="lensType" value={videoParams.lensType} onChange={handleVideoParamsChange} className="w-full p-2 mt-1 rounded-lg neumorphic-input text-sm bg-[var(--bg-color)]">{lensTypeOptions.map(o=><option key={o} value={o.toLowerCase().replace(/ /g, "-")}>{o}</option>)}</select></div><div><label className="text-sm font-semibold">Depth of Field</label><select name="depthOfField" value={videoParams.depthOfField} onChange={handleVideoParamsChange} className="w-full p-2 mt-1 rounded-lg neumorphic-input text-sm bg-[var(--bg-color)]">{dofOptions.map(o=><option key={o} value={o.toLowerCase()}>{o}</option>)}</select></div></div></CollapsibleSection><CollapsibleSection title="Visual Effects" icon={<Sparkles size={18}/>}><div><label className="text-sm font-semibold">Film Grain ({videoParams.filmGrain}%)</label><input type="range" name="filmGrain" value={videoParams.filmGrain} onChange={handleVideoParamsChange} min="0" max="100" className="w-full"/></div><div><label className="text-sm font-semibold">Chromatic Aberration ({videoParams.chromaticAberration}%)</label><input type="range" name="chromaticAberration" value={videoParams.chromaticAberration} onChange={handleVideoParamsChange} min="0" max="100" className="w-full"/></div></CollapsibleSection><CollapsibleSection title="Mood & Atmosphere" icon={<CloudSun size={18}/>}><div className="grid grid-cols-2 gap-4"><div><label className="text-sm font-semibold">Waktu</label><select name="timeOfDay" value={videoParams.timeOfDay} onChange={handleVideoParamsChange} className="w-full p-2 mt-1 rounded-lg neumorphic-input text-sm bg-[var(--bg-color)]">{timeOfDayOptions.map(o=><option key={o} value={o.toLowerCase().replace(/ /g, "-")}>{o}</option>)}</select></div><div><label className="text-sm font-semibold">Cuaca</label><select name="weather" value={videoParams.weather} onChange={handleVideoParamsChange} className="w-full p-2 mt-1 rounded-lg neumorphic-input text-sm bg-[var(--bg-color)]">{weatherOptions.map(o=><option key={o} value={o.toLowerCase()}>{o}</option>)}</select></div></div></CollapsibleSection><NeumorphicButton onClick={handleBuildVideoPrompt} loading={isBuildingPrompt} loadingText="Membangun..." className="w-full !mt-6 font-bold text-lg"><Sparkles size={18}/>Buat Prompt Video</NeumorphicButton></div>}
+                            {activeTab === 'video' && <div className="space-y-4"><label className="font-semibold block text-xl">Asisten Prompt Video</label><div><label className="text-sm font-semibold">Konsep Utama Video</label><textarea name="concept" value={videoParams.concept} onChange={handleVideoParamsChange} placeholder="Cth: Detektif cyberpunk di gang neon..." className="w-full p-3 mt-1 rounded-lg neumorphic-input h-28 resize-none"/></div><CollapsibleSection title="Basic Settings" icon={<SlidersHorizontal size={18}/>}><div className="grid grid-cols-2 gap-4"><div><label className="text-sm font-semibold">Gaya Visual</label><select name="visualStyle" value={videoParams.visualStyle} onChange={handleVideoParamsChange} className="w-full p-2 mt-1 rounded-lg neumorphic-input text-sm bg-[var(--bg-color)]">{["Cinematic", "Anime", "Photorealistic", "Watercolor", "Pixel Art", "Cyberpunk", "Retro", "Futuristic"].map(o=><option key={o} value={o.toLowerCase().replace(/ /g, "-")}>{o}</option>)}</select></div><div><label className="text-sm font-semibold">Durasi (s)</label><input type="number" name="duration" value={videoParams.duration} onChange={handleVideoParamsChange} className="w-full p-2 mt-1 rounded-lg neumorphic-input text-sm"/></div><div><label className="text-sm font-semibold">Aspek Rasio</label><select name="aspectRatio" value={videoParams.aspectRatio} onChange={handleVideoParamsChange} className="w-full p-2 mt-1 rounded-lg neumorphic-input text-sm bg-[var(--bg-color)]">{["16:9", "9:16", "1:1", "4:3", "21:9"].map(o=><option key={o} value={o}>{o}</option>)}</select></div><div><label className="text-sm font-semibold">Frame Rate</label><select name="fps" value={videoParams.fps} onChange={handleVideoParamsChange} className="w-full p-2 mt-1 rounded-lg neumorphic-input text-sm bg-[var(--bg-color)]">{[24, 30, 60, 120].map(o=><option key={o} value={o}>{o} fps</option>)}</select></div></div></CollapsibleSection><CollapsibleSection title="Cinematography" icon={<Camera size={18}/>}><div className="grid grid-cols-2 gap-4"><div><label className="text-sm font-semibold">Gerakan Kamera</label><select name="cameraMovement" value={videoParams.cameraMovement} onChange={handleVideoParamsChange} className="w-full p-2 mt-1 rounded-lg neumorphic-input text-sm bg-[var(--bg-color)]">{["Static", "Slow Pan", "Dolly", "Tracking", "Crane", "Steadycam", "Handheld", "Drone"].map(o=><option key={o} value={o.toLowerCase().replace(/ /g, "-")}>{o}</option>)}</select></div><div><label className="text-sm font-semibold">Sudut Kamera</label><select name="cameraAngle" value={videoParams.cameraAngle} onChange={handleVideoParamsChange} className="w-full p-2 mt-1 rounded-lg neumorphic-input text-sm bg-[var(--bg-color)]">{["Eye Level", "Low Angle", "High Angle", "Dutch Angle", "Overhead", "Point of View"].map(o=><option key={o} value={o.toLowerCase().replace(/ /g, "-")}>{o}</option>)}</select></div><div><label className="text-sm font-semibold">Tipe Lensa</label><select name="lensType" value={videoParams.lensType} onChange={handleVideoParamsChange} className="w-full p-2 mt-1 rounded-lg neumorphic-input text-sm bg-[var(--bg-color)]">{["Standard (50mm)", "Wide Angle (24mm)", "Telephoto (85mm+)", "Fisheye", "Anamorphic", "Macro"].map(o=><option key={o} value={o.toLowerCase().replace(/ /g, "-")}>{o}</option>)}</select></div><div><label className="text-sm font-semibold">Depth of Field</label><select name="depthOfField" value={videoParams.depthOfField} onChange={handleVideoParamsChange} className="w-full p-2 mt-1 rounded-lg neumorphic-input text-sm bg-[var(--bg-color)]">{["Shallow", "Medium", "Deep"].map(o=><option key={o} value={o.toLowerCase()}>{o}</option>)}</select></div></div></CollapsibleSection><CollapsibleSection title="Visual Effects" icon={<Sparkles size={18}/>}><div><label className="text-sm font-semibold">Film Grain ({videoParams.filmGrain}%)</label><input type="range" name="filmGrain" value={videoParams.filmGrain} onChange={handleVideoParamsChange} min="0" max="100" className="w-full"/></div><div><label className="text-sm font-semibold">Chromatic Aberration ({videoParams.chromaticAberration}%)</label><input type="range" name="chromaticAberration" value={videoParams.chromaticAberration} onChange={handleVideoParamsChange} min="0" max="100" className="w-full"/></div></CollapsibleSection><CollapsibleSection title="Mood & Atmosphere" icon={<CloudSun size={18}/>}><div className="grid grid-cols-2 gap-4"><div><label className="text-sm font-semibold">Waktu</label><select name="timeOfDay" value={videoParams.timeOfDay} onChange={handleVideoParamsChange} className="w-full p-2 mt-1 rounded-lg neumorphic-input text-sm bg-[var(--bg-color)]">{["Golden Hour", "Blue Hour", "Midday", "Night", "Sunrise", "Sunset", "Twilight"].map(o=><option key={o} value={o.toLowerCase().replace(/ /g, "-")}>{o}</option>)}</select></div><div><label className="text-sm font-semibold">Cuaca</label><select name="weather" value={videoParams.weather} onChange={handleVideoParamsChange} className="w-full p-2 mt-1 rounded-lg neumorphic-input text-sm bg-[var(--bg-color)]">{["Clear", "Cloudy", "Rainy", "Foggy", "Snowy", "Stormy"].map(o=><option key={o} value={o.toLowerCase()}>{o}</option>)}</select></div></div></CollapsibleSection><NeumorphicButton onClick={handleBuildVideoPrompt} loading={isBuildingPrompt} loadingText="Membangun..." className="w-full !mt-6 font-bold text-lg"><Sparkles size={18}/>Buat Prompt Video</NeumorphicButton></div>}
                             {activeTab === 'audio' && <div className="space-y-4"><label className="font-semibold block text-xl">Teks untuk Audio</label><div className="relative"><textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder="Ketik kalimat untuk diubah jadi suara..." className="w-full p-3 rounded-lg neumorphic-input h-28 resize-none pr-10"/><button onClick={() => setPrompt('')} className="absolute top-2 right-2 text-gray-400 hover:text-gray-600"><X size={18}/></button></div><div><label className="font-semibold block mb-2">Pilih Suara</label><select value={audioVoice} onChange={(e) => setAudioVoice(e.target.value)} className="w-full p-3 rounded-lg neumorphic-input bg-[var(--bg-color)]"><option value="alloy">Alloy</option><option value="echo">Echo</option><option value="fable">Fable</option><option value="onyx">Onyx</option><option value="nova">Nova</option><option value="shimmer">Shimmer</option></select></div><NeumorphicButton onClick={handleGenerate} loading={loading} loadingText="Membuat Audio..." className="w-full font-bold text-lg"><Sparkles size={18}/>Generate</NeumorphicButton></div>}
                         </div>
                         <div className="p-6 rounded-2xl h-fit space-y-4 neumorphic-card">
@@ -793,54 +792,34 @@ export default function AIImageGenerator() {
                         </div>
                     </div>
                     <div className="lg:col-span-8 space-y-8">
-                        <div className="p-6 rounded-2xl min-h-[50vh] flex flex-col justify-center items-center neumorphic-card">
-                            <h2 className="text-2xl font-bold mb-4">{activeTab === 'image' ? 'Hasil Generasi Gambar' : (activeTab === 'video' ? 'Hasil Prompt Video' : 'Hasil Generasi Audio')}</h2>
-                            {loading && <div className="text-center"><Spinner /><p className="mt-4">{activeTab === 'image' ? 'Membuat Gambar...' : (activeTab === 'video' ? 'Membuat Prompt...' : 'Membuat Audio...')}</p></div>}
-                            
-                            {!loading && activeTab === 'video' && generatedVideoPrompt && (
-                                <div className="w-full p-4 rounded-lg text-left relative" style={{boxShadow:'var(--shadow-inset)'}}>
-                                    <button onClick={()=>{navigator.clipboard.writeText(generatedVideoPrompt); showToast('Prompt disalin!', 'success')}} className="absolute top-2 right-2 p-1.5 opacity-60 hover:opacity-100">
-                                        <Copy size={16}/>
-                                    </button>
-                                    <p className="whitespace-pre-wrap pr-8">{generatedVideoPrompt}</p>
-                                </div>
-                            )}
+                        <GeneratedContentDisplay
+                            activeTab={activeTab}
+                            loading={loading}
+                            generatedImages={generatedImages}
+                            generatedVideoPrompt={generatedVideoPrompt}
+                            generatedAudio={generatedAudio}
+                            onSelectImage={setEditingImage} // Mengganti onViewImage
+                            showToast={showToast}
+                        />
+                        
+                        {editingImage && (
+                            <InlineImageEditor
+                                image={editingImage}
+                                onClose={() => setEditingImage(null)}
+                                onUsePromptAndSeed={handleUsePromptAndSeed}
+                                onCreateVariation={handleCreateVariation}
+                                onDownload={handleDownload}
+                                showToast={showToast}
+                            />
+                        )}
 
-                            {!loading && activeTab === 'image' && generatedImages.length === 0 && <p className="text-gray-500">Hasil gambar akan muncul di sini.</p>}
-                            
-                            {!loading && activeTab === 'image' && generatedImages.length > 0 && (
-                                <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-6">
-                                    {generatedImages.map((img, i) => (
-                                    <div key={i} className="rounded-xl p-2 space-y-3 flex flex-col" style={{boxShadow: 'var(--shadow-outset)'}}>
-                                        <div className="group relative">
-                                            <img src={img.url} className="w-full h-auto rounded-lg"/>
-                                            <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg">
-                                                <button onClick={() => handleOpenEditor(img)} className="text-white font-bold py-2 px-4 rounded-lg bg-white/20 backdrop-blur-sm">Lihat & Edit</button>
-                                            </div>
-                                        </div>
-                                        <p className="text-xs text-center opacity-60">Seed: {img.seed}</p>
-                                        <NeumorphicButton
-                                            onClick={() => handleGenerateVariation(img.prompt)}
-                                            className="w-full !p-2 text-sm mt-auto"
-                                        >
-                                            <RefreshCw size={14}/> Varian
-                                        </NeumorphicButton>
-                                    </div>
-                                    ))}
-                                </div>
-                            )}
-
-                            {!loading && activeTab === 'video' && !generatedVideoPrompt && <p className="text-gray-500">Gunakan asisten di sebelah kiri untuk membuat prompt video profesional.</p>}
-                            {!loading && activeTab === 'audio' && !generatedAudio && <p className="text-gray-500">Hasil audio akan muncul di sini.</p>}
-                            {!loading && activeTab === 'audio' && generatedAudio && <div className="w-full p-4 flex items-center gap-4"><audio controls src={generatedAudio} className="w-full"></audio><a href={generatedAudio} download="generated_audio.mp3"><NeumorphicButton className="!p-3"><ImageDown size={20}/></NeumorphicButton></a></div>}
-                        </div>
                         <div className="p-6 rounded-2xl h-fit neumorphic-card">
                              <div className="flex justify-between items-center mb-4">
                                 <h3 className="text-xl font-bold flex items-center gap-2"><History size={20}/> Riwayat & Favorit</h3>
                                 <NeumorphicButton onClick={() => setIsClearHistoryModalOpen(true)} className="!p-2" title="Hapus Riwayat & Favorit"><Trash2 size={16}/></NeumorphicButton>
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div><h4 className="font-semibold mb-2">Riwayat Gambar</h4><div className="max-h-96 overflow-y-auto space-y-2 pr-2">{generationHistory.length === 0 ? <p className="text-sm opacity-60">Kosong</p> : generationHistory.map((h) => (<div key={h.date} className="flex items-center gap-2 p-2 rounded-lg" style={{boxShadow:'var(--shadow-inset)'}}><img src={h.url} className="w-16 h-16 rounded-md object-cover cursor-pointer flex-shrink-0" onClick={() => handleOpenEditor(h)}/><p className="text-xs line-clamp-3 flex-grow cursor-pointer" onClick={() => handleOpenEditor(h)}>{h.prompt}</p><NeumorphicButton aria-label={`Hapus riwayat untuk prompt: ${h.prompt.substring(0, 30)}...`} onClick={() => setGenerationHistory(prev => prev.filter(item => item.date !== h.date))} className="!p-2 flex-shrink-0"><Trash2 size={14}/></NeumorphicButton></div>))}</div></div>
+                                <div><h4 className="font-semibold mb-2">Riwayat Gambar</h4><div className="max-h-96 overflow-y-auto space-y-2 pr-2">{generationHistory.length === 0 ? <p className="text-sm opacity-60">Kosong</p> : generationHistory.map((h) => (<div key={h.date} className="flex items-center gap-2 p-2 rounded-lg" style={{boxShadow:'var(--shadow-inset)'}}><img src={h.url} className="w-16 h-16 rounded-md object-cover cursor-pointer flex-shrink-0" onClick={() => setEditingImage(h)}/><p className="text-xs line-clamp-3 flex-grow cursor-pointer" onClick={() => setEditingImage(h)}>{h.prompt}</p><NeumorphicButton aria-label={`Hapus riwayat untuk prompt: ${h.prompt.substring(0, 30)}...`} onClick={() => setGenerationHistory(prev => prev.filter(item => item.date !== h.date))} className="!p-2 flex-shrink-0"><Trash2 size={14}/></NeumorphicButton></div>))}</div></div>
                                 <div><h4 className="font-semibold mb-2">Prompt Favorit</h4><div className="max-h-96 overflow-y-auto space-y-2 pr-2">{savedPrompts.length === 0 ? <p className="text-sm opacity-60">Kosong</p> : savedPrompts.map((p) => (<div key={p.date} className="flex items-center gap-2 p-2 rounded-lg" style={{boxShadow:'var(--shadow-inset)'}}><p className="text-sm flex-grow truncate">{p.prompt}</p><NeumorphicButton onClick={() => setPrompt(p.prompt)} className="!p-1.5"><ChevronsRight size={14}/></NeumorphicButton><NeumorphicButton aria-label={`Hapus favorit: ${p.prompt.substring(0, 30)}...`} onClick={() => setSavedPrompts(prev => prev.filter(sp => sp.date !== p.date))} className="!p-1.5"><Trash2 size={14}/></NeumorphicButton></div>))}</div></div>
                             </div>
                         </div>
