@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 
 // ===================================================================
-// KOMPONEN UTILITAS
+// KOMPONEN UTILITAS (Tidak Berubah)
 // ===================================================================
 
 export const CollapsibleSection = ({ title, icon, children, defaultOpen = false }) => {
@@ -67,52 +67,412 @@ export const Toasts = ({ toasts }) => {
 const compressImage = (file, maxWidth = 800, quality = 0.7) => new Promise((resolve, reject) => { const reader = new FileReader(); reader.readAsDataURL(file); reader.onload = event => { const img = new Image(); img.src = event.target.result; img.onload = () => { const canvas = document.createElement('canvas'); let { width, height } = img; if (width > height) { if (width > maxWidth) { height *= maxWidth / width; width = maxWidth; } } else { if (height > maxWidth) { width *= maxWidth / height; height = maxWidth; } } canvas.width = width; canvas.height = height; const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, width, height); resolve(canvas.toDataURL('image/jpeg', quality)); }; img.onerror = reject; }; reader.onerror = reject; });
 
 export const ImageAnalysisModal = ({ isOpen, onClose, onPromptGenerated, showToast }) => {
-    // ... (kode utuh tidak berubah)
-    return ( isOpen ? <div>...</div> : null );
+    const [previewSrc, setPreviewSrc] = useState('');
+    const [analysisResult, setAnalysisResult] = useState('');
+    const [isAnalyzing, setIsAnalyzing] = useState(false);
+    const fileInputRef = useRef(null);
+
+    const handleFileChange = async (e) => {
+        const file = e.target.files[0];
+        if (file) {
+             if (file.size > 2 * 1024 * 1024) { // 2MB limit
+                showToast('Ukuran file tidak boleh melebihi 2MB.', 'error');
+                return;
+            }
+            try {
+                const compressedImageSrc = await compressImage(file);
+                setPreviewSrc(compressedImageSrc);
+                setAnalysisResult('');
+            } catch (error) { showToast('Gagal memproses gambar.', 'error'); console.error(error); }
+        }
+    };
+
+    const handleAnalyze = async () => {
+        if (!previewSrc) { showToast('Silakan unggah gambar terlebih dahulu.', 'error'); return; }
+        setIsAnalyzing(true); setAnalysisResult('');
+        try {
+            const response = await fetch('/api/analyze-image', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ imageUrl: previewSrc })
+            });
+            if (!response.ok || !response.body) { const errorData = await response.json(); throw new Error(errorData.error || 'Analisis gagal.'); }
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            while (true) {
+                const { value, done } = await reader.read();
+                if (done) break;
+                const chunk = decoder.decode(value, { stream: true });
+                const lines = chunk.split('\n\n');
+                for (const line of lines) {
+                    if (line.startsWith("data: ")) {
+                        const dataStr = line.substring(6).trim();
+                        if (dataStr === "[DONE]") continue;
+                        try {
+                            const jsonData = JSON.parse(dataStr);
+                            const textChunk = jsonData?.choices?.[0]?.delta?.content;
+                            if (textChunk) { setAnalysisResult(prev => prev + textChunk); }
+                        } catch (e) { console.error("Error parsing stream chunk:", e); }
+                    }
+                }
+            }
+        } catch (error) { showToast(error.message, 'error'); setAnalysisResult('Gagal menganalisis gambar. Silakan coba lagi.'); } 
+        finally { setIsAnalyzing(false); }
+    };
+
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4 animate-fade-in">
+            <div className="p-6 rounded-2xl w-full max-w-2xl flex flex-col gap-4 neumorphic-card" style={{ background: 'var(--bg-color)', maxHeight: '90vh' }}>
+                <div className="flex-shrink-0 flex justify-between items-center">
+                    <h2 className="text-xl font-bold flex items-center gap-2"><FileImage size={22}/> Analisis Gambar untuk Prompt</h2>
+                    <NeumorphicButton onClick={onClose} className="!p-2"><X size={20} /></NeumorphicButton>
+                </div>
+                <div className="flex-grow overflow-y-auto pr-2 space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="p-4 rounded-lg flex flex-col items-center justify-center gap-3" style={{boxShadow:'var(--shadow-inset)'}}>
+                            <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden"/>
+                            {previewSrc ? (<img src={previewSrc} alt="Pratinjau Gambar" className="max-h-48 w-auto rounded-lg" />) : (<div className="text-center opacity-70"><FileImage size={48} className="mx-auto"/> <p>Pilih gambar</p></div>)}
+                            <NeumorphicButton onClick={() => fileInputRef.current.click()} className="w-full text-sm !p-2"><Upload size={16}/> {previewSrc ? 'Ganti Gambar' : 'Unggah Gambar'}</NeumorphicButton>
+                        </div>
+                        <div className="p-4 rounded-lg flex flex-col" style={{boxShadow:'var(--shadow-inset)'}}>
+                            <h4 className="font-semibold mb-2">Hasil Analisis</h4>
+                            <div className="flex-grow min-h-[100px] text-sm overflow-y-auto pr-2">
+                                {isAnalyzing && <div className="flex items-center gap-2"><Spinner/> Menganalisis...</div>}
+                                {analysisResult && <p className="whitespace-pre-wrap">{analysisResult}</p>}
+                                {!isAnalyzing && !analysisResult && <p className="opacity-60">Deskripsi gambar akan muncul di sini.</p>}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div className="flex-shrink-0 flex gap-4 pt-4 border-t border-[var(--shadow-dark)]/20">
+                    <NeumorphicButton onClick={handleAnalyze} loading={isAnalyzing} loadingText="Menganalisis..." className="w-full font-bold" disabled={!previewSrc}><Sparkles size={18}/> Analisis</NeumorphicButton>
+                    <NeumorphicButton onClick={() => onPromptGenerated(analysisResult)} className="w-full font-bold" disabled={!analysisResult || isAnalyzing}><Wand2 size={18}/> Gunakan Prompt Ini</NeumorphicButton>
+                </div>
+            </div>
+        </div>
+    );
 };
 
 export const PromptEditModal = ({ isOpen, onClose, value, onSave }) => {
-    // ... (kode utuh tidak berubah)
-    return ( isOpen ? <div>...</div> : null );
+    const [text, setText] = useState(value);
+    const textareaRef = useRef(null);
+
+    useEffect(() => {
+        setText(value);
+    }, [value]);
+
+    useEffect(() => {
+        if (isOpen && textareaRef.current) {
+            textareaRef.current.style.height = 'auto';
+            textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+        }
+    }, [isOpen, text]);
+
+    const handleSave = () => {
+        onSave(text);
+        onClose();
+    };
+
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4 animate-fade-in">
+            <div className="p-6 rounded-2xl w-full max-w-lg flex flex-col gap-4 neumorphic-card" style={{ background: 'var(--bg-color)' }}>
+                <div className="flex justify-between items-center">
+                    <h2 className="text-xl font-bold">Edit Prompt</h2>
+                    <NeumorphicButton onClick={onClose} className="!p-2"><X size={20} /></NeumorphicButton>
+                </div>
+                <div className="relative w-full">
+                    <textarea
+                        ref={textareaRef}
+                        value={text}
+                        onChange={(e) => setText(e.target.value)}
+                        className="w-full p-3 rounded-lg neumorphic-input resize-none overflow-hidden min-h-[150px]"
+                        placeholder="Ketik ide gambarmu di sini..."
+                    />
+                </div>
+                <div className="flex justify-end gap-4">
+                    <NeumorphicButton onClick={onClose}>Batal</NeumorphicButton>
+                    <NeumorphicButton onClick={handleSave} className="font-bold">Simpan</NeumorphicButton>
+                </div>
+            </div>
+        </div>
+    );
 };
 
 // ===================================================================
-// INTI PERUBAHAN: GeneratedContentDisplay yang cerdas
+// BARU: GeneratedContentDisplay yang Dimodifikasi
 // ===================================================================
+export const GeneratedContentDisplay = ({
+    activeTab, loading, generatedImages, generatedVideoPrompt, generatedAudio,
+    onSelectImage, // Prop baru untuk memilih gambar
+    showToast,
+}) => {
 
-const EditorPanel = ({ image, onClose, onUsePromptAndSeed, onCreateVariation, onDownload, showToast }) => {
-    const [baseFilter, setBaseFilter] = useState('none');
-    const [watermark, setWatermark] = useState({
-        type: 'text', text: '', color: '#ffffff', size: 8, opacity: 0.7,
-        position: { x: 50, y: 50 }, imageUrl: null
-    });
-    
-    const finalFilter = useMemo(() => {
-        if (baseFilter !== 'none') return baseFilter;
-        return 'none';
-    }, [baseFilter]);
+    const renderContent = () => {
+        if (loading) {
+            return (
+                <div className="text-center">
+                    <Spinner />
+                    <p className="mt-4">
+                        {activeTab === 'image' ? 'Membuat Gambar...' : (activeTab === 'video' ? 'Membuat Prompt...' : 'Membuat Audio...')}
+                    </p>
+                </div>
+            );
+        }
 
-    const handleWatermarkImageUpload = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            if (file.size > 2 * 1024 * 1024) { showToast('Ukuran file watermark tidak boleh melebihi 2MB.', 'error'); return; }
-            const reader = new FileReader();
-            reader.onload = (event) => setWatermark(w => ({ ...w, imageUrl: event.target.result }));
-            reader.readAsDataURL(file);
+        switch (activeTab) {
+            case 'image':
+                if (generatedImages.length === 0) {
+                    return <p className="text-gray-500">Hasil gambar akan muncul di sini.</p>;
+                }
+                return (
+                    <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-6">
+                        {generatedImages.map((img) => (
+                            <div key={img.url + img.seed} className="group relative rounded-xl p-2 space-y-3 flex flex-col neumorphic-card"
+                                onClick={() => onSelectImage(img)} style={{ cursor: 'pointer' }}>
+                                <img src={img.url} className="w-full h-auto rounded-lg"/>
+                                <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg">
+                                    <span className="text-white font-bold py-2 px-4 rounded-lg bg-white/20 backdrop-blur-sm flex items-center gap-2">
+                                        <Wand2 size={18}/> Edit & Lihat
+                                    </span>
+                                </div>
+                                <p className="text-xs text-center opacity-60">Seed: {img.seed}</p>
+                            </div>
+                        ))}
+                    </div>
+                );
+            case 'video':
+                 if (generatedVideoPrompt) {
+                    return (
+                        <div className="w-full p-4 rounded-lg text-left relative" style={{boxShadow:'var(--shadow-inset)'}}>
+                            <button onClick={()=>{navigator.clipboard.writeText(generatedVideoPrompt); showToast('Prompt disalin!', 'success')}} className="absolute top-2 right-2 p-1.5 opacity-60 hover:opacity-100">
+                                <Copy size={16}/>
+                            </button>
+                            <p className="whitespace-pre-wrap pr-8">{generatedVideoPrompt}</p>
+                        </div>
+                    );
+                 }
+                 return <p className="text-gray-500">Gunakan asisten untuk membuat prompt video profesional.</p>;
+            case 'audio':
+                if (generatedAudio) {
+                    return (
+                        <div className="w-full p-4 flex items-center gap-4">
+                           <audio controls src={generatedAudio} className="w-full"></audio>
+                           <a href={generatedAudio} download="ruangriung-ai-audio.mp3">
+                               <NeumorphicButton className="!p-3"><ImageDown size={20}/></NeumorphicButton>
+                           </a>
+                        </div>
+                    );
+                }
+                return <p className="text-gray-500">Hasil audio akan muncul di sini.</p>;
+            default:
+                return null;
         }
     };
     
-    const setWatermarkPosition = (x, y) => setWatermark(w => ({ ...w, position: { x, y } }));
-
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-gray-500/20 mt-6">
+        <div className="p-6 rounded-2xl min-h-[50vh] flex flex-col justify-center items-center neumorphic-card">
+            <h2 className="text-2xl font-bold mb-4">
+                {activeTab === 'image' ? 'Hasil Generasi Gambar' : (activeTab === 'video' ? 'Hasil Prompt Video' : 'Hasil Generasi Audio')}
+            </h2>
+            {renderContent()}
+        </div>
+    );
+};
+
+
+// ===================================================================
+// BARU: Komponen Editor Inline
+// ===================================================================
+export const InlineImageEditor = ({ image, onClose, onUsePromptAndSeed, onCreateVariation, onDownload, showToast }) => {
+  const [zoomLevel, setZoomLevel] = useState(1);
+  const [imagePosition, setImagePosition] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const startDragPos = useRef({ x: 0, y: 0 });
+
+  const [baseFilter, setBaseFilter] = useState('none');
+  const [watermark, setWatermark] = useState({
+      type: 'text', text: '', color: '#ffffff', size: 8, opacity: 0.7,
+      position: { x: 50, y: 50 }, imageUrl: null, imageFile: null,
+  });
+  
+  const [isDraggingWatermark, setIsDraggingWatermark] = useState(false);
+  const watermarkRef = useRef(null);
+  const imageContainerRef = useRef(null);
+
+  useEffect(() => {
+    setZoomLevel(1);
+    setImagePosition({ x: 0, y: 0 });
+  }, [image]);
+
+  const handleZoomIn = (e) => { e.stopPropagation(); setZoomLevel(prev => Math.min(prev + 0.2, 5)); };
+  const handleZoomOut = (e) => { e.stopPropagation(); setZoomLevel(prev => Math.max(prev - 0.2, 0.5)); };
+  const handleResetZoom = (e) => {
+    e.stopPropagation();
+    setZoomLevel(1);
+    setImagePosition({ x: 0, y: 0 });
+  };
+
+  const handleMouseDown = (e) => {
+    if (e.target.closest('.watermark-control') || e.target.closest('.zoom-control')) return;
+    e.preventDefault();
+    setIsDragging(true);
+    startDragPos.current = { x: e.clientX - imagePosition.x, y: e.clientY - imagePosition.y };
+  };
+
+  const handleMouseMove = useCallback((e) => {
+    if (!isDragging) return;
+    setImagePosition({ x: e.clientX - startDragPos.current.x, y: e.clientY - startDragPos.current.y });
+  }, [isDragging]);
+  
+  const handleMouseUp = useCallback(() => setIsDragging(false), []);
+
+  useEffect(() => {
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDragging, handleMouseMove, handleMouseUp]);
+  
+  const finalFilter = useMemo(() => {
+      if (baseFilter !== 'none') return baseFilter;
+      return 'none';
+  }, [baseFilter]);
+
+  const handleWatermarkImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        showToast('Ukuran file watermark tidak boleh melebihi 2MB.', 'error');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setWatermark(w => ({ ...w, imageUrl: event.target.result }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const setWatermarkPosition = (x, y) => {
+      setWatermark(w => ({ ...w, position: { x, y } }));
+  };
+
+  const handleWatermarkMouseDown = (e) => {
+    e.stopPropagation();
+    setIsDraggingWatermark(true);
+  };
+
+  const handleWatermarkTouchStart = (e) => {
+    e.stopPropagation();
+    setIsDraggingWatermark(true);
+  };
+
+  const handleWatermarkMove = useCallback((clientX, clientY) => {
+    if (!watermarkRef.current || !imageContainerRef.current) return;
+    const containerRect = imageContainerRef.current.getBoundingClientRect();
+    let newX = ((clientX - containerRect.left) / containerRect.width) * 100;
+    let newY = ((clientY - containerRect.top) / containerRect.height) * 100;
+    newX = Math.max(0, Math.min(100, newX));
+    newY = Math.max(0, Math.min(100, newY));
+    setWatermark(w => ({ ...w, position: { x: newX, y: newY } }));
+  }, []);
+
+  const handleWatermarkMouseMove = useCallback((e) => {
+    if (isDraggingWatermark) handleWatermarkMove(e.clientX, e.clientY);
+  }, [isDraggingWatermark, handleWatermarkMove]);
+
+  const handleWatermarkTouchMove = useCallback((e) => {
+    if (isDraggingWatermark) handleWatermarkMove(e.touches[0].clientX, e.touches[0].clientY);
+  }, [isDraggingWatermark, handleWatermarkMove]);
+
+  const handleWatermarkMouseUp = useCallback(() => setIsDraggingWatermark(false), []);
+
+   useEffect(() => {
+    window.addEventListener('mousemove', handleWatermarkMouseMove);
+    window.addEventListener('mouseup', handleWatermarkMouseUp);
+    window.addEventListener('touchmove', handleWatermarkTouchMove);
+    window.addEventListener('touchend', handleWatermarkMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', handleWatermarkMouseMove);
+      window.removeEventListener('mouseup', handleWatermarkMouseUp);
+      window.removeEventListener('touchmove', handleWatermarkTouchMove);
+      window.removeEventListener('touchend', handleWatermarkMouseUp);
+    };
+  }, [handleWatermarkMouseMove, handleWatermarkMouseUp, handleWatermarkTouchMove]);
+  
+  return (
+    <div className="mt-8 p-4 sm:p-6 rounded-2xl neumorphic-card animate-fade-in space-y-6">
+        <h2 className="text-2xl font-bold text-center">Editor Gambar</h2>
+        {/* Kontainer Gambar dengan Zoom */}
+        <div ref={imageContainerRef} className="w-full h-auto max-h-[70vh] overflow-hidden rounded-lg flex items-center justify-center relative" style={{boxShadow: 'var(--shadow-inset)', cursor: isDragging ? 'grabbing' : (zoomLevel > 1 ? 'grab' : 'default') }}>
+            <img 
+               src={image.url} 
+               alt="Editing image" 
+               onMouseDown={handleMouseDown} 
+               style={{ 
+                 transform: `scale(${zoomLevel}) translate(${imagePosition.x / zoomLevel}px, ${imagePosition.y / zoomLevel}px)`,
+                 filter: finalFilter, 
+                 transition: isDragging ? 'none' : 'transform 0.1s ease-out, filter 0.2s', 
+                 maxWidth: '100%', 
+                 maxHeight: '100%',
+                 userSelect: 'none',
+               }}
+               draggable="false"
+            />
+            
+            {/* Watermark Element */}
+            {(watermark.text || watermark.imageUrl) && (
+                <div
+                    ref={watermarkRef}
+                    onMouseDown={handleWatermarkMouseDown}
+                    onTouchStart={handleWatermarkTouchStart}
+                    className="absolute watermark-control"
+                    style={{
+                        left: `${watermark.position.x}%`,
+                        top: `${watermark.position.y}%`,
+                        transform: 'translate(-50%, -50%)',
+                        opacity: watermark.opacity,
+                        cursor: isDraggingWatermark ? 'grabbing' : 'grab',
+                        pointerEvents: 'auto',
+                        color: watermark.color,
+                        fontSize: `${watermark.size}vmin`,
+                        fontWeight: 'bold',
+                        textShadow: '0 0 2px black, 0 0 2px black',
+                        WebkitUserSelect: 'none', userSelect: 'none',
+                    }}
+                >
+                    {watermark.type === 'text' && watermark.text}
+                    {watermark.type === 'image' && watermark.imageUrl && (
+                        <img src={watermark.imageUrl} alt="Watermark preview" style={{ width: `${watermark.size * 2}px`, height: 'auto' }}/>
+                    )}
+                </div>
+            )}
+            
+            {/* Kontrol Zoom Overlay */}
+            <div className="zoom-control absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 p-2 rounded-xl bg-black/40 text-white">
+               <button onClick={handleZoomOut} className="p-2 rounded-lg hover:bg-black/50 transition-colors"><Minus size={16}/></button>
+               <button onClick={handleResetZoom} className="p-2 rounded-lg hover:bg-black/50 transition-colors"><Search size={16}/></button>
+               <button onClick={handleZoomIn} className="p-2 rounded-lg hover:bg-black/50 transition-colors"><Plus size={16}/></button>
+           </div>
+        </div>
+
+        {/* Kontrol Editor di Bawah Gambar */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-gray-500/20">
+            {/* Panel Kiri: Aksi Utama */}
             <div className="space-y-3">
                 <h3 className="font-semibold text-lg">Aksi</h3>
                 <NeumorphicButton onClick={() => onUsePromptAndSeed(image.prompt, image.seed)} className="w-full text-sm !p-2"><Layers/>Gunakan Prompt & Seed</NeumorphicButton>
                 <NeumorphicButton onClick={() => onCreateVariation(image.prompt)} className="w-full text-sm !p-2"><Repeat size={16}/> Buat Variasi</NeumorphicButton>
                 <NeumorphicButton onClick={() => onDownload(image, finalFilter, watermark)} className="w-full text-sm !p-2 font-bold"><ImageDown/>Unduh Gambar</NeumorphicButton>
-                <NeumorphicButton onClick={onClose} className="w-full text-sm !p-2"><X/> Kembali ke Grid</NeumorphicButton>
+                <NeumorphicButton onClick={onClose} className="w-full text-sm !p-2"><X/> Tutup Editor</NeumorphicButton>
             </div>
+
+            {/* Panel Kanan: Filter & Watermark */}
             <div className="space-y-4">
                  <CollapsibleSection title="Filter" icon={<Sparkles size={18}/>} defaultOpen={true}>
                     <div>
@@ -140,7 +500,9 @@ const EditorPanel = ({ image, onClose, onUsePromptAndSeed, onCreateVariation, on
                     ) : (
                         <div className="space-y-3 pt-2">
                           <input type="file" id="watermark-upload" accept="image/png, image/jpeg" onChange={handleWatermarkImageUpload} className="hidden"/>
-                          <NeumorphicButton as="label" htmlFor="watermark-upload" className="w-full text-sm !p-2"><Upload size={16}/> Unggah Gambar</NeumorphicButton>
+                          <NeumorphicButton as="label" htmlFor="watermark-upload" className="w-full text-sm !p-2">
+                            <Upload size={16}/> Unggah Gambar (Max 2MB)
+                          </NeumorphicButton>
                           {watermark.imageUrl && <img src={watermark.imageUrl} alt="watermark preview" className="w-full h-auto rounded-lg" />}
                         </div>
                     )}
@@ -149,148 +511,22 @@ const EditorPanel = ({ image, onClose, onUsePromptAndSeed, onCreateVariation, on
                          <input type="range" min="1" max="50" value={watermark.size} onChange={(e) => setWatermark(w => ({...w, size: Number(e.target.value)}))} className="w-full"/>
                          <label className="text-sm">Opasitas ({Math.round(watermark.opacity * 100)}%)</label>
                          <input type="range" min="0.1" max="1" step="0.05" value={watermark.opacity} onChange={(e) => setWatermark(w => ({...w, opacity: Number(e.target.value)}))} className="w-full"/>
-                         <label className="text-sm">Posisi</label>
+                         <label className="text-sm">Posisi Cepat</label>
                          <div className="grid grid-cols-3 gap-1 p-1 rounded-lg" style={{boxShadow:'var(--shadow-inset)'}}>
-                            <button onClick={() => setWatermarkPosition(15, 15)} className="p-2 aspect-square neumorphic-button"/>
-                            <button onClick={() => setWatermarkPosition(50, 15)} className="p-2 aspect-square neumorphic-button"/>
-                            <button onClick={() => setWatermarkPosition(85, 15)} className="p-2 aspect-square neumorphic-button"/>
-                            <button onClick={() => setWatermarkPosition(15, 50)} className="p-2 aspect-square neumorphic-button"/>
-                            <button onClick={() => setWatermarkPosition(50, 50)} className="p-2 aspect-square neumorphic-button flex items-center justify-center"><Grid3x3 size={16}/></button>
-                            <button onClick={() => setWatermarkPosition(85, 50)} className="p-2 aspect-square neumorphic-button"/>
-                            <button onClick={() => setWatermarkPosition(15, 85)} className="p-2 aspect-square neumorphic-button"/>
-                            <button onClick={() => setWatermarkPosition(50, 85)} className="p-2 aspect-square neumorphic-button"/>
-                            <button onClick={() => setWatermarkPosition(85, 85)} className="p-2 aspect-square neumorphic-button"/>
+                            <NeumorphicButton onClick={() => setWatermarkPosition(15, 15)} className="!p-2 aspect-square"/>
+                            <NeumorphicButton onClick={() => setWatermarkPosition(50, 15)} className="!p-2 aspect-square"/>
+                            <NeumorphicButton onClick={() => setWatermarkPosition(85, 15)} className="!p-2 aspect-square"/>
+                            <NeumorphicButton onClick={() => setWatermarkPosition(15, 50)} className="!p-2 aspect-square"/>
+                            <NeumorphicButton onClick={() => setWatermarkPosition(50, 50)} className="!p-2 aspect-square"><Grid3x3 size={16}/></NeumorphicButton>
+                            <NeumorphicButton onClick={() => setWatermarkPosition(85, 50)} className="!p-2 aspect-square"/>
+                            <NeumorphicButton onClick={() => setWatermarkPosition(15, 85)} className="!p-2 aspect-square"/>
+                            <NeumorphicButton onClick={() => setWatermarkPosition(50, 85)} className="!p-2 aspect-square"/>
+                            <NeumorphicButton onClick={() => setWatermarkPosition(85, 85)} className="!p-2 aspect-square"/>
                          </div>
                     </div>
                 </CollapsibleSection>
             </div>
         </div>
-    );
-};
-
-
-export const GeneratedContentDisplay = ({
-    activeTab, loading, generatedImages, generatedVideoPrompt, generatedAudio,
-    editingImage, setEditingImage, // State dan setter diterima sebagai props
-    onUsePromptAndSeed, onCreateVariation, onDownload, showToast,
-}) => {
-
-    const [zoomLevel, setZoomLevel] = useState(1);
-    const [imagePosition, setImagePosition] = useState({ x: 0, y: 0 });
-    const [isDragging, setIsDragging] = useState(false);
-    const startDragPos = useRef({ x: 0, y: 0 });
-
-    useEffect(() => {
-        if (editingImage) {
-            setZoomLevel(1);
-            setImagePosition({ x: 0, y: 0 });
-        }
-    }, [editingImage]);
-
-    const handleZoomIn = (e) => { e.stopPropagation(); setZoomLevel(prev => Math.min(prev + 0.2, 5)); };
-    const handleZoomOut = (e) => { e.stopPropagation(); setZoomLevel(prev => Math.max(prev - 0.2, 0.5)); };
-    const handleResetZoom = (e) => { e.stopPropagation(); setZoomLevel(1); setImagePosition({ x: 0, y: 0 }); };
-
-    const handleMouseDown = (e) => {
-        if (e.target.closest('.zoom-control')) return;
-        e.preventDefault();
-        setIsDragging(true);
-        startDragPos.current = { x: e.clientX - imagePosition.x, y: e.clientY - imagePosition.y };
-    };
-
-    const handleMouseMove = useCallback((e) => {
-        if (!isDragging) return;
-        setImagePosition({ x: e.clientX - startDragPos.current.x, y: e.clientY - startDragPos.current.y });
-    }, [isDragging]);
-
-    const handleMouseUp = useCallback(() => setIsDragging(false), []);
-
-    useEffect(() => {
-        window.addEventListener('mousemove', handleMouseMove);
-        window.addEventListener('mouseup', handleMouseUp);
-        return () => {
-            window.removeEventListener('mousemove', handleMouseMove);
-            window.removeEventListener('mouseup', handleMouseUp);
-        };
-    }, [isDragging, handleMouseMove, handleMouseUp]);
-
-
-    const renderContent = () => {
-        if (loading) {
-            return (
-                <div className="text-center">
-                    <Spinner />
-                    <p className="mt-4">{activeTab === 'image' ? 'Membuat Gambar...' : 'Memproses...'}</p>
-                </div>
-            );
-        }
-
-        if (activeTab === 'image') {
-            // Tampilan Editor jika ada gambar yang dipilih
-            if (editingImage) {
-                return (
-                    <div className="w-full animate-fade-in">
-                        <div className="w-full h-auto max-h-[70vh] overflow-hidden rounded-lg flex items-center justify-center relative neumorphic-card" style={{boxShadow: 'var(--shadow-inset)', cursor: isDragging ? 'grabbing' : (zoomLevel > 1 ? 'grab' : 'default')}}>
-                            <img 
-                               src={editingImage.url} alt={editingImage.prompt} onMouseDown={handleMouseDown}
-                               style={{ 
-                                 transform: `scale(${zoomLevel}) translate(${imagePosition.x / zoomLevel}px, ${imagePosition.y / zoomLevel}px)`,
-                                 transition: isDragging ? 'none' : 'transform 0.1s ease-out', 
-                                 maxWidth: '100%', maxHeight: '100%', userSelect: 'none'
-                               }}
-                               draggable="false"
-                            />
-                            <div className="zoom-control absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 p-2 rounded-xl bg-black/40 text-white">
-                               <button onClick={handleZoomOut} className="p-2 rounded-lg hover:bg-black/50 transition-colors"><Minus size={16}/></button>
-                               <button onClick={handleResetZoom} className="p-2 rounded-lg hover:bg-black/50 transition-colors"><Search size={16}/></button>
-                               <button onClick={handleZoomIn} className="p-2 rounded-lg hover:bg-black/50 transition-colors"><Plus size={16}/></button>
-                           </div>
-                        </div>
-                        <EditorPanel 
-                            image={editingImage}
-                            onClose={() => setEditingImage(null)}
-                            onUsePromptAndSeed={onUsePromptAndSeed}
-                            onCreateVariation={onCreateVariation}
-                            onDownload={onDownload}
-                            showToast={showToast}
-                        />
-                    </div>
-                );
-            }
-
-            // Tampilan Grid jika tidak ada gambar yang diedit
-            if (generatedImages.length === 0) {
-                return <p className="text-gray-500">Hasil gambar akan muncul di sini.</p>;
-            }
-            return (
-                <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-6">
-                    {generatedImages.map((img) => (
-                        <div key={img.date} className="group relative rounded-xl p-2 space-y-3 flex flex-col neumorphic-card"
-                            onClick={() => setEditingImage(img)} style={{ cursor: 'pointer' }}>
-                            <img src={img.url} className="w-full h-auto rounded-lg"/>
-                            <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg">
-                                <span className="text-white font-bold py-2 px-4 rounded-lg bg-white/20 backdrop-blur-sm flex items-center gap-2"><Wand2 size={18}/> Edit & Lihat</span>
-                            </div>
-                            <p className="text-xs text-center opacity-60">Seed: {img.seed}</p>
-                        </div>
-                    ))}
-                </div>
-            );
-        }
-
-        // Tampilan untuk tab lain
-        if (activeTab === 'video') { /* ... */ }
-        if (activeTab === 'audio') { /* ... */ }
-
-        return null;
-    };
-    
-    return (
-        <div className="p-6 rounded-2xl min-h-[50vh] flex flex-col justify-center items-center neumorphic-card">
-            <h2 className="text-2xl font-bold mb-4">
-                {editingImage ? 'Editor Gambar' : 'Hasil Generasi'}
-            </h2>
-            {renderContent()}
-        </div>
-    );
+    </div>
+  );
 };
