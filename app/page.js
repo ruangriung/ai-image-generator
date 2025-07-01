@@ -6,14 +6,13 @@ import {
     ImageDown, Bookmark, Trash2, History, Star, Upload,
     ChevronDown, ChevronUp, Sparkles, Image as ImageIcon, Video, Layers, Coins, Clock,
     Eye, EyeOff, Copy, AudioLines, SlidersHorizontal, Camera, CloudSun, KeyRound, Check,
-    MessageSquare, Download, Dices, Maximize2
+    MessageSquare, Download, Dices, Maximize2, Eraser // Ikon Eraser ditambahkan
 } from 'lucide-react';
 
 import { 
     Spinner, NeumorphicButton, Toasts, 
-    // ImageEditorModal Dihapus
-    InlineImageEditor, // Komponen Baru
-    GeneratedContentDisplay, // Komponen yang dimodifikasi
+    InlineImageEditor,
+    GeneratedContentDisplay,
     CollapsibleSection, ImageAnalysisModal, PromptEditModal 
 } from './components.js';
 import ChatbotAssistant from './ChatbotAssistant.js';
@@ -39,7 +38,6 @@ export default function AIImageGenerator() {
   const [generationHistory, setGenerationHistory] = useState([]);
   const [savedPrompts, setSavedPrompts] = useState([]);
   
-  // Mengganti isEditorOpen dengan editingImage
   const [editingImage, setEditingImage] = useState(null); 
 
   const [toasts, setToasts] = useState([]);
@@ -144,6 +142,11 @@ export default function AIImageGenerator() {
     const randomIndex = Math.floor(Math.random() * aiSuggestions.length);
     setPrompt(aiSuggestions[randomIndex]);
     showToast('Prompt acak telah dimuat!', 'success');
+  };
+
+  const handleClearPrompt = () => {
+    setPrompt('');
+    showToast('Prompt dibersihkan!', 'success');
   };
 
   useEffect(() => {
@@ -324,7 +327,7 @@ export default function AIImageGenerator() {
     if (activeTab === 'video') { showToast('Gunakan tombol "Buat Prompt Video" di dalam Asisten.', 'info'); return; } 
     if (!prompt.trim()) { showToast('Prompt tidak boleh kosong.', 'error'); return; } 
     setLoading(true); 
-    setEditingImage(null); // Tutup editor saat generate baru
+    setEditingImage(null);
     if (activeTab === 'image') await handleGenerateImage(); 
     else if (activeTab === 'audio') await handleGenerateAudio(); 
     setLoading(false); 
@@ -430,12 +433,11 @@ export default function AIImageGenerator() {
 
   const handleClearHistory = () => { setGenerationHistory([]); setSavedPrompts([]); setIsClearHistoryModalOpen(false); showToast('Semua riwayat telah dihapus.', 'success'); };
   
-  // Fungsi-fungsi yang di-pass ke editor inline
   const handleUsePromptAndSeed = (p, s) => {
     setPrompt(p);
     setSeed(String(s));
     setActiveTab('image');
-    setEditingImage(null); // Tutup editor setelah digunakan
+    setEditingImage(null);
     showToast('Prompt & Seed dimuat.', 'success');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -445,7 +447,7 @@ export default function AIImageGenerator() {
     setPrompt(basePrompt);
     setSeed('');
     setActiveTab('image');
-    setEditingImage(null); // Tutup editor
+    setEditingImage(null);
     setTimeout(() => {
         handleGenerate();
     }, 100);
@@ -636,7 +638,7 @@ export default function AIImageGenerator() {
                                         placeholder="Ketik ide gambarmu di sini..."
                                         className="w-full p-3 rounded-lg neumorphic-input resize-none pr-10 h-28"
                                     />
-{prompt && (
+                                    {prompt && (
                                         <button
                                             aria-label="Bersihkan prompt"
                                             onClick={handleClearPrompt}
@@ -808,7 +810,7 @@ export default function AIImageGenerator() {
                             generatedImages={generatedImages}
                             generatedVideoPrompt={generatedVideoPrompt}
                             generatedAudio={generatedAudio}
-                            onSelectImage={setEditingImage} // Mengganti onViewImage
+                            onSelectImage={setEditingImage}
                             showToast={showToast}
                         />
                         
