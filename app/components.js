@@ -458,10 +458,16 @@ export const GeneratedContentDisplay = ({
                                 }} className="w-32 text-xs" />
                             )}
                             <input type="color" value={pendingWatermark.color} onChange={e => setPendingWatermark(w => ({...w, color: e.target.value}))} className="w-8 h-8 p-1 rounded-lg border" title="Warna watermark"/>
-                            <input type="range" min="1" max="50" value={pendingWatermark.size} onChange={e => setPendingWatermark(w => ({...w, size: Number(e.target.value)}))} className="w-16" title="Ukuran watermark"/>
-                            <input type="range" min="0.1" max="1" step="0.05" value={pendingWatermark.opacity} onChange={e => setPendingWatermark(w => ({...w, opacity: Number(e.target.value)}))} className="w-16" title="Opasitas watermark"/>
-                            <NeumorphicButton onClick={handleApplyWatermark} className="text-xs !p-2 bg-blue-500 text-white">Terapkan</NeumorphicButton>
-                            <NeumorphicButton onClick={handleRemoveWatermark} className="text-xs !p-2 bg-red-500 text-white">Hapus</NeumorphicButton>
+                            <div className="flex flex-col items-center">
+                                <label className="text-[10px] opacity-70">Ukuran</label>
+                                <input type="range" min="1" max="50" value={pendingWatermark.size} onChange={e => setPendingWatermark(w => ({...w, size: Number(e.target.value)}))} className="w-16" title="Ukuran watermark"/>
+                            </div>
+                            <div className="flex flex-col items-center">
+                                <label className="text-[10px] opacity-70">Opasitas</label>
+                                <input type="range" min="0.1" max="1" step="0.05" value={pendingWatermark.opacity} onChange={e => setPendingWatermark(w => ({...w, opacity: Number(e.target.value)}))} className="w-16" title="Opasitas watermark"/>
+                            </div>
+                            <NeumorphicButton onClick={handleApplyWatermark} className="text-xs !p-2 bg-primary-500 text-black dark:text-white dark:bg-primary-600">Terapkan</NeumorphicButton>
+                            <NeumorphicButton onClick={handleRemoveWatermark} className="text-xs !p-2 bg-red-400 text-black dark:text-white dark:bg-red-700">Hapus</NeumorphicButton>
                         </div>
                     </div>
                 </div>
@@ -617,7 +623,7 @@ export const GeneratedContentDisplay = ({
                                 <option value="hue-rotate(90deg)">Alien</option>
                                 <option value="brightness(1.5)">Terang</option>
                             </select>
-                            <NeumorphicButton onClick={() => setWatermark(w => ({...w, type: w.type === 'text' ? 'image' : 'text'}))} className="text-xs !p-2"><Move size={16}/> {watermark.type === 'text' ? 'Teks' : 'Gambar'}</NeumorphicButton>
+                            <NeumorphicButton onClick={() => setWatermark(w => ({...w, type: w.type === 'text' ? 'image' : 'text'}))} className="text-xs !p-2 text-black dark:text-white bg-gray-200 dark:bg-gray-700">{watermark.type === 'text' ? 'Teks' : 'Gambar'}</NeumorphicButton>
                             {watermark.type === 'text' ? (
                                 <input type="text" value={watermark.text} onChange={(e) => setWatermark(w => ({...w, text: e.target.value}))} placeholder="Watermark..." className="text-xs p-2 rounded-lg neumorphic-input border w-24" />
                             ) : (
@@ -637,13 +643,42 @@ export const GeneratedContentDisplay = ({
                                 }} className="w-32 text-xs" />
                             )}
                             <input type="color" value={watermark.color} onChange={(e) => setWatermark(w => ({...w, color: e.target.value}))} className="w-8 h-8 p-1 rounded-lg border" title="Warna watermark"/>
-                            <input type="range" min="1" max="50" value={watermark.size} onChange={(e) => setWatermark(w => ({...w, size: Number(e.target.value)}))} className="w-16" title="Ukuran watermark"/>
-                            <input type="range" min="0.1" max="1" step="0.05" value={watermark.opacity} onChange={(e) => setWatermark(w => ({...w, opacity: Number(e.target.value)}))} className="w-16" title="Opasitas watermark"/>
+                            <div className="flex flex-col items-center">
+                                <label className="text-[10px] opacity-70">Ukuran</label>
+                                <input type="range" min="1" max="50" value={watermark.size} onChange={(e) => setWatermark(w => ({...w, size: Number(e.target.value)}))} className="w-16" title="Ukuran watermark"/>
+                            </div>
+                            <div className="flex flex-col items-center">
+                                <label className="text-[10px] opacity-70">Opasitas</label>
+                                <input type="range" min="0.1" max="1" step="0.05" value={watermark.opacity} onChange={(e) => setWatermark(w => ({...w, opacity: Number(e.target.value)}))} className="w-16" title="Opasitas watermark"/>
+                            </div>
                         </div>
                     </div>
                 </div>
             )}
             {isZoomModalOpen && <ZoomModal imgUrl={zoomModalImg} onClose={handleCloseZoomModal} />}
+        </div>
+    );
+};
+
+// ===================== MODAL KONFIRMASI HAPUS =====================
+// ===================================================================
+// Modal Konfirmasi Hapus Riwayat
+// ===================================================================
+export const ConfirmDeleteModal = ({ isOpen, onClose, onDelete }) => {
+    if (!isOpen) return null;
+    return (
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4 animate-fade-in">
+            <div className="p-6 rounded-2xl w-full max-w-md flex flex-col gap-4 neumorphic-card" style={{ background: 'var(--bg-color)' }}>
+                <div className="flex justify-between items-center">
+                    <h2 className="text-xl font-bold">Hapus Riwayat?</h2>
+                    <NeumorphicButton onClick={onClose} className="!p-2"><X size={20} /></NeumorphicButton>
+                </div>
+                <div className="text-base opacity-80">Apakah Anda yakin ingin menghapus semua riwayat gambar? Tindakan ini tidak dapat dibatalkan.</div>
+                <div className="flex justify-end gap-4">
+                    <NeumorphicButton onClick={onClose}>Batal</NeumorphicButton>
+                    <NeumorphicButton onClick={onDelete} className="font-bold bg-red-500 dark:bg-red-700 text-black dark:text-white">Hapus</NeumorphicButton>
+                </div>
+            </div>
         </div>
     );
 };
