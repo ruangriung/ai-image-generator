@@ -636,6 +636,16 @@ export default function AIImageGenerator() {
                                         placeholder="Ketik ide gambarmu di sini..."
                                         className="w-full p-3 rounded-lg neumorphic-input resize-none pr-10 h-28"
                                     />
+{prompt && (
+                                        <button
+                                            aria-label="Bersihkan prompt"
+                                            onClick={handleClearPrompt}
+                                            className="absolute top-2 right-2 text-gray-400 hover:text-red-500 transition-colors"
+                                            title="Bersihkan Prompt"
+                                        >
+                                            <Eraser size={18} />
+                                        </button>
+                                    )}
                                     <button
                                         aria-label="Perluas prompt di modal"
                                         onClick={() => setIsPromptModalOpen(true)}
