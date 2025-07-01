@@ -11,7 +11,6 @@ import {
 
 import { 
     Spinner, NeumorphicButton, Toasts, 
-    InlineImageEditor,
     GeneratedContentDisplay,
     CollapsibleSection, ImageAnalysisModal, PromptEditModal 
 } from './components.js';
@@ -39,6 +38,7 @@ export default function AIImageGenerator() {
   const [savedPrompts, setSavedPrompts] = useState([]);
   
   const [editingImage, setEditingImage] = useState(null); 
+  const [selectedHistoryImage, setSelectedHistoryImage] = useState(null);
 
   const [toasts, setToasts] = useState([]);
   const [isAnalysisModalOpen, setIsAnalysisModalOpen] = useState(false);
@@ -433,11 +433,15 @@ export default function AIImageGenerator() {
 
   const handleClearHistory = () => { setGenerationHistory([]); setSavedPrompts([]); setIsClearHistoryModalOpen(false); showToast('Semua riwayat telah dihapus.', 'success'); };
   
-  const handleUsePromptAndSeed = (p, s) => {
+  const handleUsePromptAndSeed = (p, s, imgObj) => {
     setPrompt(p);
     setSeed(String(s));
     setActiveTab('image');
     setEditingImage(null);
+    // Jika ada gambar dari riwayat, tampilkan di area hasil
+    if (imgObj && imgObj.url) {
+      setGeneratedImages([imgObj]);
+    }
     showToast('Prompt & Seed dimuat.', 'success');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -454,61 +458,55 @@ export default function AIImageGenerator() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleDownload = (image, filter, watermark) => {
-    const mainImage = new Image();
-    mainImage.crossOrigin = 'anonymous';
-    mainImage.src = image.url;
-
-    mainImage.onload = () => {
-        const canvas = canvasRef.current;
+  const handleDownload = async (image, filter, watermark) => {
+    try {
+      const img = new window.Image();
+      img.crossOrigin = 'anonymous';
+      img.src = image.url;
+      img.onload = async () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
         const ctx = canvas.getContext('2d');
-        canvas.width = mainImage.width;
-        canvas.height = mainImage.height;
-
-        if (filter) ctx.filter = filter;
-        ctx.drawImage(mainImage, 0, 0);
+        // Terapkan filter dasar
+        ctx.filter = filter !== 'none' ? filter : 'none';
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
         ctx.filter = 'none';
-
-        const finalizeDownload = () => {
-            const link = document.createElement('a');
-            link.download = `ruangriung-ai-${Date.now()}.png`;
-            link.href = canvas.toDataURL('image/png');
-            link.click();
-            showToast('Gambar diunduh...', 'success');
-        };
-
+        // Tambahkan watermark jika ada
         if (watermark && (watermark.text || watermark.imageUrl)) {
-            ctx.globalAlpha = watermark.opacity;
-            const x = (watermark.position.x / 100) * canvas.width;
-            const y = (watermark.position.y / 100) * canvas.height;
-
-            if (watermark.type === 'text' && watermark.text) {
-                const fontSize = (watermark.size / 100) * (canvas.width * 0.2);
-                ctx.font = `bold ${fontSize}px Arial`;
-                ctx.fillStyle = watermark.color;
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText(watermark.text, x, y);
-                finalizeDownload();
-            } else if (watermark.type === 'image' && watermark.imageUrl) {
-                const wmImage = new Image();
-                wmImage.crossOrigin = 'anonymous';
-                wmImage.src = watermark.imageUrl;
-                wmImage.onload = () => {
-                    const wmWidth = (watermark.size / 100) * canvas.width;
-                    const wmHeight = wmImage.height * (wmWidth / wmImage.width);
-                    ctx.drawImage(wmImage, x - wmWidth / 2, y - wmHeight / 2, wmWidth, wmHeight);
-                    finalizeDownload();
-                };
-                wmImage.onerror = () => { showToast('Gagal memuat gambar watermark.', 'error'); finalizeDownload(); };
-            } else {
-                finalizeDownload();
-            }
-        } else {
-            finalizeDownload();
+          ctx.save();
+          ctx.globalAlpha = watermark.opacity || 0.7;
+          const posX = (watermark.position?.x ?? 50) / 100 * canvas.width;
+          const posY = (watermark.position?.y ?? 50) / 100 * canvas.height;
+          if (watermark.type === 'text' && watermark.text) {
+            ctx.font = `bold ${Math.round((watermark.size || 8) * canvas.height / 100)}px sans-serif`;
+            ctx.fillStyle = watermark.color || '#fff';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.shadowColor = '#000';
+            ctx.shadowBlur = 4;
+            ctx.fillText(watermark.text, posX, posY);
+          } else if (watermark.type === 'image' && watermark.imageUrl) {
+            const wmImg = new window.Image();
+            wmImg.crossOrigin = 'anonymous';
+            wmImg.src = watermark.imageUrl;
+            await new Promise((resolve) => { wmImg.onload = resolve; });
+            const wmWidth = (watermark.size || 8) * 2 * (canvas.width / 100);
+            const wmHeight = wmImg.naturalHeight / wmImg.naturalWidth * wmWidth;
+            ctx.drawImage(wmImg, posX - wmWidth/2, posY - wmHeight/2, wmWidth, wmHeight);
+          }
+          ctx.restore();
         }
-    };
-    mainImage.onerror = () => { showToast('Gagal memuat gambar utama untuk diunduh.', 'error'); };
+        // Unduh hasil
+        const link = document.createElement('a');
+        link.download = `ai-image-${image.seed || Date.now()}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+      };
+      img.onerror = () => showToast('Gagal memuat gambar untuk diunduh.', 'error');
+    } catch (e) {
+      showToast('Gagal mengunduh gambar.', 'error');
+    }
   };
 
   if (!isMounted) return <div className="min-h-screen flex items-center justify-center bg-gray-100"><Spinner/></div>;
@@ -798,7 +796,7 @@ export default function AIImageGenerator() {
                             {activeTab === 'video' && <div className="space-y-4"><label className="font-semibold block text-xl">Asisten Prompt Video</label><div><label className="text-sm font-semibold">Konsep Utama Video</label><textarea name="concept" value={videoParams.concept} onChange={handleVideoParamsChange} placeholder="Cth: Detektif cyberpunk di gang neon..." className="w-full p-3 mt-1 rounded-lg neumorphic-input h-28 resize-none"/></div><CollapsibleSection title="Basic Settings" icon={<SlidersHorizontal size={18}/>}><div className="grid grid-cols-2 gap-4"><div><label className="text-sm font-semibold">Gaya Visual</label><select name="visualStyle" value={videoParams.visualStyle} onChange={handleVideoParamsChange} className="w-full p-2 mt-1 rounded-lg neumorphic-input text-sm bg-[var(--bg-color)]">{["Cinematic", "Anime", "Photorealistic", "Watercolor", "Pixel Art", "Cyberpunk", "Retro", "Futuristic"].map(o=><option key={o} value={o.toLowerCase().replace(/ /g, "-")}>{o}</option>)}</select></div><div><label className="text-sm font-semibold">Durasi (s)</label><input type="number" name="duration" value={videoParams.duration} onChange={handleVideoParamsChange} className="w-full p-2 mt-1 rounded-lg neumorphic-input text-sm"/></div><div><label className="text-sm font-semibold">Aspek Rasio</label><select name="aspectRatio" value={videoParams.aspectRatio} onChange={handleVideoParamsChange} className="w-full p-2 mt-1 rounded-lg neumorphic-input text-sm bg-[var(--bg-color)]">{["16:9", "9:16", "1:1", "4:3", "21:9"].map(o=><option key={o} value={o}>{o}</option>)}</select></div><div><label className="text-sm font-semibold">Frame Rate</label><select name="fps" value={videoParams.fps} onChange={handleVideoParamsChange} className="w-full p-2 mt-1 rounded-lg neumorphic-input text-sm bg-[var(--bg-color)]">{[24, 30, 60, 120].map(o=><option key={o} value={o}>{o} fps</option>)}</select></div></div></CollapsibleSection><CollapsibleSection title="Cinematography" icon={<Camera size={18}/>}><div className="grid grid-cols-2 gap-4"><div><label className="text-sm font-semibold">Gerakan Kamera</label><select name="cameraMovement" value={videoParams.cameraMovement} onChange={handleVideoParamsChange} className="w-full p-2 mt-1 rounded-lg neumorphic-input text-sm bg-[var(--bg-color)]">{["Static", "Slow Pan", "Dolly", "Tracking", "Crane", "Steadycam", "Handheld", "Drone"].map(o=><option key={o} value={o.toLowerCase().replace(/ /g, "-")}>{o}</option>)}</select></div><div><label className="text-sm font-semibold">Sudut Kamera</label><select name="cameraAngle" value={videoParams.cameraAngle} onChange={handleVideoParamsChange} className="w-full p-2 mt-1 rounded-lg neumorphic-input text-sm bg-[var(--bg-color)]">{["Eye Level", "Low Angle", "High Angle", "Dutch Angle", "Overhead", "Point of View"].map(o=><option key={o} value={o.toLowerCase().replace(/ /g, "-")}>{o}</option>)}</select></div><div><label className="text-sm font-semibold">Tipe Lensa</label><select name="lensType" value={videoParams.lensType} onChange={handleVideoParamsChange} className="w-full p-2 mt-1 rounded-lg neumorphic-input text-sm bg-[var(--bg-color)]">{["Standard (50mm)", "Wide Angle (24mm)", "Telephoto (85mm+)", "Fisheye", "Anamorphic", "Macro"].map(o=><option key={o} value={o.toLowerCase().replace(/ /g, "-")}>{o}</option>)}</select></div><div><label className="text-sm font-semibold">Depth of Field</label><select name="depthOfField" value={videoParams.depthOfField} onChange={handleVideoParamsChange} className="w-full p-2 mt-1 rounded-lg neumorphic-input text-sm bg-[var(--bg-color)]">{["Shallow", "Medium", "Deep"].map(o=><option key={o} value={o.toLowerCase()}>{o}</option>)}</select></div></div></CollapsibleSection><CollapsibleSection title="Visual Effects" icon={<Sparkles size={18}/>}><div><label className="text-sm font-semibold">Film Grain ({videoParams.filmGrain}%)</label><input type="range" name="filmGrain" value={videoParams.filmGrain} onChange={handleVideoParamsChange} min="0" max="100" className="w-full"/></div><div><label className="text-sm font-semibold">Chromatic Aberration ({videoParams.chromaticAberration}%)</label><input type="range" name="chromaticAberration" value={videoParams.chromaticAberration} onChange={handleVideoParamsChange} min="0" max="100" className="w-full"/></div></CollapsibleSection><CollapsibleSection title="Mood & Atmosphere" icon={<CloudSun size={18}/>}><div className="grid grid-cols-2 gap-4"><div><label className="text-sm font-semibold">Waktu</label><select name="timeOfDay" value={videoParams.timeOfDay} onChange={handleVideoParamsChange} className="w-full p-2 mt-1 rounded-lg neumorphic-input text-sm bg-[var(--bg-color)]">{["Golden Hour", "Blue Hour", "Midday", "Night", "Sunrise", "Sunset", "Twilight"].map(o=><option key={o} value={o.toLowerCase().replace(/ /g, "-")}>{o}</option>)}</select></div><div><label className="text-sm font-semibold">Cuaca</label><select name="weather" value={videoParams.weather} onChange={handleVideoParamsChange} className="w-full p-2 mt-1 rounded-lg neumorphic-input text-sm bg-[var(--bg-color)]">{["Clear", "Cloudy", "Rainy", "Foggy", "Snowy", "Stormy"].map(o=><option key={o} value={o.toLowerCase()}>{o}</option>)}</select></div></div></CollapsibleSection><NeumorphicButton onClick={handleBuildVideoPrompt} loading={isBuildingPrompt} loadingText="Membangun..." className="w-full !mt-6 font-bold text-lg"><Sparkles size={18}/>Buat Prompt Video</NeumorphicButton></div>}
                             {activeTab === 'audio' && <div className="space-y-4"><label className="font-semibold block text-xl">Teks untuk Audio</label><div className="relative"><textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder="Ketik kalimat untuk diubah jadi suara..." className="w-full p-3 rounded-lg neumorphic-input h-28 resize-none pr-10"/><button onClick={() => setPrompt('')} className="absolute top-2 right-2 text-gray-400 hover:text-gray-600"><X size={18}/></button></div><div><label className="font-semibold block mb-2">Pilih Suara</label><select value={audioVoice} onChange={(e) => setAudioVoice(e.target.value)} className="w-full p-3 rounded-lg neumorphic-input bg-[var(--bg-color)]"><option value="alloy">Alloy</option><option value="echo">Echo</option><option value="fable">Fable</option><option value="onyx">Onyx</option><option value="nova">Nova</option><option value="shimmer">Shimmer</option></select></div><NeumorphicButton onClick={handleGenerate} loading={loading} loadingText="Membuat Audio..." className="w-full font-bold text-lg"><Sparkles size={18}/>Generate</NeumorphicButton></div>}
                         </div>
-                        <div className="p-6 rounded-2xl h-fit space-y-4 neumorphic-card">
+                        <div className="p-6 rounded-2xl h-fit neumorphic-card">
                             <h3 className="font-bold text-lg">Buat Prompt dari Gambar</h3>
                             <NeumorphicButton onClick={() => setIsAnalysisModalOpen(true)} className="w-full"><Upload size={16} /> Analisis Gambar</NeumorphicButton>
                         </div>
@@ -810,28 +808,20 @@ export default function AIImageGenerator() {
                             generatedImages={generatedImages}
                             generatedVideoPrompt={generatedVideoPrompt}
                             generatedAudio={generatedAudio}
-                            onSelectImage={setEditingImage}
+                            onUsePromptAndSeed={handleUsePromptAndSeed}
+                            onCreateVariation={handleCreateVariation}
+                            onDownload={handleDownload}
                             showToast={showToast}
+                            selectedHistoryImage={selectedHistoryImage}
                         />
                         
-                        {editingImage && (
-                            <InlineImageEditor
-                                image={editingImage}
-                                onClose={() => setEditingImage(null)}
-                                onUsePromptAndSeed={handleUsePromptAndSeed}
-                                onCreateVariation={handleCreateVariation}
-                                onDownload={handleDownload}
-                                showToast={showToast}
-                            />
-                        )}
-
                         <div className="p-6 rounded-2xl h-fit neumorphic-card">
                              <div className="flex justify-between items-center mb-4">
                                 <h3 className="text-xl font-bold flex items-center gap-2"><History size={20}/> Riwayat & Favorit</h3>
                                 <NeumorphicButton onClick={() => setIsClearHistoryModalOpen(true)} className="!p-2" title="Hapus Riwayat & Favorit"><Trash2 size={16}/></NeumorphicButton>
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div><h4 className="font-semibold mb-2">Riwayat Gambar</h4><div className="max-h-96 overflow-y-auto space-y-2 pr-2">{generationHistory.length === 0 ? <p className="text-sm opacity-60">Kosong</p> : generationHistory.map((h) => (<div key={h.date} className="flex items-center gap-2 p-2 rounded-lg" style={{boxShadow:'var(--shadow-inset)'}}><img src={h.url} className="w-16 h-16 rounded-md object-cover cursor-pointer flex-shrink-0" onClick={() => setEditingImage(h)}/><p className="text-xs line-clamp-3 flex-grow cursor-pointer" onClick={() => setEditingImage(h)}>{h.prompt}</p><NeumorphicButton aria-label={`Hapus riwayat untuk prompt: ${h.prompt.substring(0, 30)}...`} onClick={() => setGenerationHistory(prev => prev.filter(item => item.date !== h.date))} className="!p-2 flex-shrink-0"><Trash2 size={14}/></NeumorphicButton></div>))}</div></div>
+                                <div><h4 className="font-semibold mb-2">Riwayat Gambar</h4><div className="max-h-96 overflow-y-auto space-y-2 pr-2">{generationHistory.length === 0 ? <p className="text-sm opacity-60">Kosong</p> : generationHistory.map((h) => (<div key={h.date} className="flex items-center gap-2 p-2 rounded-lg" style={{boxShadow:'var(--shadow-inset)'}}><img src={h.url} className="w-16 h-16 rounded-md object-cover cursor-pointer flex-shrink-0" onClick={() => { setSelectedHistoryImage(h); setGeneratedImages([]); setEditingImage(null); window.scrollTo({ top: 0, behavior: 'smooth' }); }}/><p className="text-xs line-clamp-3 flex-grow cursor-pointer" onClick={() => { setSelectedHistoryImage(h); setGeneratedImages([]); setEditingImage(null); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>{h.prompt}</p><NeumorphicButton aria-label={`Hapus riwayat untuk prompt: ${h.prompt.substring(0, 30)}...`} onClick={() => setGenerationHistory(prev => prev.filter(item => item.date !== h.date))} className="!p-2 flex-shrink-0"><Trash2 size={14}/></NeumorphicButton></div>))}</div></div>
                                 <div><h4 className="font-semibold mb-2">Prompt Favorit</h4><div className="max-h-96 overflow-y-auto space-y-2 pr-2">{savedPrompts.length === 0 ? <p className="text-sm opacity-60">Kosong</p> : savedPrompts.map((p) => (<div key={p.date} className="flex items-center gap-2 p-2 rounded-lg" style={{boxShadow:'var(--shadow-inset)'}}><p className="text-sm flex-grow truncate">{p.prompt}</p><NeumorphicButton onClick={() => setPrompt(p.prompt)} className="!p-1.5"><ChevronsRight size={14}/></NeumorphicButton><NeumorphicButton aria-label={`Hapus favorit: ${p.prompt.substring(0, 30)}...`} onClick={() => setSavedPrompts(prev => prev.filter(sp => sp.date !== p.date))} className="!p-1.5"><Trash2 size={14}/></NeumorphicButton></div>))}</div></div>
                             </div>
                         </div>
