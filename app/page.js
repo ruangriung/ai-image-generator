@@ -672,27 +672,18 @@ export default function AIImageGenerator() {
 
       <style jsx global>{`
           :root {
-            --bg-color: #f5f7fa; /* Lebih terang, kontras lebih baik */
-            --text-color: #18181b; /* Lebih gelap, kontras lebih baik */
-            --primary-btn-bg: #2563eb;
-            --primary-btn-text: #fff;
-            --danger-btn-bg: #dc2626;
-            --danger-btn-text: #fff;
+            --bg-color: #e0e0e0;
+            --text-color: #313131;
             --shadow-light: #ffffff;
             --shadow-dark: #bebebe;
-            --touch-target: 44px;
-            --touch-gap: 8px;
-            --focus-outline: 2px solid #2563eb;
+            --shadow-outset: 6px 6px 12px var(--shadow-dark), -6px -6px 12px var(--shadow-light);
+            --shadow-inset: inset 6px 6px 12px var(--shadow-dark), inset -6px -6px 12px var(--shadow-light);
           }
           .dark {
-            --bg-color: #18181b;
-            --text-color: #f5f7fa;
-            --primary-btn-bg: #60a5fa;
-            --primary-btn-text: #18181b;
-            --danger-btn-bg: #f87171;
-            --danger-btn-text: #18181b;
-            --shadow-light: #23272f;
-            --shadow-dark: #111827;
+            --bg-color: #3a3a3a;
+            --text-color: #e0e0e0;
+            --shadow-light: #464646;
+            --shadow-dark: #2e2e2e;
           }
           .neumorphic-input, .neumorphic-select, .neumorphic-card {
             background: var(--bg-color);
@@ -706,30 +697,15 @@ export default function AIImageGenerator() {
             box-shadow: var(--shadow-inset);
             border: none;
           }
+          /* A11y improvement: target sentuh & outline */
           button, .neumorphic-btn, .neumorphic-button, .neumorphicButton {
-            min-width: var(--touch-target);
-            min-height: var(--touch-target);
-            padding: 0.75rem 1rem;
-            font-size: 1rem;
-            border-radius: 0.75rem;
-            margin: var(--touch-gap) 0;
+            min-width: 44px;
+            min-height: 44px;
             outline: none;
-            transition: background 0.2s, color 0.2s, box-shadow 0.2s;
           }
           button:focus, .neumorphic-btn:focus, .neumorphic-button:focus, .neumorphicButton:focus {
-            outline: var(--focus-outline);
+            outline: 2px solid #2563eb;
             outline-offset: 2px;
-          }
-          .primary-btn {
-            background: var(--primary-btn-bg);
-            color: var(--primary-btn-text);
-          }
-          .danger-btn {
-            background: var(--danger-btn-bg);
-            color: var(--danger-btn-text);
-          }
-          .neumorphic-btn + .neumorphic-btn, .neumorphic-button + .neumorphic-button {
-            margin-left: var(--touch-gap);
           }
           @keyframes fade-in-up { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
           @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
