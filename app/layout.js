@@ -1,10 +1,11 @@
+// File: app/layout.js
+
 import { Inter } from 'next/font/google';
 import './globals.css';
-import { SpeedInsights } from "@vercel/speed-insights/next"; // <-- 1. TAMBAHKAN BARIS INI
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 const inter = Inter({ subsets: ['latin'] });
 
-// Metadata untuk SEO
 export const metadata = {
   manifest: "/manifest.json",
   title: 'RuangRiung AI Image Generator - Create Stunning Digital Art',
@@ -37,12 +38,15 @@ export const metadata = {
     statusBarStyle: '#000000',
     capable: 'yes',
   },
+  // ✅ PERBAIKAN: Tambahkan meta tag yang direkomendasikan
+  mobileWebApp: {
+    capable: 'yes',
+  },
   msapplication: {
     navbuttonColor: '#000000',
   },
 };
 
-// Pengaturan Viewport, termasuk theme-color
 export const viewport = {
   themeColor: '#000000',
 };
@@ -51,12 +55,11 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <head>
-        {/* TAMBAHKAN BARIS INI UNTUK IKON FONT AWESOME */}
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossOrigin="anonymous" referrerPolicy="no-referrer" />
       </head>
       <body className={inter.className}>
         {children}
-        <SpeedInsights /> {/* <-- 2. TAMBAHKAN BARIS INI */}
+        <SpeedInsights />
       </body>
     </html>
   )

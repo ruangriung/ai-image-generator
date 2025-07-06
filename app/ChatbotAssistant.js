@@ -3,11 +3,10 @@
 "use client";
 
 import { useEffect } from 'react';
-import './Chatbot.css'; // Impor CSS yang baru kita buat
+import './Chatbot.css'; // Impor CSS
 
 const ChatbotAssistant = () => {
   useEffect(() => {
-    // Pastikan kode hanya berjalan di client-side
     if (typeof window !== 'undefined' && !window.rrAssistantInstance) {
       
       class RRAssistant {
@@ -45,7 +44,6 @@ const ChatbotAssistant = () => {
           this.chatContainer.className = 'rr-assistant-container';
           this.chatContainer.style.display = 'none';
           
-          // Create header
           const header = document.createElement('div');
           header.className = 'rr-assistant-header';
           header.innerHTML = `
@@ -57,17 +55,14 @@ const ChatbotAssistant = () => {
             </div>
           `;
           
-          // Create close button
           this.closeButton = document.createElement('button');
           this.closeButton.className = 'rr-assistant-close';
           this.closeButton.innerHTML = '<i class="fas fa-times"></i>';
           header.appendChild(this.closeButton);
           
-          // Create messages container
           this.chatMessages = document.createElement('div');
           this.chatMessages.className = 'rr-assistant-messages';
           
-          // Create input container
           const inputContainer = document.createElement('div');
           inputContainer.className = 'rr-assistant-input-container';
 
@@ -111,7 +106,6 @@ const ChatbotAssistant = () => {
           inputContainer.appendChild(this.chatTextarea);
           inputContainer.appendChild(sendButtonContainer);
           
-          
           this.chatContainer.appendChild(header);
           this.chatContainer.appendChild(this.chatMessages);
           this.chatContainer.appendChild(inputContainer);
@@ -125,10 +119,8 @@ const ChatbotAssistant = () => {
 
         async fetchAvailableModels() {
           try {
-            // MODIFIKASI: Panggil rute proxy
-            const response = await fetch('/api/proxy', {
-                method: 'GET' // Asumsi proxy bisa handle GET untuk /models
-            });
+            // ✅ PERBAIKAN: Panggil API eksternal langsung karena tidak butuh token
+            const response = await fetch('https://text.pollinations.ai/models');
             if (!response.ok) {
               throw new Error('Failed to fetch models');
             }
@@ -235,7 +227,7 @@ const ChatbotAssistant = () => {
 
         removeUploadedFile(fileToRemove) {
           this.uploadedFiles = this.uploadedFiles.filter(f => f !== fileToRemove);
-          this.handleFileUpload({ target: { files: this.uploadedFiles } }); // Re-render previews
+          this.handleFileUpload({ target: { files: this.uploadedFiles } });
         }
 
         async sendMessage() {
@@ -270,7 +262,6 @@ const ChatbotAssistant = () => {
             const currentMsgs = this.getCurrentMessages();
             if(message) currentMsgs.push({ role: 'user', content: message });
 
-
             try {
                 if (hasFiles) {
                     const content = [{ type: "text", text: message }];
@@ -278,7 +269,7 @@ const ChatbotAssistant = () => {
                         const base64Image = await this.fileToBase64(file);
                         content.push({ type: "image_url", image_url: { url: base64Image } });
                     }
-                    currentMsgs.pop(); // remove simple text message
+                    currentMsgs.pop(); 
                     currentMsgs.push({ role: 'user', content });
                 }
 
@@ -298,7 +289,7 @@ const ChatbotAssistant = () => {
         }
 
         async streamChatCompletion(messages, thinkingId) {
-            // MODIFIKASI: Panggil rute proxy internal
+            // ✅ PERBAIKAN: Panggil rute proxy internal
             const url = "/api/proxy";
             const payload = { model: "gpt-4-vision", messages, stream: true };
 
@@ -467,7 +458,7 @@ const ChatbotAssistant = () => {
         showSavedConversations() {
             const modal = document.createElement('div');
             modal.className = 'rr-assistant-modal';
-            modal.innerHTML = `<div class="rr-assistant-modal-content">...</div>`;
+            modal.innerHTML = `<div class="rr-assistant-modal-content">...</div>`; // simplified
             document.body.appendChild(modal);
         }
         
@@ -502,7 +493,7 @@ const ChatbotAssistant = () => {
           }, 2000);
         }
       }
-
+      
       window.rrAssistantInstance = new RRAssistant();
     }
   }, []);
