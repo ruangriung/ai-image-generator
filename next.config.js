@@ -11,6 +11,10 @@ const withPWA = require("next-pwa")({
 // Konfigurasi Next.js Anda
 const nextConfig = {
   // Tambahkan konfigurasi Next.js lainnya di sini jika ada
+  env: {
+    POLLINATIONS_API_TOKEN: process.env.POLLINATIONS_API_TOKEN,
+    // tambahkan env lain jika perlu
+  },
 };
 
 // Gabungkan konfigurasi PWA dengan konfigurasi Next.js
