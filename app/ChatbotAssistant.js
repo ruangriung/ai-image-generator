@@ -39,7 +39,6 @@ const ChatbotAssistant = () => {
         }
 
         createUI() {
-          // Create main container
           this.chatContainer = document.createElement('div');
           this.chatContainer.className = 'rr-assistant-container';
           this.chatContainer.style.display = 'none';
@@ -119,7 +118,6 @@ const ChatbotAssistant = () => {
 
         async fetchAvailableModels() {
           try {
-            // ✅ PERBAIKAN: Panggil API eksternal langsung karena tidak butuh token
             const response = await fetch('https://text.pollinations.ai/models');
             if (!response.ok) {
               throw new Error('Failed to fetch models');
@@ -289,9 +287,9 @@ const ChatbotAssistant = () => {
         }
 
         async streamChatCompletion(messages, thinkingId) {
-            // ✅ PERBAIKAN: Panggil rute proxy internal
             const url = "/api/proxy";
-            const payload = { model: "gpt-4-vision", messages, stream: true };
+            // ✅ PERBAIKAN: Gunakan 'openai' sebagai nama model
+            const payload = { model: "openai", messages, stream: true };
 
             try {
                 const response = await fetch(url, {
@@ -458,15 +456,13 @@ const ChatbotAssistant = () => {
         showSavedConversations() {
             const modal = document.createElement('div');
             modal.className = 'rr-assistant-modal';
-            modal.innerHTML = `<div class="rr-assistant-modal-content">...</div>`; // simplified
+            modal.innerHTML = `<div class="rr-assistant-modal-content">...</div>`;
             document.body.appendChild(modal);
         }
         
-        loadConversation(conversationId) {
-        }
+        loadConversation(conversationId) {}
 
-        deleteConversation(conversationId) {
-        }
+        deleteConversation(conversationId) {}
         
         clearCurrentConversation() {
             if (!this.currentConversationId) return;

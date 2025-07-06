@@ -8,7 +8,7 @@ import {
     ImageDown, Bookmark, Trash2, History, Star, Upload,
     ChevronDown, ChevronUp, Sparkles, Image as ImageIcon, Video, Layers, Coins, Clock,
     Eye, EyeOff, Copy, AudioLines, SlidersHorizontal, Camera, CloudSun, KeyRound, Check,
-    MessageSquare, Download, Dices, Maximize2, Eraser // Ikon Eraser ditambahkan
+    MessageSquare, Download, Dices, Maximize2, Eraser
 } from 'lucide-react';
 
 import { 
@@ -98,12 +98,12 @@ export default function AIImageGenerator() {
   const fetchAiSuggestions = useCallback(async () => {
     setIsFetchingSuggestions(true);
     try {
-        // MODIFIKASI: Panggil rute proxy internal kita
         const res = await fetch('/api/proxy', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                model: 'gpt-3.5-turbo',
+                // ✅ PERBAIKAN: Gunakan 'openai' sebagai nama model
+                model: 'openai', 
                 seed: Math.floor(Math.random() * 1000000), 
                 messages: [{
                     role: 'system',
@@ -327,13 +327,13 @@ export default function AIImageGenerator() {
         return; 
     } 
     setIsEnhancing(true); 
-    try { 
-        // MODIFIKASI: Panggil API proxy
-        const res = await fetch('/api/proxy', { 
+    try {
+        const res = await fetch('/api/proxy', {
             method: 'POST', 
             headers: { 'Content-Type': 'application/json' }, 
-            body: JSON.stringify({ 
-                model: 'gpt-3.5-turbo', 
+            body: JSON.stringify({
+                // ✅ PERBAIKAN: Gunakan 'openai' sebagai nama model
+                model: 'openai', 
                 messages: [{ 
                     role: 'system', 
                     content: 'Rewrite the user prompt to be more vivid and artistic for an AI image generator. Respond only with the enhanced prompt.' 
@@ -412,22 +412,22 @@ export default function AIImageGenerator() {
   
   const handleGenerateAudio = async () => { 
     setGeneratedAudio(null); 
-    try { 
-        // MODIFIKASI: Panggil API proxy untuk audio
-        const res = await fetch('/api/proxy', { 
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                model: 'openai-audio',
-                voice: audioVoice,
-                messages: [{ role: 'user', content: prompt }]
-            })
-        }); 
-        if (!res.ok) throw new Error(`Gagal membuat audio (status: ${res.status})`); 
+    try {
+        // ✅ PERBAIKAN: Gunakan metode GET langsung sesuai dokumentasi
+        const encodedPrompt = encodeURIComponent(prompt);
+        const url = `https://text.pollinations.ai/${encodedPrompt}?model=openai-audio&voice=${audioVoice}`;
         
-        // Respons dari proxy untuk audio mungkin perlu penyesuaian
-        // Asumsi proxy mengembalikan audio blob jika sukses
-        const blob = await res.blob(); 
+        const res = await fetch(url);
+
+        if (!res.ok) {
+            throw new Error(`Gagal membuat audio (status: ${res.status})`);
+        }
+        
+        const blob = await res.blob();
+        if (blob.type !== 'audio/mpeg') {
+            throw new Error('Respons yang diterima bukan file audio.');
+        }
+
         setGeneratedAudio(URL.createObjectURL(blob)); 
         setCoins(c => Math.max(0, c - 1)); 
         showToast(`Audio berhasil dibuat! Sisa koin: ${coins - 1}`, 'success'); 
@@ -446,12 +446,12 @@ export default function AIImageGenerator() {
       setGeneratedVideoPrompt(''); 
       try { 
           const userInput = `Main subject: ${promptCreator.subject}. Additional details: ${promptCreator.details || 'None'}.`; 
-          // MODIFIKASI: Panggil API proxy
-          const res = await fetch('/api/proxy', { 
+          const res = await fetch('/api/proxy', {
               method: 'POST', 
               headers: { 'Content-Type': 'application/json' }, 
               body: JSON.stringify({ 
-                  model: 'gpt-3.5-turbo', 
+                  // ✅ PERBAIKAN: Gunakan 'openai' sebagai nama model
+                  model: 'openai', 
                   messages: [ { 
                       role: 'system', 
                       content: 'You are a prompt engineer who creates detailed, artistic prompts for image generation. Respond only with the final prompt.' 
@@ -487,12 +487,12 @@ export default function AIImageGenerator() {
       setGeneratedImagePrompt(''); 
       const allParams = Object.entries(videoParams).map(([key, value]) => (value ? `${key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}: ${value}` : null)).filter(Boolean).join('. '); 
       try { 
-          // MODIFIKASI: Panggil API proxy
           const res = await fetch('/api/proxy', { 
               method: 'POST', 
               headers: { 'Content-Type': 'application/json' }, 
               body: JSON.stringify({ 
-                  model: 'gpt-3.5-turbo', 
+                  // ✅ PERBAIKAN: Gunakan 'openai' sebagai nama model
+                  model: 'openai', 
                   messages: [ { 
                       role: 'system', 
                       content: 'You are a professional cinematographer. Based on these parameters, write a complete, coherent, and inspiring video prompt for a text-to-video AI. Combine all elements into a natural paragraph.' 
@@ -568,7 +568,6 @@ export default function AIImageGenerator() {
     setSeed(String(s));
     setActiveTab('image');
     setEditingImage(null);
-    // Jika ada gambar dari riwayat, tampilkan di area hasil
     if (imgObj && imgObj.url) {
       setGeneratedImages([imgObj]);
     }
@@ -598,11 +597,9 @@ export default function AIImageGenerator() {
         canvas.width = img.naturalWidth;
         canvas.height = img.naturalHeight;
         const ctx = canvas.getContext('2d');
-        // Terapkan filter dasar
         ctx.filter = filter !== 'none' ? filter : 'none';
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
         ctx.filter = 'none';
-        // Tambahkan watermark jika ada
         if (watermark && (watermark.text || watermark.imageUrl)) {
           ctx.save();
           ctx.globalAlpha = watermark.opacity || 0.7;
@@ -627,7 +624,6 @@ export default function AIImageGenerator() {
           }
           ctx.restore();
         }
-        // Unduh hasil
         const link = document.createElement('a');
         link.download = `ai-image-${image.seed || Date.now()}.png`;
         link.href = canvas.toDataURL('image/png');
