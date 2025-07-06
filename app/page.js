@@ -1,3 +1,5 @@
+// File: app/page.js
+
 "use client";
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
@@ -96,7 +98,8 @@ export default function AIImageGenerator() {
   const fetchAiSuggestions = useCallback(async () => {
     setIsFetchingSuggestions(true);
     try {
-        const res = await fetch('https://text.pollinations.ai/openai', {
+        // MODIFIKASI: Panggil rute proxy internal kita
+        const res = await fetch('/api/proxy', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -318,7 +321,43 @@ export default function AIImageGenerator() {
   
   const handleApiKeySubmit = () => { if (tempApiKey.trim()) { setApiKey(tempApiKey); setModel(modelRequiringKey); showToast(`API Key tersimpan & model ${modelRequiringKey.toUpperCase()} dipilih.`, 'success'); setIsApiModalOpen(false); setTempApiKey(''); setModelRequiringKey(null); } else { showToast('API Key tidak boleh kosong.', 'error'); } };
   
-  const handleEnhancePrompt = async () => { if (!prompt.trim()) { showToast('Prompt tidak boleh kosong.', 'error'); return; } setIsEnhancing(true); try { const res = await fetch('https://text.pollinations.ai/openai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'gpt-3.5-turbo', messages: [{ role: 'system', content: 'Rewrite the user prompt to be more vivid and artistic for an AI image generator. Respond only with the enhanced prompt.' },{ role: 'user', content: prompt }] }) }); if (!res.ok) throw new Error(`API Error: ${res.statusText}`); const data = await res.json(); const enhanced = data.choices[0]?.message?.content; if (enhanced) { setPrompt(enhanced.trim()); showToast('Prompt berhasil disempurnakan!', 'success'); } else { throw new Error('Gagal memproses respons API.'); } } catch (err) { showToast(err.message, 'error'); } finally { setIsEnhancing(false); } };
+  const handleEnhancePrompt = async () => { 
+    if (!prompt.trim()) { 
+        showToast('Prompt tidak boleh kosong.', 'error'); 
+        return; 
+    } 
+    setIsEnhancing(true); 
+    try { 
+        // MODIFIKASI: Panggil API proxy
+        const res = await fetch('/api/proxy', { 
+            method: 'POST', 
+            headers: { 'Content-Type': 'application/json' }, 
+            body: JSON.stringify({ 
+                model: 'gpt-3.5-turbo', 
+                messages: [{ 
+                    role: 'system', 
+                    content: 'Rewrite the user prompt to be more vivid and artistic for an AI image generator. Respond only with the enhanced prompt.' 
+                },{ 
+                    role: 'user', 
+                    content: prompt 
+                }] 
+            }) 
+        }); 
+        if (!res.ok) throw new Error(`API Error: ${res.statusText}`); 
+        const data = await res.json(); 
+        const enhanced = data.choices[0]?.message?.content; 
+        if (enhanced) { 
+            setPrompt(enhanced.trim()); 
+            showToast('Prompt berhasil disempurnakan!', 'success'); 
+        } else { 
+            throw new Error('Gagal memproses respons API.'); 
+        } 
+    } catch (err) { 
+        showToast(err.message, 'error'); 
+    } finally { 
+        setIsEnhancing(false); 
+    } 
+  };
   
   const handleGenerate = async () => { 
     if (coins <= 0) {
@@ -374,8 +413,20 @@ export default function AIImageGenerator() {
   const handleGenerateAudio = async () => { 
     setGeneratedAudio(null); 
     try { 
-        const res = await fetch(`https://text.pollinations.ai/${encodeURIComponent(prompt)}?model=openai-audio&voice=${audioVoice}`); 
+        // MODIFIKASI: Panggil API proxy untuk audio
+        const res = await fetch('/api/proxy', { 
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                model: 'openai-audio',
+                voice: audioVoice,
+                messages: [{ role: 'user', content: prompt }]
+            })
+        }); 
         if (!res.ok) throw new Error(`Gagal membuat audio (status: ${res.status})`); 
+        
+        // Respons dari proxy untuk audio mungkin perlu penyesuaian
+        // Asumsi proxy mengembalikan audio blob jika sukses
         const blob = await res.blob(); 
         setGeneratedAudio(URL.createObjectURL(blob)); 
         setCoins(c => Math.max(0, c - 1)); 
@@ -385,9 +436,87 @@ export default function AIImageGenerator() {
     } 
   };
   
-  const handleBuildImagePrompt = async () => { if (!promptCreator.subject.trim()) { showToast('Subjek tidak boleh kosong.', 'error'); return; } setIsBuildingPrompt(true); setGeneratedImagePrompt(''); setGeneratedVideoPrompt(''); try { const userInput = `Main subject: ${promptCreator.subject}. Additional details: ${promptCreator.details || 'None'}.`; const res = await fetch('https://text.pollinations.ai/openai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'gpt-3.5-turbo', messages: [ { role: 'system', content: 'You are a prompt engineer who creates detailed, artistic prompts for image generation. Respond only with the final prompt.' }, { role: 'user', content: userInput }]}) }); if (!res.ok) throw new Error(`API Error: ${res.statusText}`); const data = await res.json(); const newPrompt = data.choices[0]?.message?.content; if (newPrompt) { setGeneratedImagePrompt(newPrompt.trim()); showToast('Prompt gambar dikembangkan oleh AI!', 'success'); } else { throw new Error('Gagal memproses respons API.'); } } catch (err) { showToast(err.message, 'error'); } finally { setIsBuildingPrompt(false); } };
+  const handleBuildImagePrompt = async () => { 
+      if (!promptCreator.subject.trim()) { 
+          showToast('Subjek tidak boleh kosong.', 'error'); 
+          return; 
+      } 
+      setIsBuildingPrompt(true); 
+      setGeneratedImagePrompt(''); 
+      setGeneratedVideoPrompt(''); 
+      try { 
+          const userInput = `Main subject: ${promptCreator.subject}. Additional details: ${promptCreator.details || 'None'}.`; 
+          // MODIFIKASI: Panggil API proxy
+          const res = await fetch('/api/proxy', { 
+              method: 'POST', 
+              headers: { 'Content-Type': 'application/json' }, 
+              body: JSON.stringify({ 
+                  model: 'gpt-3.5-turbo', 
+                  messages: [ { 
+                      role: 'system', 
+                      content: 'You are a prompt engineer who creates detailed, artistic prompts for image generation. Respond only with the final prompt.' 
+                  }, { 
+                      role: 'user', 
+                      content: userInput 
+                  }]
+              }) 
+          }); 
+          if (!res.ok) throw new Error(`API Error: ${res.statusText}`); 
+          const data = await res.json(); 
+          const newPrompt = data.choices[0]?.message?.content; 
+          if (newPrompt) { 
+              setGeneratedImagePrompt(newPrompt.trim()); 
+              showToast('Prompt gambar dikembangkan oleh AI!', 'success'); 
+          } else { 
+              throw new Error('Gagal memproses respons API.'); 
+          } 
+      } catch (err) { 
+          showToast(err.message, 'error'); 
+      } finally { 
+          setIsBuildingPrompt(false); 
+      } 
+  };
   
-  const handleBuildVideoPrompt = async () => { if (!videoParams.concept.trim()) { showToast('Konsep utama video tidak boleh kosong.', 'error'); return; } setIsBuildingPrompt(true); setGeneratedVideoPrompt(''); setGeneratedImagePrompt(''); const allParams = Object.entries(videoParams).map(([key, value]) => (value ? `${key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}: ${value}` : null)).filter(Boolean).join('. '); try { const res = await fetch('https://text.pollinations.ai/openai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'gpt-3.5-turbo', messages: [ { role: 'system', content: 'You are a professional cinematographer. Based on these parameters, write a complete, coherent, and inspiring video prompt for a text-to-video AI. Combine all elements into a natural paragraph.' }, { role: 'user', content: allParams }]}) }); if (!res.ok) throw new Error(`API Error: ${res.statusText}`); const data = await res.json(); const videoPrompt = data.choices[0]?.message?.content; if (videoPrompt) { setGeneratedVideoPrompt(videoPrompt.trim()); showToast('Prompt video profesional berhasil dibuat!', 'success'); } else { throw new Error('Gagal memproses respons API.'); } } catch (err) { showToast(err.message, 'error'); } finally { setIsBuildingPrompt(false); } };
+  const handleBuildVideoPrompt = async () => { 
+      if (!videoParams.concept.trim()) { 
+          showToast('Konsep utama video tidak boleh kosong.', 'error'); 
+          return; 
+      } 
+      setIsBuildingPrompt(true); 
+      setGeneratedVideoPrompt(''); 
+      setGeneratedImagePrompt(''); 
+      const allParams = Object.entries(videoParams).map(([key, value]) => (value ? `${key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}: ${value}` : null)).filter(Boolean).join('. '); 
+      try { 
+          // MODIFIKASI: Panggil API proxy
+          const res = await fetch('/api/proxy', { 
+              method: 'POST', 
+              headers: { 'Content-Type': 'application/json' }, 
+              body: JSON.stringify({ 
+                  model: 'gpt-3.5-turbo', 
+                  messages: [ { 
+                      role: 'system', 
+                      content: 'You are a professional cinematographer. Based on these parameters, write a complete, coherent, and inspiring video prompt for a text-to-video AI. Combine all elements into a natural paragraph.' 
+                  }, { 
+                      role: 'user', 
+                      content: allParams 
+                  }]
+              }) 
+          }); 
+          if (!res.ok) throw new Error(`API Error: ${res.statusText}`); 
+          const data = await res.json(); 
+          const videoPrompt = data.choices[0]?.message?.content; 
+          if (videoPrompt) { 
+              setGeneratedVideoPrompt(videoPrompt.trim()); 
+              showToast('Prompt video profesional berhasil dibuat!', 'success'); 
+          } else { 
+              throw new Error('Gagal memproses respons API.'); 
+          } 
+      } catch (err) { 
+          showToast(err.message, 'error'); 
+      } finally { 
+          setIsBuildingPrompt(false); 
+      } 
+  };
   
   const handlePromptCreatorChange = (e, type) => { const { name, value } = e.target; if (type === 'image') setPromptCreator(p => ({ ...p, [name]: value })); };
   

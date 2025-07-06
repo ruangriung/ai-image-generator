@@ -1,3 +1,5 @@
+// File: app/ChatbotAssistant.js
+
 "use client";
 
 import { useEffect } from 'react';
@@ -8,7 +10,6 @@ const ChatbotAssistant = () => {
     // Pastikan kode hanya berjalan di client-side
     if (typeof window !== 'undefined' && !window.rrAssistantInstance) {
       
-      // ===== KODE DARI assistant.js DIMULAI DI SINI =====
       class RRAssistant {
         constructor() {
           this.chatContainer = null;
@@ -124,7 +125,10 @@ const ChatbotAssistant = () => {
 
         async fetchAvailableModels() {
           try {
-            const response = await fetch('https://text.pollinations.ai/models');
+            // MODIFIKASI: Panggil rute proxy
+            const response = await fetch('/api/proxy', {
+                method: 'GET' // Asumsi proxy bisa handle GET untuk /models
+            });
             if (!response.ok) {
               throw new Error('Failed to fetch models');
             }
@@ -137,7 +141,6 @@ const ChatbotAssistant = () => {
         }
 
         setupEventListeners() {
-          
           this.closeButton.addEventListener('click', () => this.toggleChat());
           
           this.chatTextarea.addEventListener('input', () => {
@@ -295,7 +298,8 @@ const ChatbotAssistant = () => {
         }
 
         async streamChatCompletion(messages, thinkingId) {
-            const url = "https://text.pollinations.ai/openai";
+            // MODIFIKASI: Panggil rute proxy internal
+            const url = "/api/proxy";
             const payload = { model: "gpt-4-vision", messages, stream: true };
 
             try {
@@ -387,21 +391,21 @@ const ChatbotAssistant = () => {
         }
 
         updateMessage(id, newContent, overwrite = false) {
-            const messageElement = document.getElementById(id);
-            if (messageElement) {
-              const contentElement = messageElement.querySelector('.rr-assistant-content');
-              if (contentElement) {
-                if (messageElement.classList.contains('thinking')) {
-                  messageElement.classList.remove('thinking');
-                }
-                if (overwrite) {
-                  contentElement.textContent = newContent;
-                } else {
-                  contentElement.textContent += newContent;
-                }
+          const messageElement = document.getElementById(id);
+          if (messageElement) {
+            const contentElement = messageElement.querySelector('.rr-assistant-content');
+            if (contentElement) {
+              if (messageElement.classList.contains('thinking')) {
+                messageElement.classList.remove('thinking');
+              }
+              if (overwrite) {
+                contentElement.textContent = newContent;
+              } else {
+                contentElement.textContent += newContent;
               }
             }
           }
+        }
 
         copyToClipboard(text) {
           navigator.clipboard.writeText(text).then(() => {
@@ -463,17 +467,14 @@ const ChatbotAssistant = () => {
         showSavedConversations() {
             const modal = document.createElement('div');
             modal.className = 'rr-assistant-modal';
-            modal.innerHTML = `<div class="rr-assistant-modal-content">...</div>`; // simplified
+            modal.innerHTML = `<div class="rr-assistant-modal-content">...</div>`;
             document.body.appendChild(modal);
-            // Full implementation in original code
         }
         
         loadConversation(conversationId) {
-            // Full implementation in original code
         }
 
         deleteConversation(conversationId) {
-            // Full implementation in original code
         }
         
         clearCurrentConversation() {
@@ -501,14 +502,12 @@ const ChatbotAssistant = () => {
           }, 2000);
         }
       }
-      // ===== KODE DARI assistant.js BERAKHIR DI SINI =====
 
-      // Inisialisasi class hanya sekali
       window.rrAssistantInstance = new RRAssistant();
     }
-  }, []); // Array kosong memastikan useEffect hanya berjalan sekali
+  }, []);
 
-  return null; // Komponen ini tidak me-render JSX apa pun secara langsung
+  return null;
 };
 
 export default ChatbotAssistant;

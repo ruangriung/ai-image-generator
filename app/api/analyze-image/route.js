@@ -1,4 +1,13 @@
+// File: app/api/analyze-image/route.js
+
 import { NextResponse } from 'next/server';
+
+// Mendapatkan URL absolut untuk API proxy internal
+function getApiProxyUrl(request) {
+    const host = request.headers.get('host');
+    const protocol = host.startsWith('localhost') ? 'http' : 'https';
+    return `${protocol}://${host}/api/proxy`;
+}
 
 export async function POST(request) {
     try {
@@ -7,9 +16,8 @@ export async function POST(request) {
             return new Response('Image data is missing', { status: 400 });
         }
 
-        // Payload for the external API
         const payload = {
-            model: "openai", // or another suitable model
+            model: "openai", // Model yang sesuai untuk analisis gambar
             messages: [
                 {
                     role: "user",
@@ -19,25 +27,25 @@ export async function POST(request) {
                     ]
                 }
             ],
-            stream: true // Enable streaming
+            stream: true // Aktifkan streaming untuk respons yang lebih cepat
         };
         
-        // Fetch from the external API
-        const externalResponse = await fetch('https://text.pollinations.ai/openai', {
+        // Panggil rute proxy internal kita
+        const internalProxyUrl = getApiProxyUrl(request);
+        const proxyResponse = await fetch(internalProxyUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
 
-        // Check if the external API call was successful
-        if (!externalResponse.ok) {
-            const errorText = await externalResponse.text();
-            console.error('External API Error:', errorText);
-            return new Response(`External API failed: ${externalResponse.statusText}`, { status: externalResponse.status });
+        if (!proxyResponse.ok) {
+            const errorText = await proxyResponse.text();
+            console.error('Internal Proxy Error:', errorText);
+            return new Response(`Internal proxy failed: ${proxyResponse.statusText}`, { status: proxyResponse.status });
         }
         
-        // Return the streaming response directly to the client
-        return new Response(externalResponse.body, {
+        // Teruskan respons streaming dari proxy ke client
+        return new Response(proxyResponse.body, {
             headers: { 
                 'Content-Type': 'text/event-stream',
                 'Cache-Control': 'no-cache',
@@ -46,7 +54,7 @@ export async function POST(request) {
         });
 
     } catch (error) {
-        console.error('Internal API Error:', error);
+        console.error('Analyze Image API Error:', error);
         return new Response('Failed to process the request on the server.', { status: 500 });
     }
 }
