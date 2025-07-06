@@ -4,8 +4,6 @@ import { Inter } from 'next/font/google';
 import './globals.css';
 import { SpeedInsights } from "@vercel/speed-insights/next";
 
-// next/font/google akan mengoptimalkan pemuatan font secara otomatis
-// Ini cara terbaik untuk memuat Google Fonts di Next.js
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata = {
@@ -40,14 +38,11 @@ export const metadata = {
     statusBarStyle: '#000000',
     capable: 'yes',
   },
-  // ✅ PERBAIKAN: Tambahkan meta tag yang direkomendasikan
-  mobileWebApp: {
-    capable: 'yes',
-  },
   msapplication: {
     navbuttonColor: '#000000',
   },
 };
+
 export const viewport = {
   themeColor: '#000000',
 };
@@ -56,21 +51,12 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <head>
-        {/* ✅ PERBAIKAN: Memuat Font Awesome secara asinkron */}
-        <link 
-          rel="preload" 
-          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" 
-          as="style" 
-          onLoad="this.onload=null;this.rel='stylesheet'"
-        />
-        <noscript>
-          <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
-        </noscript>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossOrigin="anonymous" referrerPolicy="no-referrer" />
       </head>
       <body className={inter.className}>
         {children}
         <SpeedInsights />
       </body>
     </html>
-  );
+  )
 }
