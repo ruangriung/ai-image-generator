@@ -781,9 +781,9 @@ export default function AIImageGenerator() {
               <header className="flex flex-col gap-4 items-center text-center mb-8">
                   <h1 className="text-3xl md:text-4xl font-bold flex items-center justify-center gap-2 md:gap-3">
                     <Wand2 className="text-yellow-500 h-8 w-8 md:h-9 md:w-9 flex-shrink-0" />
-                    <span>RuangRiung AI Generator</span>
+                    <span>RuangRiung AI Image Generator</span>
                   </h1>
-                  <h2 className="text-lg md:text-xl font-semibold mt-2">AI Gambar, Video, dan Audio Generator</h2>
+                  <h2 className="text-lg md:text-xl font-semibold mt-2">Tuangkan Imajinasimu, Biarkan AI Mewujudkannya</h2>
                   <div className="flex items-center gap-2 sm:gap-4 flex-wrap justify-center">
                       <div className="flex items-center gap-2 sm:gap-4 p-2 rounded-xl" style={{boxShadow: 'var(--shadow-outset)'}}>
                           <div className="flex items-center gap-2 border-r border-transparent sm:border-[var(--shadow-dark)] dark:sm:border-[var(--shadow-light)] pr-2 sm:pr-3"><Coins size={20} className="text-yellow-500"/><span className="font-bold">{coins}</span></div>
