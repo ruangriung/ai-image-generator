@@ -102,7 +102,6 @@ export default function AIImageGenerator() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                // ✅ PERBAIKAN: Gunakan 'openai' sebagai nama model
                 model: 'openai', 
                 seed: Math.floor(Math.random() * 1000000), 
                 messages: [{
@@ -332,7 +331,6 @@ export default function AIImageGenerator() {
             method: 'POST', 
             headers: { 'Content-Type': 'application/json' }, 
             body: JSON.stringify({
-                // ✅ PERBAIKAN: Gunakan 'openai' sebagai nama model
                 model: 'openai', 
                 messages: [{ 
                     role: 'system', 
@@ -413,7 +411,6 @@ export default function AIImageGenerator() {
   const handleGenerateAudio = async () => { 
     setGeneratedAudio(null); 
     try {
-        // ✅ PERBAIKAN: Gunakan metode GET langsung sesuai dokumentasi
         const encodedPrompt = encodeURIComponent(prompt);
         const url = `https://text.pollinations.ai/${encodedPrompt}?model=openai-audio&voice=${audioVoice}`;
         
@@ -450,7 +447,6 @@ export default function AIImageGenerator() {
               method: 'POST', 
               headers: { 'Content-Type': 'application/json' }, 
               body: JSON.stringify({ 
-                  // ✅ PERBAIKAN: Gunakan 'openai' sebagai nama model
                   model: 'openai', 
                   messages: [ { 
                       role: 'system', 
@@ -491,7 +487,6 @@ export default function AIImageGenerator() {
               method: 'POST', 
               headers: { 'Content-Type': 'application/json' }, 
               body: JSON.stringify({ 
-                  // ✅ PERBAIKAN: Gunakan 'openai' sebagai nama model
                   model: 'openai', 
                   messages: [ { 
                       role: 'system', 
@@ -587,11 +582,12 @@ export default function AIImageGenerator() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  // ✅ PERBAIKAN: Menggunakan document.createElement('img') untuk menghindari konflik
   const handleDownload = async (image, filter, watermark) => {
     try {
-      const img = new window.Image();
+      const img = document.createElement('img');
       img.crossOrigin = 'anonymous';
-      img.src = image.url;
+      
       img.onload = async () => {
         const canvas = document.createElement('canvas');
         canvas.width = img.naturalWidth;
@@ -600,11 +596,13 @@ export default function AIImageGenerator() {
         ctx.filter = filter !== 'none' ? filter : 'none';
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
         ctx.filter = 'none';
+
         if (watermark && (watermark.text || watermark.imageUrl)) {
           ctx.save();
           ctx.globalAlpha = watermark.opacity || 0.7;
           const posX = (watermark.position?.x ?? 50) / 100 * canvas.width;
           const posY = (watermark.position?.y ?? 50) / 100 * canvas.height;
+
           if (watermark.type === 'text' && watermark.text) {
             ctx.font = `bold ${Math.round((watermark.size || 8) * canvas.height / 100)}px sans-serif`;
             ctx.fillStyle = watermark.color || '#fff';
@@ -614,24 +612,34 @@ export default function AIImageGenerator() {
             ctx.shadowBlur = 4;
             ctx.fillText(watermark.text, posX, posY);
           } else if (watermark.type === 'image' && watermark.imageUrl) {
-            const wmImg = new window.Image();
+            const wmImg = document.createElement('img');
             wmImg.crossOrigin = 'anonymous';
-            wmImg.src = watermark.imageUrl;
-            await new Promise((resolve) => { wmImg.onload = resolve; });
+            
+            await new Promise((resolve, reject) => {
+              wmImg.onload = resolve;
+              wmImg.onerror = reject;
+              wmImg.src = watermark.imageUrl;
+            });
+            
             const wmWidth = (watermark.size || 8) * 2 * (canvas.width / 100);
             const wmHeight = wmImg.naturalHeight / wmImg.naturalWidth * wmWidth;
-            ctx.drawImage(wmImg, posX - wmWidth/2, posY - wmHeight/2, wmWidth, wmHeight);
+            ctx.drawImage(wmImg, posX - wmWidth / 2, posY - wmHeight / 2, wmWidth, wmHeight);
           }
           ctx.restore();
         }
+
         const link = document.createElement('a');
         link.download = `ai-image-${image.seed || Date.now()}.png`;
         link.href = canvas.toDataURL('image/png');
         link.click();
       };
+      
       img.onerror = () => showToast('Gagal memuat gambar untuk diunduh.', 'error');
+      img.src = image.url;
+
     } catch (e) {
       showToast('Gagal mengunduh gambar.', 'error');
+      console.error(e);
     }
   };
 
