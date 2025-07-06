@@ -671,11 +671,66 @@ export default function AIImageGenerator() {
       )}
 
       <style jsx global>{`
-          :root { --bg-color: #e0e0e0; --text-color: #313131; --shadow-light: #ffffff; --shadow-dark: #bebebe; --shadow-outset: 6px 6px 12px var(--shadow-dark), -6px -6px 12px var(--shadow-light); --shadow-inset: inset 6px 6px 12px var(--shadow-dark), inset -6px -6px 12px var(--shadow-light); }
-          .dark { --bg-color: #3a3a3a; --text-color: #e0e0e0; --shadow-light: #464646; --shadow-dark: #2e2e2e; }
-          .neumorphic-input, .neumorphic-select, .neumorphic-card { background: var(--bg-color); color: var(--text-color); }
-          .neumorphic-card { box-shadow: var(--shadow-outset); transition: background 0.3s ease, color 0.3s ease; }
-          .neumorphic-input, .neumorphic-select { box-shadow: var(--shadow-inset); border: none; }
+          :root {
+            --bg-color: #f5f7fa; /* Lebih terang, kontras lebih baik */
+            --text-color: #18181b; /* Lebih gelap, kontras lebih baik */
+            --primary-btn-bg: #2563eb;
+            --primary-btn-text: #fff;
+            --danger-btn-bg: #dc2626;
+            --danger-btn-text: #fff;
+            --shadow-light: #ffffff;
+            --shadow-dark: #bebebe;
+            --touch-target: 44px;
+            --touch-gap: 8px;
+            --focus-outline: 2px solid #2563eb;
+          }
+          .dark {
+            --bg-color: #18181b;
+            --text-color: #f5f7fa;
+            --primary-btn-bg: #60a5fa;
+            --primary-btn-text: #18181b;
+            --danger-btn-bg: #f87171;
+            --danger-btn-text: #18181b;
+            --shadow-light: #23272f;
+            --shadow-dark: #111827;
+          }
+          .neumorphic-input, .neumorphic-select, .neumorphic-card {
+            background: var(--bg-color);
+            color: var(--text-color);
+          }
+          .neumorphic-card {
+            box-shadow: var(--shadow-outset);
+            transition: background 0.3s ease, color 0.3s ease;
+          }
+          .neumorphic-input, .neumorphic-select {
+            box-shadow: var(--shadow-inset);
+            border: none;
+          }
+          button, .neumorphic-btn, .neumorphic-button, .neumorphicButton {
+            min-width: var(--touch-target);
+            min-height: var(--touch-target);
+            padding: 0.75rem 1rem;
+            font-size: 1rem;
+            border-radius: 0.75rem;
+            margin: var(--touch-gap) 0;
+            outline: none;
+            transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+          }
+          button:focus, .neumorphic-btn:focus, .neumorphic-button:focus, .neumorphicButton:focus {
+            outline: var(--focus-outline);
+            outline-offset: 2px;
+          }
+          .primary-btn {
+            background: var(--primary-btn-bg);
+            color: var(--primary-btn-text);
+          }
+          .danger-btn {
+            background: var(--danger-btn-bg);
+            color: var(--danger-btn-text);
+          }
+          .neumorphic-btn + .neumorphic-btn, .neumorphic-button + .neumorphic-button {
+            margin-left: var(--touch-gap);
+          }
           @keyframes fade-in-up { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
           @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
           .animate-fade-in-up { animation: fade-in-up 0.3s ease-out forwards; }
@@ -752,6 +807,7 @@ export default function AIImageGenerator() {
                     <Wand2 className="text-yellow-500 h-8 w-8 md:h-9 md:w-9 flex-shrink-0" />
                     <span>RuangRiung AI Generator</span>
                   </h1>
+                  <h2 className="text-lg md:text-xl font-semibold mt-2">AI Gambar, Video, dan Audio Generator</h2>
                   <div className="flex items-center gap-2 sm:gap-4 flex-wrap justify-center">
                       <div className="flex items-center gap-2 sm:gap-4 p-2 rounded-xl" style={{boxShadow: 'var(--shadow-outset)'}}>
                           <div className="flex items-center gap-2 border-r border-transparent sm:border-[var(--shadow-dark)] dark:sm:border-[var(--shadow-light)] pr-2 sm:pr-3"><Coins size={20} className="text-yellow-500"/><span className="font-bold">{coins}</span></div>
@@ -974,13 +1030,35 @@ export default function AIImageGenerator() {
                       />
                       
                       <div className="p-6 rounded-2xl h-fit neumorphic-card">
-                           <div className="flex justify-between items-center mb-4">
-                              <h3 className="text-xl font-bold flex items-center gap-2"><History size={20}/> Riwayat & Favorit</h3>
-                              <NeumorphicButton onClick={() => setIsClearHistoryModalOpen(true)} className="!p-2" title="Hapus Riwayat & Favorit"><Trash2 size={16}/></NeumorphicButton>
+                          <div className="flex justify-between items-center mb-4">
+                            <h2 className="text-xl font-bold flex items-center gap-2"><History size={20}/> Riwayat & Favorit</h2>
+                            <NeumorphicButton onClick={() => setIsClearHistoryModalOpen(true)} className="!p-2" title="Hapus Riwayat & Favorit"><Trash2 size={16}/></NeumorphicButton>
                           </div>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                              <div><h4 className="font-semibold mb-2">Riwayat Gambar</h4><div className="max-h-96 overflow-y-auto space-y-2 pr-2">{generationHistory.length === 0 ? <p className="text-sm opacity-60">Kosong</p> : generationHistory.map((h) => (<div key={h.date} className="flex items-center gap-2 p-2 rounded-lg" style={{boxShadow:'var(--shadow-inset)'}}><img src={h.url} alt={h.prompt.substring(0,30)} className="w-16 h-16 rounded-md object-cover cursor-pointer flex-shrink-0" onClick={() => { setSelectedHistoryImage(h); setGeneratedImages([]); setEditingImage(null); window.scrollTo({ top: 0, behavior: 'smooth' }); }}/><p className="text-xs line-clamp-3 flex-grow cursor-pointer" onClick={() => { setSelectedHistoryImage(h); setGeneratedImages([]); setEditingImage(null); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>{h.prompt}</p><NeumorphicButton aria-label={`Hapus riwayat untuk prompt: ${h.prompt.substring(0, 30)}...`} onClick={() => setGenerationHistory(prev => prev.filter(item => item.date !== h.date))} className="!p-2 flex-shrink-0"><Trash2 size={14}/></NeumorphicButton></div>))}</div></div>
-                              <div><h4 className="font-semibold mb-2">Prompt Favorit</h4><div className="max-h-96 overflow-y-auto space-y-2 pr-2">{savedPrompts.length === 0 ? <p className="text-sm opacity-60">Kosong</p> : savedPrompts.map((p) => (<div key={p.date} className="flex items-center gap-2 p-2 rounded-lg" style={{boxShadow:'var(--shadow-inset)'}}><p className="text-sm flex-grow truncate">{p.prompt}</p><NeumorphicButton onClick={() => setPrompt(p.prompt)} className="!p-1.5"><ChevronsRight size={14}/></NeumorphicButton><NeumorphicButton aria-label={`Hapus favorit: ${p.prompt.substring(0, 30)}...`} onClick={() => setSavedPrompts(prev => prev.filter(sp => sp.date !== p.date))} className="!p-1.5"><Trash2 size={14}/></NeumorphicButton></div>))}</div></div>
+                              <div>
+                                <h3 className="font-semibold mb-2 text-lg">Riwayat Gambar</h3>
+                                <div className="max-h-96 overflow-y-auto space-y-2 pr-2">
+                                  {generationHistory.length === 0 ? <p className="text-sm opacity-60">Kosong</p> : generationHistory.map((h) => (
+                                      <div key={h.date} className="flex items-center gap-2 p-2 rounded-lg" style={{boxShadow:'var(--shadow-inset)'}}>
+                                        <img src={h.url} alt={h.prompt.substring(0,30)} className="w-16 h-16 rounded-md object-cover cursor-pointer flex-shrink-0" onClick={() => { setSelectedHistoryImage(h); setGeneratedImages([]); setEditingImage(null); window.scrollTo({ top: 0, behavior: 'smooth' }); }}/>
+                                        <p className="text-xs line-clamp-3 flex-grow cursor-pointer" onClick={() => { setSelectedHistoryImage(h); setGeneratedImages([]); setEditingImage(null); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>{h.prompt}</p>
+                                        <NeumorphicButton aria-label={`Hapus riwayat untuk prompt: ${h.prompt.substring(0, 30)}...`} onClick={() => setGenerationHistory(prev => prev.filter(item => item.date !== h.date))} className="!p-2 flex-shrink-0"><Trash2 size={14}/></NeumorphicButton>
+                                      </div>
+                                  ))}
+                                </div>
+                              </div>
+                              <div>
+                                <h3 className="font-semibold mb-2 text-lg">Prompt Favorit</h3>
+                                <div className="max-h-96 overflow-y-auto space-y-2 pr-2">
+                                  {savedPrompts.length === 0 ? <p className="text-sm opacity-60">Kosong</p> : savedPrompts.map((p) => (
+                                      <div key={p.date} className="flex items-center gap-2 p-2 rounded-lg" style={{boxShadow:'var(--shadow-inset)'}}>
+                                        <p className="text-sm flex-grow truncate">{p.prompt}</p>
+                                        <NeumorphicButton onClick={() => setPrompt(p.prompt)} className="!p-1.5"><ChevronsRight size={14}/></NeumorphicButton>
+                                        <NeumorphicButton aria-label={`Hapus favorit: ${p.prompt.substring(0, 30)}...`} onClick={() => setSavedPrompts(prev => prev.filter(sp => sp.date !== p.date))} className="!p-1.5"><Trash2 size={14}/></NeumorphicButton>
+                                      </div>
+                                  ))}
+                                </div>
+                              </div>
                           </div>
                       </div>
                   </div>
