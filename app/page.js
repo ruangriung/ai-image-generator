@@ -424,7 +424,7 @@ export default function AIImageGenerator() {
   const handleGenerateAudio = async () => { 
     try {
         const encodedPrompt = encodeURIComponent(prompt);
-        const url = `https://text.pollinations.ai/${encodedPrompt}?model=openai-audio&voice=${audioVoice}`;
+        const url = `https://text.pollinations.ai/${encodedPrompt}?model=openai-audio&voice=${audioVoice}&referrer=rrai.my.id`;
         
         const res = await fetch(url);
 
