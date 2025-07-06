@@ -354,7 +354,7 @@ export const GeneratedContentDisplay = ({
 
         return (
             <div className="flex flex-col items-center w-full">
-                {/* Area hasil gambar: hanya gambar, tanpa kartu raised */}
+                {/* Area hasil gambar */}
                 <div className="w-full flex justify-center">
                     <div className="w-full flex flex-col items-center relative max-w-3xl">
                         <div ref={imageContainerRef}
@@ -362,19 +362,21 @@ export const GeneratedContentDisplay = ({
                             style={{boxShadow: 'var(--shadow-outset)', cursor: isDragging ? 'grabbing' : (zoomLevel > 1 ? 'grab' : 'default'), zIndex: 1 }}
                             onMouseDown={handleMouseDown}
                         >
-                            <img
+                            {/* ✅ PERBAIKAN: Ganti <img> dengan <Image> */}
+                            <Image
                                 src={img.url}
                                 alt="Generated"
+                                width={1024} // Berikan ukuran dasar
+                                height={1024} // Berikan ukuran dasar
+                                priority // Penting untuk gambar LCP (Largest Contentful Paint)
+                                className="rounded-xl shadow-lg object-contain w-full h-full"
                                 style={{
                                     transform: `scale(${zoomLevel}) translate(${imagePosition.x / zoomLevel}px, ${imagePosition.y / zoomLevel}px)`,
                                     filter: finalFilter,
                                     transition: 'none',
-                                    maxWidth: '100%',
-                                    maxHeight: '100%',
                                     userSelect: 'none',
                                 }}
                                 draggable="false"
-                                className="rounded-xl shadow-lg"
                             />
                             {/* Tombol zoom di pojok kanan atas, warna kontras */}
                             <div className="absolute top-2 right-2 flex flex-col gap-1 zoom-control rounded-lg p-1 opacity-90 hover:opacity-100 transition-all z-20"
