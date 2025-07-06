@@ -582,7 +582,7 @@ export default function AIImageGenerator() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // ✅ PERBAIKAN: Menggunakan document.createElement('img') untuk menghindari konflik
+  // ✅ PERBAIKAN UTAMA: Ganti `new window.Image()` dengan `document.createElement('img')`
   const handleDownload = async (image, filter, watermark) => {
     try {
       const img = document.createElement('img');
