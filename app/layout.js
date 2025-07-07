@@ -60,9 +60,6 @@ export default function RootLayout({ children }) {
         <main id="main-content" tabIndex="-1">
           {children}
         </main>
-        <footer className="text-center py-4 text-xs opacity-70">
-          &copy; {new Date().getFullYear()} RuangRiung AI Image Generator
-        </footer>
         <SpeedInsights />
       </body>
     </html>
