@@ -369,7 +369,7 @@ export default function AIImageGenerator() {
         showToast("Anda harus memasukkan kata sandi untuk menggunakan fitur Lab.", "error");
         return;
     }
-
+    
     if (!prompt.trim() && (activeTab === 'audio' || (activeTab === 'video' && !videoParams.concept.trim()))) {
         showToast('Prompt atau konsep utama tidak boleh kosong.', 'error');
         return;
@@ -430,11 +430,9 @@ export default function AIImageGenerator() {
     }
   };
   
-  // --- FUNGSI AUDIO DIPERBARUI ---
-  const handleGenerateAudio = async () => { 
+  const handleGenerateAudio = async () => {
     try {
         const encodedPrompt = encodeURIComponent(prompt);
-        // Tambahkan parameter acak untuk menghindari cache server
         const randomCacheBuster = `&r=${Math.random()}`;
         const url = `https://text.pollinations.ai/${encodedPrompt}?model=openai-audio&voice=${audioVoice}&referrer=rrai.my.id${randomCacheBuster}`;
         
@@ -449,11 +447,11 @@ export default function AIImageGenerator() {
             throw new Error('Respons yang diterima bukan file audio.');
         }
 
-        setGeneratedAudio(URL.createObjectURL(blob)); 
-        setCoins(c => Math.max(0, c - 1)); 
-        showToast(`Audio berhasil dibuat! Sisa koin: ${coins - 1}`, 'success'); 
-    } catch (err) { 
-        showToast(err.message, 'error'); 
+        setGeneratedAudio(URL.createObjectURL(blob));
+        setCoins(c => Math.max(0, c - 1));
+        showToast(`Audio berhasil dibuat! Sisa koin: ${coins - 1}`, 'success');
+    } catch (err) {
+        showToast(err.message, 'error');
     } finally {
         setLoading(false);
     }
@@ -473,6 +471,7 @@ export default function AIImageGenerator() {
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                   model: 'openai',
+                  seed: Math.floor(Math.random() * 1000000),
                   messages: [ {
                       role: 'system',
                       content: 'You are a prompt engineer who creates detailed, artistic prompts for image generation. Respond only with the final prompt.'
@@ -498,48 +497,46 @@ export default function AIImageGenerator() {
       }
   };
   
-  // --- FUNGSI PROMPT VIDEO DIPERBARUI ---
-  const handleBuildVideoPrompt = async () => { 
-      if (!videoParams.concept.trim()) { 
-          showToast('Konsep utama video tidak boleh kosong.', 'error'); 
-          return; 
-      } 
-      setIsBuildingPrompt(true); 
+  const handleBuildVideoPrompt = async () => {
+      if (!videoParams.concept.trim()) {
+          showToast('Konsep utama video tidak boleh kosong.', 'error');
+          return;
+      }
+      setIsBuildingPrompt(true);
       setGeneratedVideoPrompt('');
-      const allParams = Object.entries(videoParams).map(([key, value]) => (value ? `${key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}: ${value}` : null)).filter(Boolean).join('. '); 
-      try { 
-          const res = await fetch('/api/proxy', { 
-              method: 'POST', 
-              headers: { 'Content-Type': 'application/json' }, 
-              body: JSON.stringify({ 
+      const allParams = Object.entries(videoParams).map(([key, value]) => (value ? `${key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}: ${value}` : null)).filter(Boolean).join('. ');
+      try {
+          const res = await fetch('/api/proxy', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
                   model: 'openai',
-                  // Tambahkan seed acak untuk variasi
-                  seed: Math.floor(Math.random() * 1000000), 
-                  messages: [ { 
-                      role: 'system', 
-                      content: 'You are a professional cinematographer. Based on these parameters, write a complete, coherent, and inspiring video prompt for a text-to-video AI. Combine all elements into a natural paragraph.' 
-                  }, { 
-                      role: 'user', 
-                      content: allParams 
+                  seed: Math.floor(Math.random() * 1000000),
+                  messages: [ {
+                      role: 'system',
+                      content: 'You are a professional cinematographer. Based on these parameters, write a complete, coherent, and inspiring video prompt for a text-to-video AI. Combine all elements into a natural paragraph.'
+                  }, {
+                      role: 'user',
+                      content: allParams
                   }]
-              }) 
-          }); 
-          if (!res.ok) throw new Error(`API Error: ${res.statusText}`); 
-          const data = await res.json(); 
-          const videoPrompt = data.choices[0]?.message?.content; 
-          if (videoPrompt) { 
+              })
+          });
+          if (!res.ok) throw new Error(`API Error: ${res.statusText}`);
+          const data = await res.json();
+          const videoPrompt = data.choices[0]?.message?.content;
+          if (videoPrompt) {
               setGeneratedVideoPrompt(videoPrompt.trim());
               setCoins(c => Math.max(0, c - 1));
-              showToast('Prompt video profesional berhasil dibuat!', 'success'); 
-          } else { 
-              throw new Error('Gagal memproses respons API.'); 
-          } 
-      } catch (err) { 
-          showToast(err.message, 'error'); 
-      } finally { 
-          setIsBuildingPrompt(false); 
+              showToast('Prompt video profesional berhasil dibuat!', 'success');
+          } else {
+              throw new Error('Gagal memproses respons API.');
+          }
+      } catch (err) {
+          showToast(err.message, 'error');
+      } finally {
+          setIsBuildingPrompt(false);
           setLoading(false);
-      } 
+      }
   };
   
   const handlePromptCreatorChange = (e, type) => { const { name, value } = e.target; if (type === 'image') setPromptCreator(p => ({ ...p, [name]: value })); };
@@ -681,7 +678,6 @@ export default function AIImageGenerator() {
   };
 
   const handleLabAuthSuccess = () => {
-    sessionStorage.setItem('labAuthenticated', 'true');
     setIsLabAuthenticated(true);
   };
   
@@ -883,7 +879,88 @@ export default function AIImageGenerator() {
                                 </div>
                               </CollapsibleSection>
 
-                              <NeumorphicButton onClick={() => setIsCreatorOpen(!isCreatorOpen)} className="w-full text-sm !p-3">
+                              <NeumorphicButton onClick={() => setIsSettingsOpen(!isSettingsOpen)} className="w-full text-sm relative !p-3">
+                                <span className="flex items-center justify-center gap-2">
+                                  <Settings size={16} />
+                                  Pengaturan Lanjutan
+                                </span>
+                                <span className="absolute right-3 top-1/2 -translate-y-1/2">
+                                  {isSettingsOpen ? <ChevronUp size={16}/> : <ChevronDown size={16}/>}
+                                </span>
+                              </NeumorphicButton>
+                              {isSettingsOpen && (
+                                  <div className="p-4 rounded-lg space-y-4 animate-fade-in" style={{boxShadow: 'var(--shadow-inset)'}}>
+                                    <div>
+                                        <label htmlFor="art-style-select" className="font-semibold block mb-2 text-sm">Gaya Seni</label>
+                                        <select id="art-style-select" value={artStyle} onChange={(e) => setArtStyle(e.target.value)} className="w-full p-3 rounded-lg neumorphic-input bg-[var(--bg-color)]">
+                                            <option value="">-- Pilih Gaya (Opsional) --</option>
+                                            {artStyles.map(group => (
+                                              <optgroup key={group.label} label={group.label}>
+                                                {group.options.map(opt => (
+                                                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                                ))}
+                                              </optgroup>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label htmlFor="model-select" className="font-semibold block mb-2 text-sm">Model</label>
+                                        <select id="model-select" value={model} onChange={handleModelChange} className="w-full p-3 rounded-lg neumorphic-input bg-[var(--bg-color)]">
+                                            <option value="flux">Flux (Cepat & Bagus)</option>
+                                            <option value="gptimage">GPT Image (Deskriptif)</option>
+                                            <option value="turbo">Turbo (Premium)</option>
+                                            <option value="dalle3">DALL-E 3 (Perlu Key)</option>
+                                            <option value="stability">Stability (Perlu Key)</option>
+                                            <option value="ideogram">Ideogram (Perlu Key)</option>
+                                        </select>
+                                        {model === 'turbo' && turboCountdown && (
+                                            <div className="text-xs text-center mt-2 p-2 rounded-lg" style={{boxShadow:'var(--shadow-inset)'}}>
+                                                {turboCountdown !== "Kadaluarsa" ? (
+                                                    <span>Sisa waktu Turbo: <span className="font-mono font-bold text-green-500">{turboCountdown}</span></span>
+                                                ) : (
+                                                    <span className="text-red-500">Sesi Turbo Kadaluarsa</span>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div>
+                                        <label htmlFor="quality-select" className="font-semibold block mb-2 text-sm">Kualitas</label>
+                                        <select id="quality-select" value={quality} onChange={(e) => setQuality(e.target.value)} className="w-full p-3 rounded-lg neumorphic-input bg-[var(--bg-color)]">
+                                            <option value="standard">Standard</option>
+                                            <option value="hd">HD</option>
+                                            <option value="ultra">Ultra</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <div className="flex items-center justify-between mb-2">
+                                            <label htmlFor="size-preset-select" className="font-semibold text-sm">Ukuran</label>
+                                            <button
+                                              onClick={() => setUseCustomSize(!useCustomSize)}
+                                              className="text-sm font-medium"
+                                              aria-pressed={useCustomSize}
+                                              title={useCustomSize ? 'Gunakan preset ukuran' : 'Gunakan ukuran kustom'}
+                                            >
+                                              {useCustomSize ? 'Ganti ke Preset' : 'Ganti ke Kustom'}
+                                            </button>
+                                        </div>
+                                        {!useCustomSize ? <select id="size-preset-select" value={sizePreset} onChange={(e) => setSizePreset(e.target.value)} className="w-full p-3 rounded-lg neumorphic-input bg-[var(--bg-color)]"><option value="1024x1024">Persegi (1024x1024)</option><option value="1024x1792">Potret (1024x1792)</option><option value="1792x1024">Lanskap (1792x1024)</option></select> : <div className="space-y-3 p-3 rounded-lg" style={{boxShadow: 'var(--shadow-inset)'}}><div><label htmlFor="custom-width-input" className="text-sm">Lebar: {customWidth}px</label><input id="custom-width-input" type="range" min="256" max="2048" step="64" value={customWidth} onChange={(e) => setCustomWidth(Number(e.target.value))} className="w-full" aria-label="Lebar gambar kustom" /></div><div><label htmlFor="custom-height-input" className="text-sm">Tinggi: {customHeight}px</label><input id="custom-height-input" type="range" min="256" max="2048" step="64" value={customHeight} onChange={(e) => setCustomHeight(Number(e.target.value))} className="w-full" aria-label="Tinggi gambar kustom" /></div></div>}
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label htmlFor="batch-input" className="font-semibold block mb-2 text-sm">Batch</label>
+                                            <input id="batch-input" type="number" min="1" max="10" value={batchSize} onChange={(e) => setBatchSize(Number(e.target.value))} className="w-full p-3 rounded-lg neumorphic-input"/>
+                                        </div>
+                                        <div>
+                                            <label htmlFor="seed-input" className="font-semibold block mb-2 text-sm">Seed</label>
+                                            <input id="seed-input" type="text" value={seed} onChange={(e) => setSeed(e.target.value)} placeholder="Acak" className="w-full p-3 rounded-lg neumorphic-input"/>
+                                        </div>
+                                    </div>
+                                  </div>
+                              )}
+                              
+                              <NeumorphicButton onClick={() => setIsCreatorOpen(!isCreatorOpen)} className="w-full text-sm relative !p-3">
                                 <span className="flex items-center justify-center gap-2">
                                     <Wand2 size={16} /> Asisten Prompt Gambar
                                 </span>
@@ -921,7 +998,7 @@ export default function AIImageGenerator() {
                                       )}
                                   </div>
                               }
-
+                              
                               <div className="flex flex-wrap gap-2">
                                   <NeumorphicButton onClick={handleRandomPrompt} className="flex-1 text-sm"><Dices size={16}/>Acak</NeumorphicButton>
                                   <NeumorphicButton onClick={handleEnhancePrompt} loading={isEnhancing} loadingText="Memproses..." className="flex-1 text-sm"><Wand2 size={16}/>Sempurnakan</NeumorphicButton>

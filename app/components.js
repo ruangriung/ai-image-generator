@@ -3,8 +3,8 @@
 "use client";
 
 import { useMemo, useState, useEffect, useRef, useCallback } from 'react';
-import { 
-    Search, Minus, Plus, X, Layers, ImageDown, 
+import {
+    Search, Minus, Plus, X, Layers, ImageDown,
     Repeat, Sparkles, ChevronUp, ChevronDown, ZoomIn, ImageIcon as FileImage, Upload, Wand2, Text, Image as ImageIconLucide, Move, Grid3x3, Copy
 } from 'lucide-react';
 
@@ -62,35 +62,35 @@ export const Toasts = ({ toasts }) => {
   );
 };
 
-const compressImage = (file, maxWidth = 800, quality = 0.7) => new Promise((resolve, reject) => { 
-    const reader = new FileReader(); 
-    reader.readAsDataURL(file); 
-    reader.onload = event => { 
-        const img = new window.Image(); 
-        img.src = event.target.result; 
-        img.onload = () => { 
-            const canvas = document.createElement('canvas'); 
-            let { width, height } = img; 
-            if (width > height) { 
-                if (width > maxWidth) { 
-                    height *= maxWidth / width; 
-                    width = maxWidth; 
-                } 
-            } else { 
-                if (height > maxWidth) { 
-                    width *= maxWidth / height; 
-                    height = maxWidth; 
-                } 
-            } 
-            canvas.width = width; 
-            canvas.height = height; 
-            const ctx = canvas.getContext('2d'); 
-            ctx.drawImage(img, 0, 0, width, height); 
-            resolve(canvas.toDataURL('image/jpeg', quality)); 
-        }; 
-        img.onerror = reject; 
-    }; 
-    reader.onerror = reject; 
+const compressImage = (file, maxWidth = 800, quality = 0.7) => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = event => {
+        const img = new window.Image();
+        img.src = event.target.result;
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            let { width, height } = img;
+            if (width > height) {
+                if (width > maxWidth) {
+                    height *= maxWidth / width;
+                    width = maxWidth;
+                }
+            } else {
+                if (height > maxWidth) {
+                    width *= maxWidth / height;
+                    height = maxWidth;
+                }
+            }
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+            resolve(canvas.toDataURL('image/jpeg', quality));
+        };
+        img.onerror = reject;
+    };
+    reader.onerror = reject;
 });
 
 export const ImageAnalysisModal = ({ isOpen, onClose, onPromptGenerated, showToast }) => {
@@ -142,7 +142,7 @@ export const ImageAnalysisModal = ({ isOpen, onClose, onPromptGenerated, showToa
                     }
                 }
             }
-        } catch (error) { showToast(error.message, 'error'); setAnalysisResult('Gagal menganalisis gambar. Silakan coba lagi.'); } 
+        } catch (error) { showToast(error.message, 'error'); setAnalysisResult('Gagal menganalisis gambar. Silakan coba lagi.'); }
         finally { setIsAnalyzing(false); }
     };
 
@@ -181,20 +181,13 @@ export const ImageAnalysisModal = ({ isOpen, onClose, onPromptGenerated, showToa
     );
 };
 
+// --- KODE PROMPT EDIT MODAL DIPERBAIKI ---
 export const PromptEditModal = ({ isOpen, onClose, value, onSave }) => {
     const [text, setText] = useState(value);
-    const textareaRef = useRef(null);
 
     useEffect(() => {
         setText(value);
     }, [value]);
-
-    useEffect(() => {
-        if (isOpen && textareaRef.current) {
-            textareaRef.current.style.height = 'auto';
-            textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
-        }
-    }, [isOpen, text]);
 
     const handleSave = () => {
         onSave(text);
@@ -205,21 +198,29 @@ export const PromptEditModal = ({ isOpen, onClose, value, onSave }) => {
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4 animate-fade-in">
-            <div className="p-6 rounded-2xl w-full max-w-lg flex flex-col gap-4 neumorphic-card" style={{ background: 'var(--bg-color)' }}>
-                <div className="flex justify-between items-center">
+            {/* Mengubah struktur flexbox agar header dan footer tetap */}
+            <div
+                className="p-6 rounded-2xl w-full max-w-lg flex flex-col gap-4 neumorphic-card"
+                style={{ background: 'var(--bg-color)', maxHeight: '80vh' }}
+            >
+                {/* Header */}
+                <div className="flex-shrink-0 flex justify-between items-center">
                     <h2 className="text-xl font-bold">Edit Prompt</h2>
                     <NeumorphicButton onClick={onClose} className="!p-2"><X size={20} /></NeumorphicButton>
                 </div>
-                <div className="relative w-full">
+
+                {/* Area Konten yang Bisa di-scroll */}
+                <div className="flex-grow overflow-y-auto pr-2">
                     <textarea
-                        ref={textareaRef}
                         value={text}
                         onChange={(e) => setText(e.target.value)}
-                        className="w-full p-3 rounded-lg neumorphic-input resize-none overflow-hidden min-h-[150px]"
+                        className="w-full p-3 rounded-lg neumorphic-input resize-none h-full min-h-[200px]"
                         placeholder="Ketik ide gambarmu di sini..."
                     />
                 </div>
-                <div className="flex justify-end gap-4">
+                
+                {/* Footer dengan tombol */}
+                <div className="flex-shrink-0 flex justify-end gap-4 border-t border-gray-500/20 pt-4">
                     <NeumorphicButton onClick={onClose}>Batal</NeumorphicButton>
                     <NeumorphicButton onClick={handleSave} className="font-bold">Simpan</NeumorphicButton>
                 </div>
@@ -229,7 +230,7 @@ export const PromptEditModal = ({ isOpen, onClose, value, onSave }) => {
 };
 
 export const GeneratedContentDisplay = ({
-    activeTab, // Tambahkan prop ini
+    activeTab,
     loading, generatedImages, generatedVideoPrompt, generatedAudio,
     onUsePromptAndSeed, onCreateVariation, onDownload, showToast,
     selectedHistoryImage
@@ -346,7 +347,6 @@ export const GeneratedContentDisplay = ({
         );
     }
     
-    // ✅ PERBAIKAN: Tambahkan blok render untuk Video dan Audio
     if (activeTab === 'video' && generatedVideoPrompt) {
         return (
             <div className="w-full flex justify-center">
