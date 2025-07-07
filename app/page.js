@@ -823,12 +823,14 @@ export default function AIImageGenerator() {
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                   <div className="lg:col-span-4 space-y-6">
                       <div className="p-6 rounded-2xl h-fit space-y-4 neumorphic-card">
-                          <div className="grid grid-cols-2 gap-2">
-                              <NeumorphicButton onClick={() => setActiveTab('image')} active={activeTab === 'image'} className="w-full"><ImageIcon size={16}/>Gambar</NeumorphicButton>
-                              <NeumorphicButton onClick={() => setActiveTab('video')} active={activeTab === 'video'} className="w-full"><Video size={16}/>Video</NeumorphicButton>
-                              <NeumorphicButton onClick={() => setActiveTab('audio')} active={activeTab === 'audio'} className="w-full"><AudioLines size={16}/>Audio</NeumorphicButton>
-                              <NeumorphicButton onClick={() => setActiveTab('lab')} active={activeTab === 'lab'} className="w-full"><FlaskConical size={16}/>Lab</NeumorphicButton>
-                          </div>
+                          <div className="space-y-2">
+  <div className="grid grid-cols-3 gap-2">
+      <NeumorphicButton onClick={() => setActiveTab('image')} active={activeTab === 'image'} className="w-full"><ImageIcon size={16}/>Gambar</NeumorphicButton>
+      <NeumorphicButton onClick={() => setActiveTab('video')} active={activeTab === 'video'} className="w-full"><Video size={16}/>Video</NeumorphicButton>
+      <NeumorphicButton onClick={() => setActiveTab('audio')} active={activeTab === 'audio'} className="w-full"><AudioLines size={16}/>Audio</NeumorphicButton>
+  </div>
+  <NeumorphicButton onClick={() => setActiveTab('lab')} active={activeTab === 'lab'} className="w-full"><FlaskConical size={16}/>Lab</NeumorphicButton>
+</div>
 
                           {activeTab === 'image' && (
                             <div className='space-y-4 animate-fade-in'>
