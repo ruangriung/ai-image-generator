@@ -3,30 +3,32 @@
 "use client";
 
 import { Sun, Moon, Wand2, Upload, Coins, Clock, Settings, Trash2, ChevronUp, Download, X } from 'lucide-react';
-import { useAppState } from './useAppState.js'; //
+import { useSession } from "next-auth/react";
+import { useAppState } from './useAppState.js';
 
-import { Spinner, NeumorphicButton, Toasts, GeneratedContentDisplay } from './components.js'; //
-import ChatbotAssistant from './ChatbotAssistant.js'; //
-import Lab from './Lab.js'; //
-import HistorySection from './History.js'; //
-import VideoSection from './Video.js'; //
-import AudioSection from './Audio.js'; //
-import ImageTab from './ImageTab.js'; //
-import TabSelector from './TabSelector.js'; //
-import Modals from './Modals.js'; //
-import AuthButtons from './AuthButtons.js'; //
-import EventModal from './EventModal.js'; //
+import { Spinner, NeumorphicButton, Toasts, GeneratedContentDisplay } from './components.js';
+import ChatbotAssistant from './ChatbotAssistant.js';
+import Lab from './Lab.js';
+import HistorySection from './History.js';
+import VideoSection from './Video.js';
+import AudioSection from './Audio.js';
+import ImageTab from './ImageTab.js';
+import TabSelector from './TabSelector.js';
+import Modals from './Modals.js';
+import AuthButtons from './AuthButtons.js';
+import EventModal from './EventModal.js';
+import AuthWall from './AuthWall.js';
 
 export default function AIImageGenerator() {
-  const state = useAppState(); //
+  const state = useAppState();
+  const { data: session, status } = useSession();
 
-  if (!state.isMounted) {
+  if (!state.isMounted || status === 'loading') {
     return <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900"><Spinner /></div>;
   }
 
   return (
     <div className={`min-h-screen transition-colors duration-300 bg-[var(--bg-color)] text-[var(--text-color)]`}>
-      {/* Meneruskan prop darkMode ke EventModal */}
       <EventModal darkMode={state.darkMode} />
 
       <style jsx global>{`
@@ -71,7 +73,7 @@ export default function AIImageGenerator() {
           .animate-fade-in { animation: fade-in 0.5s ease-out forwards; }
       `}</style>
       
-      {state.isBannerVisible && ( //
+      {state.isBannerVisible && (
        <div className="fixed top-0 left-0 right-0 bg-blue-600 text-white p-3 flex items-center justify-center gap-4 z-50 shadow-lg animate-fade-in">
           <span className="text-sm md:text-base">Install aplikasi untuk akses lebih cepat!</span>
           <button 
@@ -114,9 +116,24 @@ export default function AIImageGenerator() {
             <div className="lg:col-span-4 space-y-6">
               <div className="p-6 rounded-2xl h-fit space-y-4 neumorphic-card">
                 <TabSelector activeTab={state.activeTab} setActiveTab={state.setActiveTab} />
+                
                 {state.activeTab === 'image' && <ImageTab {...state} />}
+                
                 {state.activeTab === 'video' && <VideoSection {...state} />}
-                {state.activeTab === 'audio' && <AudioSection {...state} />}
+
+                {state.activeTab === 'audio' && (
+                  status === 'authenticated' ? (
+                    <AudioSection {...state} session={session} />
+                  ) : (
+                    <div className="animate-fade-in pt-4">
+                      <AuthWall 
+                        title="Login Diperlukan"
+                        message="Fitur Audio hanya tersedia untuk pengguna yang sudah login. Silakan masuk untuk melanjutkan."
+                      />
+                    </div>
+                  )
+                )}
+
                 {state.activeTab === 'lab' && <Lab isAuthenticated={state.isLabAuthenticated} onAuthSuccess={state.handleLabAuthSuccess} showToast={state.showToast} />}
               </div>
               <div className="p-6 rounded-2xl h-fit neumorphic-card">
@@ -138,7 +155,7 @@ export default function AIImageGenerator() {
                   selectedHistoryImage={state.selectedHistoryImage}
               />
               
-              {state.activeTab === 'lab' && !state.loading && ( //
+              {state.activeTab === 'lab' && !state.loading && (
                 <div className="w-full flex justify-center">
                   <div className="rounded-2xl p-8 text-center text-gray-400 bg-[var(--bg-color)] border border-gray-200 dark:border-gray-800 neumorphic-card shadow-lg max-w-3xl w-full">
                     {state.isLabAuthenticated ? 'Hasil eksperimen Lab akan muncul di sini.' : 'Masukkan kata sandi untuk melihat konten Lab.'}
@@ -175,7 +192,7 @@ export default function AIImageGenerator() {
           </p>
         </footer>
       </div>
-      {state.showBackToTop && ( //
+      {state.showBackToTop && (
         <NeumorphicButton onClick={state.scrollToTop} className="!p-3 fixed bottom-5 right-5 z-50 !rounded-full animate-fade-in" title="Back to Top">
           <ChevronUp size={24} />
         </NeumorphicButton>
