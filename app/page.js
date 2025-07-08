@@ -3,7 +3,7 @@
 "use client";
 
 import { Sun, Moon, Wand2, Upload, Coins, Clock, Settings, Trash2, ChevronUp, X } from 'lucide-react';
-import { useAppState } from './useAppState.js';
+import { useAppState } from './useAppState.js'; // --- Impor Custom Hook
 
 import { Spinner, NeumorphicButton, Toasts, GeneratedContentDisplay } from './components.js';
 import ChatbotAssistant from './ChatbotAssistant.js';
@@ -14,7 +14,6 @@ import AudioSection from './Audio.js';
 import ImageTab from './ImageTab.js';
 import TabSelector from './TabSelector.js';
 import Modals from './Modals.js';
-import AuthButtons from './AuthButtons.js';
 
 export default function AIImageGenerator() {
   const state = useAppState();
@@ -99,7 +98,6 @@ export default function AIImageGenerator() {
                 <NeumorphicButton aria-label="Buka pengaturan" onClick={() => state.setIsAdminModalOpen(true)} className="!p-2"><Settings size={16} /></NeumorphicButton>
               </div>
               <NeumorphicButton aria-label={state.darkMode ? "Ganti ke mode terang" : "Ganti ke mode gelap"} onClick={() => state.setDarkMode(!state.darkMode)} className="!p-3">{state.darkMode ? <Sun /> : <Moon />}</NeumorphicButton>
-              <AuthButtons />
             </div>
           </header>
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -117,7 +115,21 @@ export default function AIImageGenerator() {
               </div>
             </div>
             <div className="lg:col-span-8 space-y-8">
-              <GeneratedContentDisplay {...state} />
+              {/* --- BAGIAN YANG DIPERBAIKI --- */}
+              <GeneratedContentDisplay
+                  activeTab={state.activeTab}
+                  loading={state.loading}
+                  generatedImages={state.generatedImages}
+                  generatedVideoPrompt={state.generatedVideoPrompt}
+                  generatedAudio={state.generatedAudio}
+                  onUsePromptAndSeed={state.handleUsePromptAndSeed}
+                  onCreateVariation={state.handleCreateVariation}
+                  onDownload={state.handleDownload}
+                  showToast={state.showToast}
+                  selectedHistoryImage={state.selectedHistoryImage}
+              />
+              {/* --- AKHIR BAGIAN YANG DIPERBAIKI --- */}
+              
               {state.activeTab === 'lab' && !state.loading && (
                 <div className="w-full flex justify-center">
                   <div className="rounded-2xl p-8 text-center text-gray-400 bg-[var(--bg-color)] border border-gray-200 dark:border-gray-800 neumorphic-card shadow-lg max-w-3xl w-full">

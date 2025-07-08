@@ -61,7 +61,7 @@ export function useAppState() {
   const [isClearHistoryModalOpen, setIsClearHistoryModalOpen] = useState(false);
   const [isApiModalOpen, setIsApiModalOpen] = useState(false);
   const [isMasterResetModalOpen, setIsMasterResetModalOpen] = useState(false);
-
+  
   const canvasRef = useRef(null);
 
   const { width, height } = useMemo(() => {
@@ -115,7 +115,6 @@ export function useAppState() {
     }
   }, [showToast]);
 
-  // --- DEFINISI FUNGSI YANG HILANG DITAMBAHKAN DI SINI ---
   const handleRandomPrompt = useCallback(() => {
     if (aiSuggestions.length === 0) {
       showToast('Saran prompt sedang dimuat, coba lagi sesaat.', 'info');
@@ -456,10 +455,10 @@ export function useAppState() {
       if (!response.ok) throw new Error('Network response was not ok.');
       const blob = await response.blob();
       const objectURL = URL.createObjectURL(blob);
-
+    
       const img = new window.Image();
       img.crossOrigin = 'anonymous';
-
+    
       img.onload = async () => {
         const canvas = document.createElement('canvas');
         canvas.width = img.naturalWidth;
@@ -468,13 +467,13 @@ export function useAppState() {
         ctx.filter = filter !== 'none' ? filter : 'none';
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
         ctx.filter = 'none';
-
+    
         if (watermark && (watermark.text || watermark.imageUrl)) {
           ctx.save();
           ctx.globalAlpha = watermark.opacity || 0.7;
           const posX = (watermark.position?.x ?? 50) / 100 * canvas.width;
           const posY = (watermark.position?.y ?? 50) / 100 * canvas.height;
-
+    
           if (watermark.type === 'text' && watermark.text) {
             ctx.font = `bold ${Math.round((watermark.size || 8) / 100 * canvas.height)}px sans-serif`;
             ctx.fillStyle = watermark.color || '#fff';
@@ -486,33 +485,33 @@ export function useAppState() {
           } else if (watermark.type === 'image' && watermark.imageUrl) {
             const wmImg = new window.Image();
             wmImg.crossOrigin = 'anonymous';
-
+    
             await new Promise((resolve, reject) => {
               wmImg.onload = resolve;
               wmImg.onerror = reject;
               wmImg.src = watermark.imageUrl;
             });
-
+    
             const wmWidth = (watermark.size || 8) * 2 * (canvas.width / 100);
             const wmHeight = wmImg.naturalHeight / wmImg.naturalWidth * wmWidth;
             ctx.drawImage(wmImg, posX - wmWidth / 2, posY - wmHeight / 2, wmWidth, wmHeight);
           }
           ctx.restore();
         }
-
+    
         const link = document.createElement('a');
         link.download = `ruangriung-ai-${image.seed || Date.now()}.png`;
         link.href = canvas.toDataURL('image/png');
         link.click();
         URL.revokeObjectURL(objectURL);
       };
-
+    
       img.onerror = () => {
         showToast('Gagal memuat gambar untuk diunduh.', 'error');
         URL.revokeObjectURL(objectURL);
       }
       img.src = objectURL;
-
+    
     } catch (e) {
       showToast('Gagal mengunduh gambar. Coba lagi.', 'error');
       console.error(e);
