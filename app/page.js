@@ -3,22 +3,22 @@
 "use client";
 
 import { Sun, Moon, Wand2, Upload, Coins, Clock, Settings, Trash2, ChevronUp, Download, X } from 'lucide-react';
-import { useAppState } from './useAppState.js';
+import { useAppState } from './useAppState.js'; //
 
-import { Spinner, NeumorphicButton, Toasts, GeneratedContentDisplay } from './components.js';
-import ChatbotAssistant from './ChatbotAssistant.js';
-import Lab from './Lab.js';
-import HistorySection from './History.js';
-import VideoSection from './Video.js';
-import AudioSection from './Audio.js';
-import ImageTab from './ImageTab.js';
-import TabSelector from './TabSelector.js';
-import Modals from './Modals.js';
-import AuthButtons from './AuthButtons.js';
-import EventModal from './EventModal.js'; // <-- Komponen modal event diimpor di sini
+import { Spinner, NeumorphicButton, Toasts, GeneratedContentDisplay } from './components.js'; //
+import ChatbotAssistant from './ChatbotAssistant.js'; //
+import Lab from './Lab.js'; //
+import HistorySection from './History.js'; //
+import VideoSection from './Video.js'; //
+import AudioSection from './Audio.js'; //
+import ImageTab from './ImageTab.js'; //
+import TabSelector from './TabSelector.js'; //
+import Modals from './Modals.js'; //
+import AuthButtons from './AuthButtons.js'; //
+import EventModal from './EventModal.js'; //
 
 export default function AIImageGenerator() {
-  const state = useAppState();
+  const state = useAppState(); //
 
   if (!state.isMounted) {
     return <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900"><Spinner /></div>;
@@ -26,23 +26,8 @@ export default function AIImageGenerator() {
 
   return (
     <div className={`min-h-screen transition-colors duration-300 bg-[var(--bg-color)] text-[var(--text-color)]`}>
-      <EventModal /> {/* <-- Komponen modal event dirender di sini */}
-
-      {state.isBannerVisible && (
-       <div className="fixed top-0 left-0 right-0 bg-blue-600 text-white p-3 flex items-center justify-center gap-4 z-50 shadow-lg animate-fade-in">
-          <span className="text-sm md:text-base">Install aplikasi untuk akses lebih cepat!</span>
-          <button 
-            onClick={state.handleInstallClick} 
-            className="bg-white text-blue-700 font-bold py-2 px-4 rounded-lg flex items-center gap-2 text-sm hover:bg-gray-200 transition-colors shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white"
-          >
-            <Download size={16} />
-            Install
-          </button>
-          <button onClick={state.handleBannerClose} className="absolute top-1/2 right-3 -translate-y-1/2 text-white/70 hover:text-white">
-            <X size={20} />
-          </button>
-        </div>
-      )}
+      {/* Meneruskan prop darkMode ke EventModal */}
+      <EventModal darkMode={state.darkMode} />
 
       <style jsx global>{`
           :root {
@@ -86,6 +71,22 @@ export default function AIImageGenerator() {
           .animate-fade-in { animation: fade-in 0.5s ease-out forwards; }
       `}</style>
       
+      {state.isBannerVisible && ( //
+       <div className="fixed top-0 left-0 right-0 bg-blue-600 text-white p-3 flex items-center justify-center gap-4 z-50 shadow-lg animate-fade-in">
+          <span className="text-sm md:text-base">Install aplikasi untuk akses lebih cepat!</span>
+          <button 
+            onClick={state.handleInstallClick} 
+            className="bg-white text-blue-700 font-bold py-2 px-4 rounded-lg flex items-center gap-2 text-sm hover:bg-gray-200 transition-colors shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white"
+          >
+            <Download size={16} />
+            Install
+          </button>
+          <button onClick={state.handleBannerClose} className="absolute top-1/2 right-3 -translate-y-1/2 text-white/70 hover:text-white">
+            <X size={20} />
+          </button>
+        </div>
+      )}
+
       <Toasts toasts={state.toasts} />
       <canvas ref={state.canvasRef} className="hidden"></canvas>
       
@@ -124,21 +125,20 @@ export default function AIImageGenerator() {
               </div>
             </div>
             <div className="lg:col-span-8 space-y-8">
-              {/* --- PERBAIKAN UTAMA DI SINI --- */}
               <GeneratedContentDisplay
                   activeTab={state.activeTab}
                   loading={state.loading}
                   generatedImages={state.generatedImages}
                   generatedVideoPrompt={state.generatedVideoPrompt}
                   generatedAudio={state.generatedAudio}
-                  onUsePromptAndSeed={state.handleUsePromptAndSeed} // <- Nama prop yang benar
-                  onCreateVariation={state.handleCreateVariation} // <- Nama prop yang benar
-                  onDownload={state.handleDownload}                 // <- Nama prop yang benar
+                  onUsePromptAndSeed={state.handleUsePromptAndSeed}
+                  onCreateVariation={state.handleCreateVariation}
+                  onDownload={state.handleDownload}
                   showToast={state.showToast}
                   selectedHistoryImage={state.selectedHistoryImage}
               />
               
-              {state.activeTab === 'lab' && !state.loading && (
+              {state.activeTab === 'lab' && !state.loading && ( //
                 <div className="w-full flex justify-center">
                   <div className="rounded-2xl p-8 text-center text-gray-400 bg-[var(--bg-color)] border border-gray-200 dark:border-gray-800 neumorphic-card shadow-lg max-w-3xl w-full">
                     {state.isLabAuthenticated ? 'Hasil eksperimen Lab akan muncul di sini.' : 'Masukkan kata sandi untuk melihat konten Lab.'}
@@ -146,7 +146,6 @@ export default function AIImageGenerator() {
                 </div>
               )}
               
-              {/* --- PERBAIKAN KEDUA DI SINI --- */}
               <HistorySection
                 generationHistory={state.generationHistory}
                 setGenerationHistory={state.setGenerationHistory}
@@ -158,8 +157,7 @@ export default function AIImageGenerator() {
                 showToast={state.showToast}
                 setPrompt={state.setPrompt}
                 setSeed={state.setSeed}
-                // Pastikan prop ini juga diteruskan ke HistorySection
-                onUsePromptAndSeed={state.handleUsePromptAndSeed} // <- Nama prop yang benar
+                onUsePromptAndSeed={state.handleUsePromptAndSeed}
               />
             </div>
           </div>
@@ -177,7 +175,7 @@ export default function AIImageGenerator() {
           </p>
         </footer>
       </div>
-      {state.showBackToTop && (
+      {state.showBackToTop && ( //
         <NeumorphicButton onClick={state.scrollToTop} className="!p-3 fixed bottom-5 right-5 z-50 !rounded-full animate-fade-in" title="Back to Top">
           <ChevronUp size={24} />
         </NeumorphicButton>

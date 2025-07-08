@@ -4,34 +4,29 @@
 
 import { useState, useEffect } from 'react';
 import { X, Gift, Trophy, Calendar, ScrollText, Share2 } from 'lucide-react';
-import { NeumorphicButton } from './components.js';
+import { NeumorphicButton } from './components.js'; //
 
-export default function EventModal() {
-  const [isOpen, setIsOpen] = useState(false);
+export default function EventModal({ darkMode }) { // Tambahkan `darkMode` sebagai prop
+  const [isOpen, setIsOpen] = useState(false); //
 
-  useEffect(() => {
-    // Timer akan berjalan setelah komponen selesai dimuat di client
+  useEffect(() => { //
     const timer = setTimeout(() => {
-      // Hanya tampilkan modal jika belum pernah ditutup di sesi ini
-      if (!sessionStorage.getItem('eventModalClosed')) {
-        setIsOpen(true);
-      }
-    }, 5000); // Tampilkan setelah 5 detik
+      setIsOpen(true); //
+    }, 5000); //
 
-    // Membersihkan timer jika komponen di-unmount sebelum 5 detik
-    return () => clearTimeout(timer);
-  }, []);
+    return () => clearTimeout(timer); //
+  }, []); //
 
-  const handleClose = () => {
-    setIsOpen(false);
-    // Tandai bahwa modal sudah ditutup agar tidak muncul lagi di sesi ini
-    sessionStorage.setItem('eventModalClosed', 'true');
-  };
+  const handleClose = () => { //
+    setIsOpen(false); //
+  }; //
 
-  // Jika modal tidak terbuka, jangan render apa-apa
-  if (!isOpen) {
-    return null;
+  if (!isOpen) { //
+    return null; //
   }
+
+  // Pilih logo berdasarkan mode gelap
+  const logoSrc = darkMode ? '/assets/logo-dark.png' : '/assets/logo-light.png';
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-[100] p-4 animate-fade-in">
@@ -50,6 +45,12 @@ export default function EventModal() {
 
         {/* Konten Scrollable */}
         <div className="flex-grow overflow-y-auto pr-4 -mr-4 space-y-6 text-sm sm:text-base">
+          {/* Banner RuangRiung - sekarang dinamis */}
+          <img
+            src={logoSrc}
+            alt="Logo RuangRiung"
+            className="w-[830px] h-[156px] object-contain mx-auto mb-4"
+          />
           <p className="text-center font-semibold">
             Mari rayakan 1 TAHUN RUANGRIUNG dengan cara yang kreatif, unik, dan penuh imajinasi!
           </p>
@@ -101,7 +102,6 @@ export default function EventModal() {
         <div className="flex-shrink-0 text-center pt-4 mt-4 space-y-4 border-t border-gray-500/20">
           <p className="font-bold">Mari berkarya dan tunjukkan kreativitas tanpa batas!</p>
           
-          {/* --- TOMBOL BARU DITAMBAHKAN DI SINI --- */}
           <NeumorphicButton
             as="a"
             href="https://web.facebook.com/groups/1182261482811767/"
@@ -113,7 +113,6 @@ export default function EventModal() {
             <Share2 size={18} />
             Gabung Grup Facebook
           </NeumorphicButton>
-          {/* -------------------------------------- */}
           
           <p className="text-sm opacity-80">RUANGRIUNG adalah ruang untuk imajinasi, eksplorasi, dan ekspresi.</p>
         </div>
