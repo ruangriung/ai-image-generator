@@ -6,7 +6,6 @@ import { useState, useEffect } from 'react';
 import { useSession, signIn, signOut } from 'next-auth/react';
 import { NeumorphicButton, Spinner, Toasts } from '../components.js';
 import Link from 'next/link';
-// --- Impor ikon yang dibutuhkan ---
 import { LogIn, LogOut, Send, User, Mail, MessageSquare } from 'lucide-react';
 
 export default function ContactPage() {
@@ -69,11 +68,12 @@ export default function ContactPage() {
   if (status === 'unauthenticated') {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center text-center p-4">
+        {/* --- Bagian yang diubah dimulai di sini --- */}
         <div className="p-8 rounded-2xl w-full max-w-sm neumorphic-card">
-          <h1 className="text-2xl font-bold mb-4">Akses Ditolak</h1>
-          <p className="mb-6 opacity-70">Anda harus login untuk mengakses halaman ini.</p>
+          <h1 className="text-2xl font-bold mb-4">Eits, Tahan Dulu! ✋</h1>
+          <p className="mb-6 opacity-70">Kamu perlu masuk dulu nih, biar bisa kirim pesan ke kami.</p>
           <NeumorphicButton onClick={() => signIn('google')} className="font-bold w-full">
-            <LogIn size={18}/> Login dengan Google
+            <LogIn size={18}/> Lanjut dengan Google
           </NeumorphicButton>
         </div>
         <div className="text-center mt-8">
@@ -81,6 +81,7 @@ export default function ContactPage() {
               &larr; Kembali ke Generator
             </Link>
         </div>
+        {/* --- Bagian yang diubah berakhir di sini --- */}
       </div>
     );
   }
@@ -110,27 +111,23 @@ export default function ContactPage() {
         
         <form onSubmit={handleSubmit} className="p-6 sm:p-8 rounded-2xl neumorphic-card space-y-6">
           <div>
-            {/* --- Label dengan Ikon --- */}
-            <label htmlFor="name" className=" font-semibold mb-2 flex items-center gap-2">
+            <label htmlFor="name" className="font-semibold mb-2 flex items-center gap-2">
               <User size={16} className="opacity-70" /> Nama
             </label>
             <input type="text" name="name" id="name" value={formData.name} onChange={handleChange} required className="w-full p-3 rounded-lg neumorphic-input"/>
           </div>
           <div>
-            {/* --- Label dengan Ikon --- */}
-            <label htmlFor="email" className=" font-semibold mb-2 flex items-center gap-2">
+            <label htmlFor="email" className="font-semibold mb-2 flex items-center gap-2">
               <Mail size={16} className="opacity-70" /> Email
             </label>
             <input type="email" name="email" id="email" value={formData.email} onChange={handleChange} required className="w-full p-3 rounded-lg neumorphic-input"/>
           </div>
           <div>
-            {/* --- Label dengan Ikon --- */}
-            <label htmlFor="message" className=" font-semibold mb-2 flex items-center gap-2">
+            <label htmlFor="message" className="font-semibold mb-2 flex items-center gap-2">
               <MessageSquare size={16} className="opacity-70" /> Pesan
             </label>
             <textarea name="message" id="message" value={formData.message} onChange={handleChange} rows="5" required className="w-full p-3 rounded-lg neumorphic-input resize-none"></textarea>
           </div>
-          {/* --- Tombol dengan Ikon --- */}
           <NeumorphicButton type="submit" loading={isSending} loadingText="Mengirim..." className="w-full font-bold text-lg flex items-center justify-center gap-2">
             <Send size={18} /> Kirim Pesan
           </NeumorphicButton>
