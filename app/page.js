@@ -3,7 +3,7 @@
 "use client";
 
 import { Sun, Moon, Wand2, Upload, Coins, Clock, Settings, Trash2, ChevronUp, X } from 'lucide-react';
-import { useAppState } from './useAppState.js'; // --- Impor Custom Hook
+import { useAppState } from './useAppState.js';
 
 import { Spinner, NeumorphicButton, Toasts, GeneratedContentDisplay } from './components.js';
 import ChatbotAssistant from './ChatbotAssistant.js';
@@ -14,6 +14,7 @@ import AudioSection from './Audio.js';
 import ImageTab from './ImageTab.js';
 import TabSelector from './TabSelector.js';
 import Modals from './Modals.js';
+import AuthButtons from './AuthButtons.js';
 
 export default function AIImageGenerator() {
   const state = useAppState();
@@ -98,6 +99,7 @@ export default function AIImageGenerator() {
                 <NeumorphicButton aria-label="Buka pengaturan" onClick={() => state.setIsAdminModalOpen(true)} className="!p-2"><Settings size={16} /></NeumorphicButton>
               </div>
               <NeumorphicButton aria-label={state.darkMode ? "Ganti ke mode terang" : "Ganti ke mode gelap"} onClick={() => state.setDarkMode(!state.darkMode)} className="!p-3">{state.darkMode ? <Sun /> : <Moon />}</NeumorphicButton>
+              <AuthButtons />
             </div>
           </header>
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -115,20 +117,19 @@ export default function AIImageGenerator() {
               </div>
             </div>
             <div className="lg:col-span-8 space-y-8">
-              {/* --- BAGIAN YANG DIPERBAIKI --- */}
+              {/* --- PERBAIKAN UTAMA DI SINI --- */}
               <GeneratedContentDisplay
                   activeTab={state.activeTab}
                   loading={state.loading}
                   generatedImages={state.generatedImages}
                   generatedVideoPrompt={state.generatedVideoPrompt}
                   generatedAudio={state.generatedAudio}
-                  onUsePromptAndSeed={state.handleUsePromptAndSeed}
-                  onCreateVariation={state.handleCreateVariation}
-                  onDownload={state.handleDownload}
+                  onUsePromptAndSeed={state.handleUsePromptAndSeed} // <- Nama prop yang benar
+                  onCreateVariation={state.handleCreateVariation} // <- Nama prop yang benar
+                  onDownload={state.handleDownload}                 // <- Nama prop yang benar
                   showToast={state.showToast}
                   selectedHistoryImage={state.selectedHistoryImage}
               />
-              {/* --- AKHIR BAGIAN YANG DIPERBAIKI --- */}
               
               {state.activeTab === 'lab' && !state.loading && (
                 <div className="w-full flex justify-center">
@@ -137,7 +138,22 @@ export default function AIImageGenerator() {
                   </div>
                 </div>
               )}
-              <HistorySection {...state} />
+              
+              {/* --- PERBAIKAN KEDUA DI SINI --- */}
+              <HistorySection
+                generationHistory={state.generationHistory}
+                setGenerationHistory={state.setGenerationHistory}
+                savedPrompts={state.savedPrompts}
+                setSavedPrompts={state.setSavedPrompts}
+                setSelectedHistoryImage={state.setSelectedHistoryImage}
+                setGeneratedImages={state.setGeneratedImages}
+                setIsClearHistoryModalOpen={state.setIsClearHistoryModalOpen}
+                showToast={state.showToast}
+                setPrompt={state.setPrompt}
+                setSeed={state.setSeed}
+                // Pastikan prop ini juga diteruskan ke HistorySection
+                onUsePromptAndSeed={state.handleUsePromptAndSeed} // <- Nama prop yang benar
+              />
             </div>
           </div>
         </main>

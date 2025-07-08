@@ -128,7 +128,6 @@ export function useAppState() {
     showToast('Prompt acak telah dimuat!', 'success');
   }, [aiSuggestions, isFetchingSuggestions, showToast, fetchAiSuggestions]);
 
-
   useEffect(() => {
     setIsMounted(true);
   }, []);
@@ -539,7 +538,8 @@ export function useAppState() {
   }, [showToast, handleGenerate]);
 
 
-  // Di sini kita mengembalikan semua state dan fungsi yang dibutuhkan oleh komponen UI
+  // --- PERBAIKAN DI SINI ---
+  // Objek yang di-return sekarang menyertakan SEMUA fungsi handler
   return {
     isMounted, prompt, setPrompt, model, setModel, quality, setQuality, sizePreset, setSizePreset,
     useCustomSize, setUseCustomSize, customWidth, setCustomWidth, customHeight, setCustomHeight,
@@ -556,14 +556,14 @@ export function useAppState() {
     isAdminModalOpen, setIsAdminModalOpen, isClearHistoryModalOpen, setIsClearHistoryModalOpen, isApiModalOpen, setIsApiModalOpen,
     isMasterResetModalOpen, setIsMasterResetModalOpen, canvasRef, showToast, fetchAiSuggestions, handleRandomPrompt,
     handleModelChange, handleApiKeySubmit, handleEnhancePrompt, handleGenerate,
-    handleAdminReset: () => { if (adminPassword === "passwordRahasia") { setCoins(500); localStorage.setItem('aiGeneratorCoinsData', JSON.stringify({ coins: 500, lastReset: new Date().getTime() })); showToast('Koin berhasil direset ke 500!', 'success'); setIsAdminModalOpen(false); setAdminPassword(''); } else { showToast('Password admin salah.', 'error'); } },
-    handleGenerateModalPassword: () => {
+    handleAdminReset: useCallback(() => { if (adminPassword === "passwordRahasia") { setCoins(500); localStorage.setItem('aiGeneratorCoinsData', JSON.stringify({ coins: 500, lastReset: new Date().getTime() })); showToast('Koin berhasil direset ke 500!', 'success'); setIsAdminModalOpen(false); setAdminPassword(''); } else { showToast('Password admin salah.', 'error'); } }, [adminPassword, showToast]),
+    handleGenerateModalPassword: useCallback(() => {
         const randomChars = Array(5).fill(0).map(() => Math.floor(Math.random() * 10)).join('');
         const newPassword = `ruangriung-${randomChars}`;
         setGeneratedTurboPassword(newPassword);
         setTurboPasswordInput('');
-    },
-    handleActivateTurbo: () => {
+    }, []),
+    handleActivateTurbo: useCallback(() => {
         const expiry = new Date().getTime() + 24 * 60 * 60 * 1000;
         try {
             localStorage.setItem('turboPasswordData', JSON.stringify({ password: generatedTurboPassword, expiry }));
@@ -575,13 +575,13 @@ export function useAppState() {
         } catch (e) {
             showToast('Gagal menyimpan dan mengaktifkan Turbo.', 'error');
         }
-    },
-    handleClearHistory: () => { setGenerationHistory([]); setSavedPrompts([]); setIsClearHistoryModalOpen(false); showToast('Semua riwayat telah dihapus.', 'success'); },
+    }, [generatedTurboPassword, showToast]),
+    handleClearHistory: useCallback(() => { setGenerationHistory([]); setSavedPrompts([]); setIsClearHistoryModalOpen(false); showToast('Semua riwayat telah dihapus.', 'success'); }, [showToast]),
     handleUsePromptAndSeed,
     handleCreateVariation,
     handleDownload,
-    handleLabAuthSuccess: () => setIsLabAuthenticated(true),
-    handleMasterReset: () => {
+    handleLabAuthSuccess: useCallback(() => setIsLabAuthenticated(true), []),
+    handleMasterReset: useCallback(() => {
         try {
           const coinData = localStorage.getItem('aiGeneratorCoinsData');
           const darkModePref = localStorage.getItem('darkMode');
@@ -610,18 +610,18 @@ export function useAppState() {
           console.error("Gagal mereset data:", e);
           showToast('Gagal mereset data.', 'error');
         }
-    },
-    handleInstallClick: async () => {
+    }, [showToast]),
+    handleInstallClick: useCallback(async () => {
       if (!installPrompt) return;
       const result = await installPrompt.prompt();
       console.log(`Install prompt was: ${result.outcome}`);
       setInstallPrompt(null);
       setIsBannerVisible(false);
-    },
-    handleBannerClose: () => {
+    }, [installPrompt]),
+    handleBannerClose: useCallback(() => {
       setIsBannerVisible(false);
       sessionStorage.setItem('pwaBannerClosed', 'true');
-    },
-    scrollToTop: () => window.scrollTo({ top: 0, behavior: 'smooth' }),
+    }, []),
+    scrollToTop: useCallback(() => window.scrollTo({ top: 0, behavior: 'smooth' }), []),
   };
 }

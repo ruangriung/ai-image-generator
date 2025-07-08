@@ -75,6 +75,11 @@ export default function ContactPage() {
             <LogIn size={18}/> Login dengan Google
           </NeumorphicButton>
         </div>
+         <div className="text-center mt-8">
+            <Link href="/" className="font-semibold text-indigo-400 hover:text-indigo-300 transition-colors">
+              &larr; Kembali ke Generator
+            </Link>
+        </div>
       </div>
     );
   }
