@@ -111,21 +111,21 @@ export default function ContactPage() {
         <form onSubmit={handleSubmit} className="p-6 sm:p-8 rounded-2xl neumorphic-card space-y-6">
           <div>
             {/* --- Label dengan Ikon --- */}
-            <label htmlFor="name" className="block font-semibold mb-2 flex items-center gap-2">
+            <label htmlFor="name" className=" font-semibold mb-2 flex items-center gap-2">
               <User size={16} className="opacity-70" /> Nama
             </label>
             <input type="text" name="name" id="name" value={formData.name} onChange={handleChange} required className="w-full p-3 rounded-lg neumorphic-input"/>
           </div>
           <div>
             {/* --- Label dengan Ikon --- */}
-            <label htmlFor="email" className="block font-semibold mb-2 flex items-center gap-2">
+            <label htmlFor="email" className=" font-semibold mb-2 flex items-center gap-2">
               <Mail size={16} className="opacity-70" /> Email
             </label>
             <input type="email" name="email" id="email" value={formData.email} onChange={handleChange} required className="w-full p-3 rounded-lg neumorphic-input"/>
           </div>
           <div>
             {/* --- Label dengan Ikon --- */}
-            <label htmlFor="message" className="block font-semibold mb-2 flex items-center gap-2">
+            <label htmlFor="message" className=" font-semibold mb-2 flex items-center gap-2">
               <MessageSquare size={16} className="opacity-70" /> Pesan
             </label>
             <textarea name="message" id="message" value={formData.message} onChange={handleChange} rows="5" required className="w-full p-3 rounded-lg neumorphic-input resize-none"></textarea>

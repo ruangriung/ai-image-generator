@@ -2,7 +2,7 @@
 
 "use client";
 
-import { Sun, Moon, Wand2, Upload, Coins, Clock, Settings, Trash2, ChevronUp, X } from 'lucide-react';
+import { Sun, Moon, Wand2, Upload, Coins, Clock, Settings, Trash2, ChevronUp, Download, X } from 'lucide-react';
 import { useAppState } from './useAppState.js';
 
 import { Spinner, NeumorphicButton, Toasts, GeneratedContentDisplay } from './components.js';
