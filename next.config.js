@@ -15,6 +15,15 @@ const nextConfig = {
     NEXT_PUBLIC_LAB_ACCESS_PASSWORD: process.env.LAB_ACCESS_PASSWORD || 'passwordRahasia',
     // ----------------------
   },
+images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'lh3.googleusercontent.com',
+        port: '',
+        pathname: '/**',
+      },
+    ],
+  },
 };
-
 module.exports = withPWA(nextConfig);
