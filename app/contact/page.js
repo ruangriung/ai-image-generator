@@ -6,7 +6,8 @@ import { useState, useEffect } from 'react';
 import { useSession, signIn, signOut } from 'next-auth/react';
 import { NeumorphicButton, Spinner, Toasts } from '../components.js';
 import Link from 'next/link';
-import { LogIn, LogOut, Send, User, Mail, MessageSquare } from 'lucide-react';
+// Hapus LogIn dari impor jika sudah tidak ada tombol lain yang menggunakannya
+import { LogOut, Send, User, Mail, MessageSquare } from 'lucide-react';
 
 export default function ContactPage() {
   const { data: session, status } = useSession();
@@ -68,12 +69,14 @@ export default function ContactPage() {
   if (status === 'unauthenticated') {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center text-center p-4">
-        {/* --- Bagian yang diubah dimulai di sini --- */}
         <div className="p-8 rounded-2xl w-full max-w-sm neumorphic-card">
           <h1 className="text-2xl font-bold mb-4">Eits, Tahan Dulu! ✋</h1>
           <p className="mb-6 opacity-70">Kamu perlu masuk dulu nih, biar bisa kirim pesan ke kami.</p>
           <NeumorphicButton onClick={() => signIn('google')} className="font-bold w-full">
-            <LogIn size={18}/> Lanjut dengan Google
+            {/* --- BLOK YANG DIUBAH --- */}
+            <img src="/google-icon.svg" alt="Google logo" className="w-5 h-5" />
+            Lanjut dengan Google
+            {/* --- AKHIR BLOK --- */}
           </NeumorphicButton>
         </div>
         <div className="text-center mt-8">
@@ -81,12 +84,12 @@ export default function ContactPage() {
               &larr; Kembali ke Generator
             </Link>
         </div>
-        {/* --- Bagian yang diubah berakhir di sini --- */}
       </div>
     );
   }
 
   return (
+    // ... sisa kode tidak berubah ...
     <div className="min-h-screen container mx-auto p-4 sm:p-6 lg:p-8 flex items-center justify-center">
       <Toasts toasts={toasts} />
       <div className="max-w-2xl w-full">

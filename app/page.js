@@ -30,7 +30,6 @@ export default function AIImageGenerator() {
   return (
     <div className={`min-h-screen transition-colors duration-300 bg-[var(--bg-color)] text-[var(--text-color)]`}>
       <EventModal darkMode={state.darkMode} />
-
       <style jsx global>{`
           :root {
             --bg-color: #e0e0e0;
@@ -119,8 +118,21 @@ export default function AIImageGenerator() {
                 
                 {state.activeTab === 'image' && <ImageTab {...state} />}
                 
-                {state.activeTab === 'video' && <VideoSection {...state} />}
-
+                {/* --- BLOK VIDEO DENGAN LOGIN --- */}
+                {state.activeTab === 'video' && (
+                  status === 'authenticated' ? (
+                    <VideoSection {...state} session={session} />
+                  ) : (
+                    <div className="animate-fade-in pt-4">
+                      <AuthWall 
+                        title="Login Diperlukan"
+                        message="Fitur Video hanya tersedia untuk pengguna yang sudah login. Silakan masuk untuk melanjutkan."
+                      />
+                    </div>
+                  )
+                )}
+                
+                {/* --- BLOK AUDIO DENGAN LOGIN (TETAP ADA) --- */}
                 {state.activeTab === 'audio' && (
                   status === 'authenticated' ? (
                     <AudioSection {...state} session={session} />

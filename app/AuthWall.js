@@ -4,7 +4,8 @@
 
 import { signIn } from 'next-auth/react';
 import { NeumorphicButton } from './components.js';
-import { LogIn } from 'lucide-react';
+// Hapus impor LogIn karena sudah tidak digunakan
+// import { LogIn } from 'lucide-react'; 
 
 export default function AuthWall({ title, message }) {
   return (
@@ -15,7 +16,10 @@ export default function AuthWall({ title, message }) {
         onClick={() => signIn('google')} 
         className="font-bold w-full max-w-xs mx-auto"
       >
-        <LogIn size={18}/> Lanjut dengan Google
+        {/* --- BLOK YANG DIUBAH --- */}
+        <img src="/google-icon.svg" alt="Google logo" className="w-5 h-5" />
+        Lanjut dengan Google
+        {/* --- AKHIR BLOK --- */}
       </NeumorphicButton>
     </div>
   );
