@@ -26,11 +26,15 @@ export default function AIImageGenerator() {
   return (
     <div className={`min-h-screen transition-colors duration-300 bg-[var(--bg-color)] text-[var(--text-color)]`}>
       {state.isBannerVisible && (
-        <div className="fixed top-0 left-0 right-0 bg-blue-600 text-white p-3 flex items-center justify-center gap-4 z-50 shadow-lg animate-fade-in">
+       <div className="fixed top-0 left-0 right-0 bg-blue-600 text-white p-3 flex items-center justify-center gap-4 z-50 shadow-lg animate-fade-in">
           <span className="text-sm md:text-base">Install aplikasi untuk akses lebih cepat!</span>
-          <NeumorphicButton onClick={state.handleInstallClick} className="bg-white text-blue-600 font-bold !py-1 !px-3 rounded-md !text-sm hover:bg-gray-200">
+          <button 
+            onClick={state.handleInstallClick} 
+            className="bg-white text-blue-700 font-bold py-2 px-4 rounded-lg flex items-center gap-2 text-sm hover:bg-gray-200 transition-colors shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white"
+          >
+            <Download size={16} />
             Install
-          </NeumorphicButton>
+          </button>
           <button onClick={state.handleBannerClose} className="absolute top-1/2 right-3 -translate-y-1/2 text-white/70 hover:text-white">
             <X size={20} />
           </button>

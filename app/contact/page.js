@@ -6,7 +6,8 @@ import { useState, useEffect } from 'react';
 import { useSession, signIn, signOut } from 'next-auth/react';
 import { NeumorphicButton, Spinner, Toasts } from '../components.js';
 import Link from 'next/link';
-import { LogIn, LogOut } from 'lucide-react';
+// --- Impor ikon yang dibutuhkan ---
+import { LogIn, LogOut, Send, User, Mail, MessageSquare } from 'lucide-react';
 
 export default function ContactPage() {
   const { data: session, status } = useSession();
@@ -75,7 +76,7 @@ export default function ContactPage() {
             <LogIn size={18}/> Login dengan Google
           </NeumorphicButton>
         </div>
-         <div className="text-center mt-8">
+        <div className="text-center mt-8">
             <Link href="/" className="font-semibold text-indigo-400 hover:text-indigo-300 transition-colors">
               &larr; Kembali ke Generator
             </Link>
@@ -88,39 +89,50 @@ export default function ContactPage() {
     <div className="min-h-screen container mx-auto p-4 sm:p-6 lg:p-8 flex items-center justify-center">
       <Toasts toasts={toasts} />
       <div className="max-w-2xl w-full">
-        {/* --- BAGIAN BARU DIMULAI DARI SINI --- */}
-        <header className="relative text-center mb-8">
-            <div className="absolute top-0 right-0 flex items-center gap-3">
-                <img 
-                    src={session.user.image} 
-                    alt={session.user.name} 
-                    className="w-10 h-10 rounded-full neumorphic-card p-1"
-                    title={`Login sebagai ${session.user.name}`}
-                />
-                <NeumorphicButton onClick={() => signOut()} className="!p-2" title="Logout">
-                    <LogOut size={18} />
-                </NeumorphicButton>
-            </div>
+        <header className="flex justify-between items-center mb-8">
+          <div className="w-24"></div>
+          <div className="text-center">
             <h1 className="text-3xl font-bold">Hubungi Kami</h1>
-            <p className="opacity-70 mt-2">Punya pertanyaan atau masukan? Jangan ragu untuk mengirim pesan.</p>
+            <p className="opacity-70 mt-2">Punya pertanyaan atau masukan?</p>
+          </div>
+          <div className="flex items-center justify-end gap-3 w-24">
+              <img 
+                  src={session.user.image} 
+                  alt={session.user.name} 
+                  className="w-10 h-10 rounded-full neumorphic-card p-1"
+                  title={`Login sebagai ${session.user.name}`}
+              />
+              <NeumorphicButton onClick={() => signOut()} className="!p-2" title="Logout">
+                  <LogOut size={18} />
+              </NeumorphicButton>
+          </div>
         </header>
-        {/* --- BAGIAN BARU BERAKHIR DI SINI --- */}
         
         <form onSubmit={handleSubmit} className="p-6 sm:p-8 rounded-2xl neumorphic-card space-y-6">
           <div>
-            <label htmlFor="name" className="block font-semibold mb-2">Nama</label>
+            {/* --- Label dengan Ikon --- */}
+            <label htmlFor="name" className="block font-semibold mb-2 flex items-center gap-2">
+              <User size={16} className="opacity-70" /> Nama
+            </label>
             <input type="text" name="name" id="name" value={formData.name} onChange={handleChange} required className="w-full p-3 rounded-lg neumorphic-input"/>
           </div>
           <div>
-            <label htmlFor="email" className="block font-semibold mb-2">Email</label>
+            {/* --- Label dengan Ikon --- */}
+            <label htmlFor="email" className="block font-semibold mb-2 flex items-center gap-2">
+              <Mail size={16} className="opacity-70" /> Email
+            </label>
             <input type="email" name="email" id="email" value={formData.email} onChange={handleChange} required className="w-full p-3 rounded-lg neumorphic-input"/>
           </div>
           <div>
-            <label htmlFor="message" className="block font-semibold mb-2">Pesan</label>
+            {/* --- Label dengan Ikon --- */}
+            <label htmlFor="message" className="block font-semibold mb-2 flex items-center gap-2">
+              <MessageSquare size={16} className="opacity-70" /> Pesan
+            </label>
             <textarea name="message" id="message" value={formData.message} onChange={handleChange} rows="5" required className="w-full p-3 rounded-lg neumorphic-input resize-none"></textarea>
           </div>
-          <NeumorphicButton type="submit" loading={isSending} loadingText="Mengirim..." className="w-full font-bold text-lg">
-            Kirim Pesan
+          {/* --- Tombol dengan Ikon --- */}
+          <NeumorphicButton type="submit" loading={isSending} loadingText="Mengirim..." className="w-full font-bold text-lg flex items-center justify-center gap-2">
+            <Send size={18} /> Kirim Pesan
           </NeumorphicButton>
         </form>
         <div className="text-center mt-8">
