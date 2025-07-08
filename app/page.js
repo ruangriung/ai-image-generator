@@ -15,6 +15,7 @@ import ImageTab from './ImageTab.js';
 import TabSelector from './TabSelector.js';
 import Modals from './Modals.js';
 import AuthButtons from './AuthButtons.js';
+import EventModal from './EventModal.js'; // <-- Komponen modal event diimpor di sini
 
 export default function AIImageGenerator() {
   const state = useAppState();
@@ -25,6 +26,8 @@ export default function AIImageGenerator() {
 
   return (
     <div className={`min-h-screen transition-colors duration-300 bg-[var(--bg-color)] text-[var(--text-color)]`}>
+      <EventModal /> {/* <-- Komponen modal event dirender di sini */}
+
       {state.isBannerVisible && (
        <div className="fixed top-0 left-0 right-0 bg-blue-600 text-white p-3 flex items-center justify-center gap-4 z-50 shadow-lg animate-fade-in">
           <span className="text-sm md:text-base">Install aplikasi untuk akses lebih cepat!</span>
