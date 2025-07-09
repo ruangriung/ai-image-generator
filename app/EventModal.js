@@ -26,7 +26,7 @@ export default function EventModal({ darkMode }) { // Tambahkan `darkMode` sebag
   }
 
   // Pilih logo berdasarkan mode gelap
-  const logoSrc = darkMode ? '/assets/logo-dark.png' : '/assets/logo-light.png';
+  const logoSrc = darkMode ? '/assets/logo-dark.web' : '/assets/logo-light.web';
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-[100] p-4 animate-fade-in">
