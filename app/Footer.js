@@ -84,6 +84,13 @@ export default function Footer() {
       </div>
 
       <div className="text-center mt-12 pt-8 border-t border-gray-500/20 opacity-70">
+        {/* --- PENAMBAHAN BARU: Tautan Kebijakan --- */}
+        <div className="space-x-4 mb-4">
+            <Link href="/terms" className="hover:underline">Ketentuan Layanan</Link>
+            <span>•</span>
+            <Link href="/privacy" className="hover:underline">Kebijakan Privasi</Link>
+        </div>
+        {/* --- AKHIR PENAMBAHAN --- */}
         <p>&copy; {new Date().getFullYear()} RuangRiung AI Image Generator - Developed with ❤️ by{' '}
           <a href="https://ariftirtana.com" target="_blank" rel="noopener noreferrer" className="font-semibold text-indigo-400 hover:text-indigo-300 transition-colors">
             Arif Tirtana
