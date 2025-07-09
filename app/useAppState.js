@@ -6,7 +6,6 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 
 // Ini adalah Custom Hook kita!
 export function useAppState() {
-  // ... (semua deklarasi useState tetap sama)
   const [isMounted, setIsMounted] = useState(false);
   const [prompt, setPrompt] = useState('');
   const [model, setModel] = useState('flux');
@@ -32,7 +31,9 @@ export function useAppState() {
       concept: '', visualStyle: 'cinematic', duration: 10, aspectRatio: '16:9',
       fps: 24, cameraMovement: 'static', cameraAngle: 'eye-level', lensType: 'standard',
       depthOfField: 'medium', filmGrain: 20, chromaticAberration: 10,
-      colorGrading: 'neutral', timeOfDay: 'midday', weather: 'clear'
+      colorGrading: 'neutral', timeOfDay: 'midday', weather: 'clear',
+      narration: '', 
+      videoModel: 'default'
   });
   const [tempApiKey, setTempApiKey] = useState('');
   const [showApiKey, setShowApiKey] = useState(false);
@@ -46,7 +47,7 @@ export function useAppState() {
   const [adminPassword, setAdminPassword] = useState('');
   const [showAdminPassword, setShowAdminPassword] = useState(false);
   const [audioVoice, setAudioVoice] = useState('alloy');
-  const [generatedAudio, setGeneratedAudio] = useState(null);
+  const [generatedAudioData, setGeneratedAudioData] = useState(null);
   const [generatedVideoPrompt, setGeneratedVideoPrompt] = useState('');
   const [showBackToTop, setShowBackToTop] = useState(false);
   const [installPrompt, setInstallPrompt] = useState(null);
@@ -75,6 +76,47 @@ export function useAppState() {
     setToasts(prev => [...prev, { id, message, type }]);
     setTimeout(() => setToasts(prev => prev.filter(toast => toast.id !== id)), duration);
   }, []);
+
+  const handleDownloadAudio = useCallback(() => {
+    if (!generatedAudioData || !generatedAudioData.url) {
+      showToast('Tidak ada audio untuk diunduh.', 'error');
+      return;
+    }
+    const link = document.createElement('a');
+    link.href = generatedAudioData.url;
+    link.download = `ruangriung-audio-${generatedAudioData.voice}-${Date.now()}.mp3`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showToast('Audio berhasil diunduh!', 'success');
+  }, [generatedAudioData, showToast]);
+
+  const handleDownloadVideoPromptJson = useCallback(() => {
+    if (!generatedVideoPrompt) {
+      showToast('Tidak ada prompt video untuk diunduh.', 'error');
+      return;
+    }
+
+    const dataToDownload = {
+      generator: 'RuangRiung AI Video Prompt Assistant',
+      createdAt: new Date().toISOString(),
+      prompt: generatedVideoPrompt,
+      parameters: videoParams,
+    };
+
+    const jsonString = JSON.stringify(dataToDownload, null, 2);
+    const blob = new Blob([jsonString], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `ruangriung-video-prompt-${Date.now()}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    showToast('File JSON berhasil diunduh!', 'success');
+  }, [generatedVideoPrompt, videoParams, showToast]);
 
   const fetchAiSuggestions = useCallback(async () => {
     setIsFetchingSuggestions(true);
@@ -185,7 +227,7 @@ export function useAppState() {
                 const turboDataString = localStorage.getItem('turboPasswordData');
                 if(turboDataString){
                     const turboData = JSON.parse(turboDataString);
-                    if(turboData.password && turboData.expiry){
+                    if(turboData.password && turboData.expiry > now){
                         const turboDiff = turboData.expiry - now;
                         if(turboDiff > 0){
                             setTurboCountdown(`${String(Math.floor((turboDiff/(1000*60*60))%24)).padStart(2,'0')}:${String(Math.floor((turboDiff/1000/60)%60)).padStart(2,'0')}:${String(Math.floor((diff/1000)%60)).padStart(2,'0')}`);
@@ -364,7 +406,17 @@ export function useAppState() {
             throw new Error('Respons yang diterima bukan file audio.');
         }
 
-        setGeneratedAudio(URL.createObjectURL(blob));
+        if (generatedAudioData && generatedAudioData.url) {
+          URL.revokeObjectURL(generatedAudioData.url);
+        }
+
+        setGeneratedAudioData({
+          url: URL.createObjectURL(blob),
+          prompt: prompt,
+          voice: audioVoice,
+          date: new Date().toISOString(),
+        });
+
         setCoins(c => Math.max(0, c - 1));
         showToast(`Audio berhasil dibuat! Sisa koin: ${coins - 1}`, 'success');
     } catch (err) {
@@ -372,8 +424,9 @@ export function useAppState() {
     } finally {
         setLoading(false);
     }
-  }, [prompt, audioVoice, showToast, coins]);
+  }, [prompt, audioVoice, showToast, coins, generatedAudioData]);
   
+  // --- FUNGSI YANG DIPERBAIKI ---
   const handleBuildVideoPrompt = useCallback(async () => {
       if (!videoParams.concept.trim()) {
           showToast('Konsep utama video tidak boleh kosong.', 'error');
@@ -401,13 +454,21 @@ export function useAppState() {
           if (!res.ok) throw new Error(`API Error: ${res.statusText}`);
           const data = await res.json();
           const videoPrompt = data.choices[0]?.message?.content;
-          if (videoPrompt) {
-              setGeneratedVideoPrompt(videoPrompt.trim());
+          
+          // --- LOGIKA VALIDASI BARU ---
+          const trimmedPrompt = videoPrompt ? videoPrompt.trim() : '';
+          
+          if (trimmedPrompt) {
+              setGeneratedVideoPrompt(trimmedPrompt);
               setCoins(c => Math.max(0, c - 1));
               showToast('Prompt video profesional berhasil dibuat!', 'success');
           } else {
-              throw new Error('Gagal memproses respons API.');
+              // Jika respons kosong, tampilkan error dan jangan potong koin
+              console.error("API returned an empty or whitespace-only response for video prompt.");
+              throw new Error('AI tidak memberikan hasil. Coba ubah parameter Anda.');
           }
+          // --- AKHIR LOGIKA VALIDASI ---
+
       } catch (err) {
           showToast(err.message, 'error');
       } finally {
@@ -426,17 +487,21 @@ export function useAppState() {
         return;
     }
     
-    if (!prompt.trim() && (activeTab === 'audio' || (activeTab === 'video' && !videoParams.concept.trim()))) {
-        showToast('Prompt atau konsep utama tidak boleh kosong.', 'error');
-        return;
-    }
     if (activeTab === 'image' && !prompt.trim()) {
         showToast('Prompt tidak boleh kosong.', 'error');
         return;
     }
+    if (activeTab === 'audio' && !prompt.trim()) {
+        showToast('Prompt tidak boleh kosong.', 'error');
+        return;
+    }
+    if (activeTab === 'video' && !videoParams.concept.trim()) {
+        showToast('Konsep utama video tidak boleh kosong.', 'error');
+        return;
+    }
     
     setLoading(true);
-    setGeneratedAudio(null);
+    setGeneratedAudioData(null);
     setGeneratedVideoPrompt('');
     setGeneratedImages([]);
 
@@ -446,7 +511,7 @@ export function useAppState() {
     else {
       setLoading(false);
     }
-  }, [activeTab, coins, isLabAuthenticated, prompt, videoParams.concept, handleGenerateImage, handleGenerateAudio, handleBuildVideoPrompt]);
+  }, [activeTab, coins, isLabAuthenticated, prompt, videoParams.concept, handleGenerateImage, handleGenerateAudio, handleBuildVideoPrompt, showToast]);
 
   const handleDownload = useCallback(async (image, filter, watermark) => {
     try {
@@ -537,9 +602,94 @@ export function useAppState() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [showToast, handleGenerate]);
 
+  const handleAdminReset = useCallback(() => {
+    if (adminPassword === "passwordRahasia") {
+      setCoins(500);
+      localStorage.setItem('aiGeneratorCoinsData', JSON.stringify({ coins: 500, lastReset: new Date().getTime() }));
+      showToast('Koin berhasil direset ke 500!', 'success');
+      setIsAdminModalOpen(false);
+      setAdminPassword('');
+    } else {
+      showToast('Password admin salah.', 'error');
+    }
+  }, [adminPassword, showToast]);
 
-  // --- PERBAIKAN DI SINI ---
-  // Objek yang di-return sekarang menyertakan SEMUA fungsi handler
+  const handleGenerateModalPassword = useCallback(() => {
+    const randomChars = Array(5).fill(0).map(() => Math.floor(Math.random() * 10)).join('');
+    const newPassword = `ruangriung-${randomChars}`;
+    setGeneratedTurboPassword(newPassword);
+    setTurboPasswordInput('');
+  }, []);
+
+  const handleActivateTurbo = useCallback(() => {
+    const expiry = new Date().getTime() + 24 * 60 * 60 * 1000;
+    try {
+        localStorage.setItem('turboPasswordData', JSON.stringify({ password: generatedTurboPassword, expiry }));
+        setModel('turbo');
+        showToast('Otentikasi berhasil! Model Turbo aktif.', 'success');
+        setIsTurboAuthModalOpen(false);
+        setGeneratedTurboPassword('');
+        setTurboPasswordInput('');
+    } catch (e) {
+        showToast('Gagal menyimpan dan mengaktifkan Turbo.', 'error');
+    }
+  }, [generatedTurboPassword, showToast]);
+
+  const handleClearHistory = useCallback(() => {
+    setGenerationHistory([]);
+    setSavedPrompts([]);
+    setIsClearHistoryModalOpen(false);
+    showToast('Semua riwayat telah dihapus.', 'success');
+  }, [showToast]);
+
+  const handleLabAuthSuccess = useCallback(() => setIsLabAuthenticated(true), []);
+
+  const handleMasterReset = useCallback(() => {
+    try {
+      const coinData = localStorage.getItem('aiGeneratorCoinsData');
+      const darkModePref = localStorage.getItem('darkMode');
+      
+      localStorage.clear();
+      sessionStorage.clear();
+      
+      if (coinData) localStorage.setItem('aiGeneratorCoinsData', coinData);
+      if (darkModePref) localStorage.setItem('darkMode', darkModePref);
+      
+      setPrompt(''); setModel('flux'); setQuality('hd'); setSizePreset('1024x1024'); setUseCustomSize(false); setCustomWidth(1024); setCustomHeight(1024); setSeed(''); setBatchSize(1); setArtStyle(''); setGeneratedImages([]); setLoading(false); setIsEnhancing(false); setApiKey(''); setGenerationHistory([]); setSavedPrompts([]); setSelectedHistoryImage(null); setIsAnalysisModalOpen(false); setActiveTab('image');
+      setVideoParams({
+          concept: '', visualStyle: 'cinematic', duration: 10, aspectRatio: '16:9',
+          fps: 24, cameraMovement: 'static', cameraAngle: 'eye-level', lensType: 'standard',
+          depthOfField: 'medium', filmGrain: 20, chromaticAberration: 10,
+          colorGrading: 'neutral', timeOfDay: 'midday', weather: 'clear'
+      });
+      setGeneratedAudioData(null);
+      setGeneratedVideoPrompt('');
+      setIsLabAuthenticated(false);
+
+      showToast('Semua data aplikasi telah direset.', 'success');
+      setIsMasterResetModalOpen(false);
+      
+    } catch (e) {
+      console.error("Gagal mereset data:", e);
+      showToast('Gagal mereset data.', 'error');
+    }
+  }, [showToast]);
+
+  const handleInstallClick = useCallback(async () => {
+    if (!installPrompt) return;
+    const result = await installPrompt.prompt();
+    console.log(`Install prompt was: ${result.outcome}`);
+    setInstallPrompt(null);
+    setIsBannerVisible(false);
+  }, [installPrompt]);
+
+  const handleBannerClose = useCallback(() => {
+    setIsBannerVisible(false);
+    sessionStorage.setItem('pwaBannerClosed', 'true');
+  }, []);
+
+  const scrollToTop = useCallback(() => window.scrollTo({ top: 0, behavior: 'smooth' }), []);
+
   return {
     isMounted, prompt, setPrompt, model, setModel, quality, setQuality, sizePreset, setSizePreset,
     useCustomSize, setUseCustomSize, customWidth, setCustomWidth, customHeight, setCustomHeight,
@@ -550,78 +700,15 @@ export function useAppState() {
     modelRequiringKey, setModelRequiringKey, isTurboAuthModalOpen, setIsTurboAuthModalOpen, generatedTurboPassword, setGeneratedTurboPassword,
     turboPasswordInput, setTurboPasswordInput, turboCountdown, setTurboCountdown, coins, setCoins, countdown, setCountdown,
     adminPassword, setAdminPassword, showAdminPassword, setShowAdminPassword, audioVoice, setAudioVoice,
-    generatedAudio, setGeneratedAudio, generatedVideoPrompt, setGeneratedVideoPrompt, showBackToTop, setShowBackToTop,
+    generatedAudioData, generatedVideoPrompt, showBackToTop, setShowBackToTop,
     installPrompt, setInstallPrompt, isBannerVisible, setIsBannerVisible, aiSuggestions, isFetchingSuggestions,
     isLabAuthenticated, setIsLabAuthenticated, isAnalysisModalOpen, setIsAnalysisModalOpen, isPromptModalOpen, setIsPromptModalOpen,
     isAdminModalOpen, setIsAdminModalOpen, isClearHistoryModalOpen, setIsClearHistoryModalOpen, isApiModalOpen, setIsApiModalOpen,
     isMasterResetModalOpen, setIsMasterResetModalOpen, canvasRef, showToast, fetchAiSuggestions, handleRandomPrompt,
     handleModelChange, handleApiKeySubmit, handleEnhancePrompt, handleGenerate,
-    handleAdminReset: useCallback(() => { if (adminPassword === "passwordRahasia") { setCoins(500); localStorage.setItem('aiGeneratorCoinsData', JSON.stringify({ coins: 500, lastReset: new Date().getTime() })); showToast('Koin berhasil direset ke 500!', 'success'); setIsAdminModalOpen(false); setAdminPassword(''); } else { showToast('Password admin salah.', 'error'); } }, [adminPassword, showToast]),
-    handleGenerateModalPassword: useCallback(() => {
-        const randomChars = Array(5).fill(0).map(() => Math.floor(Math.random() * 10)).join('');
-        const newPassword = `ruangriung-${randomChars}`;
-        setGeneratedTurboPassword(newPassword);
-        setTurboPasswordInput('');
-    }, []),
-    handleActivateTurbo: useCallback(() => {
-        const expiry = new Date().getTime() + 24 * 60 * 60 * 1000;
-        try {
-            localStorage.setItem('turboPasswordData', JSON.stringify({ password: generatedTurboPassword, expiry }));
-            setModel('turbo');
-            showToast('Otentikasi berhasil! Model Turbo aktif.', 'success');
-            setIsTurboAuthModalOpen(false);
-            setGeneratedTurboPassword('');
-            setTurboPasswordInput('');
-        } catch (e) {
-            showToast('Gagal menyimpan dan mengaktifkan Turbo.', 'error');
-        }
-    }, [generatedTurboPassword, showToast]),
-    handleClearHistory: useCallback(() => { setGenerationHistory([]); setSavedPrompts([]); setIsClearHistoryModalOpen(false); showToast('Semua riwayat telah dihapus.', 'success'); }, [showToast]),
-    handleUsePromptAndSeed,
-    handleCreateVariation,
-    handleDownload,
-    handleLabAuthSuccess: useCallback(() => setIsLabAuthenticated(true), []),
-    handleMasterReset: useCallback(() => {
-        try {
-          const coinData = localStorage.getItem('aiGeneratorCoinsData');
-          const darkModePref = localStorage.getItem('darkMode');
-          
-          localStorage.clear();
-          sessionStorage.clear();
-          
-          if (coinData) localStorage.setItem('aiGeneratorCoinsData', coinData);
-          if (darkModePref) localStorage.setItem('darkMode', darkModePref);
-          
-          setPrompt(''); setModel('flux'); setQuality('hd'); setSizePreset('1024x1024'); setUseCustomSize(false); setCustomWidth(1024); setCustomHeight(1024); setSeed(''); setBatchSize(1); setArtStyle(''); setGeneratedImages([]); setLoading(false); setIsEnhancing(false); setApiKey(''); setGenerationHistory([]); setSavedPrompts([]); setSelectedHistoryImage(null); setIsAnalysisModalOpen(false); setActiveTab('image');
-          setVideoParams({
-              concept: '', visualStyle: 'cinematic', duration: 10, aspectRatio: '16:9',
-              fps: 24, cameraMovement: 'static', cameraAngle: 'eye-level', lensType: 'standard',
-              depthOfField: 'medium', filmGrain: 20, chromaticAberration: 10,
-              colorGrading: 'neutral', timeOfDay: 'midday', weather: 'clear'
-          });
-          setGeneratedAudio(null);
-          setGeneratedVideoPrompt('');
-          setIsLabAuthenticated(false);
-    
-          showToast('Semua data aplikasi telah direset.', 'success');
-          setIsMasterResetModalOpen(false);
-          
-        } catch (e) {
-          console.error("Gagal mereset data:", e);
-          showToast('Gagal mereset data.', 'error');
-        }
-    }, [showToast]),
-    handleInstallClick: useCallback(async () => {
-      if (!installPrompt) return;
-      const result = await installPrompt.prompt();
-      console.log(`Install prompt was: ${result.outcome}`);
-      setInstallPrompt(null);
-      setIsBannerVisible(false);
-    }, [installPrompt]),
-    handleBannerClose: useCallback(() => {
-      setIsBannerVisible(false);
-      sessionStorage.setItem('pwaBannerClosed', 'true');
-    }, []),
-    scrollToTop: useCallback(() => window.scrollTo({ top: 0, behavior: 'smooth' }), []),
+    handleAdminReset, handleGenerateModalPassword, handleActivateTurbo, handleClearHistory,
+    handleUsePromptAndSeed, handleCreateVariation, handleDownload,
+    handleLabAuthSuccess, handleMasterReset, handleInstallClick, handleBannerClose, scrollToTop,
+    handleDownloadAudio, handleDownloadVideoPromptJson
   };
 }

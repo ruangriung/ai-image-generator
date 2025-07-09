@@ -18,6 +18,8 @@ import Modals from './Modals.js';
 import AuthButtons from './AuthButtons.js';
 import EventModal from './EventModal.js';
 import AuthWall from './AuthWall.js';
+import Footer from './Footer.js';
+import AuthDisplay from './AuthDisplay.js'; // Impor komponen AuthDisplay
 
 export default function AIImageGenerator() {
   const state = useAppState();
@@ -94,9 +96,8 @@ export default function AIImageGenerator() {
       <Modals {...state} />
 
       <div className="flex flex-col min-h-screen">
-        <main className="flex-grow container mx-auto p-4 sm:p-6 lg:p-8 pt-12 sm:pt-20">
+        <main className="flex-grow container mx-auto p-4 sm:p-6 lg:p-8 pt-20">
           <header className="flex flex-col gap-4 items-center text-center mb-8">
-            {/* --- BLOK HEADER YANG DIPERBARUI --- */}
             <h1 className="text-3xl md:text-4xl font-bold">
               <Wand2 className="text-yellow-500 inline-block align-middle h-8 w-8 md:h-9 md:w-9 mr-2" />
               <span className="align-middle">RuangRiung AI Generator</span>
@@ -104,16 +105,20 @@ export default function AIImageGenerator() {
             <h2 className="text-lg md:text-xl font-semibold mt-2">
               Tuangkan Imajinasimu, Biarkan AI Mewujudkannya
             </h2>
+            
             <div className="flex items-center gap-2 sm:gap-4 flex-wrap justify-center">
-              <div className="flex items-center gap-1.5 sm:gap-4 p-2 rounded-xl" style={{ boxShadow: 'var(--shadow-outset)' }}>
-                <div className="flex items-center gap-1.5 sm:gap-3 border-r border-transparent sm:border-[var(--shadow-dark)] dark:sm:border-[var(--shadow-light)] pr-2 sm:pr-3"><Coins size={20} className="text-yellow-500" /><span className="font-bold">{state.coins}</span></div>
-                <div className="flex items-center gap-1.5 pr-2 sm:pr-3"><Clock size={20} className="opacity-70" /><span className="font-mono text-sm font-semibold">{state.countdown}</span></div>
+                <div className="flex items-center gap-1.5 sm:gap-4 p-2 rounded-xl" style={{ boxShadow: 'var(--shadow-outset)' }}>
+                    <div className="flex items-center gap-1.5 sm:gap-3 pr-2 sm:pr-3"><Coins size={20} className="text-yellow-500" /><span className="font-bold">{state.coins}</span></div>
+                    <div className="flex items-center gap-1.5 pr-2 sm:pr-3"><Clock size={20} className="opacity-70" /><span className="font-mono text-sm font-semibold">{state.countdown}</span></div>
+                </div>
                 <NeumorphicButton aria-label="Buka pengaturan" onClick={() => state.setIsAdminModalOpen(true)} className="!p-2"><Settings size={16} /></NeumorphicButton>
-              </div>
-              <NeumorphicButton aria-label={state.darkMode ? "Ganti ke mode terang" : "Ganti ke mode gelap"} onClick={() => state.setDarkMode(!state.darkMode)} className="!p-3">{state.darkMode ? <Sun /> : <Moon />}</NeumorphicButton>
-              <AuthButtons />
+                <NeumorphicButton aria-label={state.darkMode ? "Ganti ke mode terang" : "Ganti ke mode gelap"} onClick={() => state.setDarkMode(!state.darkMode)} className="!p-3">{state.darkMode ? <Sun /> : <Moon />}</NeumorphicButton>
+                <AuthButtons />
             </div>
-            {/* --- AKHIR BLOK HEADER --- */}
+
+            <div className="w-full max-w-sm mt-2">
+              <AuthDisplay />
+            </div>
           </header>
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -125,7 +130,7 @@ export default function AIImageGenerator() {
                 
                 {state.activeTab === 'video' && (
                   status === 'authenticated' ? (
-                    <VideoSection {...state} session={session} />
+                    <VideoSection {...state} />
                   ) : (
                     <div className="animate-fade-in pt-4">
                       <AuthWall 
@@ -138,7 +143,7 @@ export default function AIImageGenerator() {
                 
                 {state.activeTab === 'audio' && (
                   status === 'authenticated' ? (
-                    <AudioSection {...state} session={session} />
+                    <AudioSection {...state} />
                   ) : (
                     <div className="animate-fade-in pt-4">
                       <AuthWall 
@@ -162,12 +167,14 @@ export default function AIImageGenerator() {
                   loading={state.loading}
                   generatedImages={state.generatedImages}
                   generatedVideoPrompt={state.generatedVideoPrompt}
-                  generatedAudio={state.generatedAudio}
+                  generatedAudioData={state.generatedAudioData}
                   onUsePromptAndSeed={state.handleUsePromptAndSeed}
                   onCreateVariation={state.handleCreateVariation}
                   onDownload={state.handleDownload}
                   showToast={state.showToast}
                   selectedHistoryImage={state.selectedHistoryImage}
+                  onDownloadVideoJson={state.handleDownloadVideoPromptJson}
+                  onDownloadAudio={state.handleDownloadAudio}
               />
               
               {state.activeTab === 'lab' && !state.loading && (
@@ -199,13 +206,9 @@ export default function AIImageGenerator() {
             <Trash2 size={16} /> Reset Semua Data Aplikasi
           </NeumorphicButton>
         </div>
-        <footer className="text-center p-4 mt-8 border-t border-gray-500/20 text-sm opacity-70">
-          <p>&copy; {new Date().getFullYear()} RuangRiung AI Image Generator - Developed with ❤️ by{' '}
-            <a href="https://ariftirtana.com" target="_blank" rel="noopener noreferrer" className="font-semibold text-indigo-400 hover:text-indigo-300 transition-colors">
-              Arif Tirtana
-            </a>
-          </p>
-        </footer>
+        
+        <Footer />
+
       </div>
       {state.showBackToTop && (
         <NeumorphicButton onClick={state.scrollToTop} className="!p-3 fixed bottom-5 right-5 z-50 !rounded-full animate-fade-in" title="Back to Top">

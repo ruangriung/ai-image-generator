@@ -2,19 +2,16 @@
 
 "use client";
 
-import { SlidersHorizontal, Camera, Sparkles, CloudSun, Video as VideoIcon } from 'lucide-react';
+import { SlidersHorizontal, Camera, Sparkles, CloudSun, Video as VideoIcon, MessageSquare, Film } from 'lucide-react';
 import { CollapsibleSection, NeumorphicButton } from './components.js';
 
 export default function VideoSection({
   videoParams,
   setVideoParams,
   handleGenerate,
-  loading,
-  generatedVideoPrompt,
-  showToast // Menerima showToast sebagai prop
+  loading
 }) {
 
-  // Fungsi untuk menangani perubahan pada form video
   const handleVideoParamsChange = (e) => {
     const { name, value, type } = e.target;
     setVideoParams(p => ({
@@ -26,6 +23,7 @@ export default function VideoSection({
   return (
     <div className="space-y-4 animate-fade-in">
       <label className="font-semibold block text-xl">Asisten Prompt Video</label>
+      
       <div>
         <label className="text-sm font-semibold">
           Konsep Utama Video <span className="text-red-500">*</span>
@@ -38,6 +36,43 @@ export default function VideoSection({
           className="w-full p-3 mt-1 rounded-lg neumorphic-input h-28 resize-none"
         />
       </div>
+
+      <div>
+        <label htmlFor="narration-input" className="text-sm font-semibold flex items-center gap-2">
+            <MessageSquare size={16} /> Narasi (Opsional)
+        </label>
+        <textarea
+            id="narration-input"
+            name="narration"
+            value={videoParams.narration}
+            onChange={handleVideoParamsChange}
+            placeholder="Ketik narasi atau dialog di sini..."
+            className="w-full p-3 mt-1 rounded-lg neumorphic-input h-20 resize-none"
+        />
+      </div>
+
+      <div>
+        <label htmlFor="video-model-select" className="text-sm font-semibold flex items-center gap-2">
+            <Film size={16} /> Model Video AI
+        </label>
+        <select
+            id="video-model-select"
+            name="videoModel"
+            value={videoParams.videoModel}
+            onChange={handleVideoParamsChange}
+            className="w-full p-3 mt-1 rounded-lg neumorphic-input text-sm bg-[var(--bg-color)]"
+        >
+            <option value="default">Default (Umum)</option>
+            <option value="veo3">Google VEO 3</option>
+            <option value="veo2">Google VEO 2</option>
+            <option value="flow">Flow</option>
+            <option value="kling">Kling AI</option>
+            <option value="sora">OpenAI SORA</option>
+            <option value="runway">Runway</option>
+            <option value="capcut">CapCut</option>
+        </select>
+      </div>
+
       <CollapsibleSection title="Pengaturan Dasar" icon={<SlidersHorizontal size={18} />}>
         <div className="grid grid-cols-2 gap-4">
           <div>

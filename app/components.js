@@ -5,7 +5,7 @@
 import { useMemo, useState, useEffect, useRef, useCallback } from 'react';
 import {
     Search, Minus, Plus, X, Layers, ImageDown,
-    Repeat, Sparkles, ChevronUp, ChevronDown, ZoomIn, ImageIcon as FileImage, Upload, Wand2, Text, Image as ImageIconLucide, Move, Grid3x3, Copy
+    Repeat, Sparkles, ChevronUp, ChevronDown, ZoomIn, ImageIcon as FileImage, Download, Upload, Wand2, Text, Image as ImageIconLucide, Move, Grid3x3, Copy
 } from 'lucide-react';
 
 export const CollapsibleSection = ({ title, icon, children, defaultOpen = false }) => {
@@ -231,9 +231,13 @@ export const PromptEditModal = ({ isOpen, onClose, value, onSave }) => {
 
 export const GeneratedContentDisplay = ({
     activeTab,
-    loading, generatedImages, generatedVideoPrompt, generatedAudio,
+    loading, generatedImages, generatedVideoPrompt, 
+    // --- PERBAIKAN: Gunakan generatedAudioData dan onDownloadAudio ---
+    generatedAudioData, 
+    onDownloadAudio,
     onUsePromptAndSeed, onCreateVariation, onDownload, showToast,
-    selectedHistoryImage
+    selectedHistoryImage,
+    onDownloadVideoJson
 }) => {
     const imagesToShow = (generatedImages && generatedImages.length > 0)
         ? generatedImages
@@ -347,7 +351,7 @@ export const GeneratedContentDisplay = ({
         );
     }
     
-    if (activeTab === 'video' && generatedVideoPrompt) {
+     if (activeTab === 'video' && generatedVideoPrompt) {
         return (
             <div className="w-full flex justify-center">
                 <div className="p-6 rounded-2xl w-full max-w-3xl space-y-4 neumorphic-card">
@@ -355,22 +359,47 @@ export const GeneratedContentDisplay = ({
                     <div className="p-4 rounded-lg text-sm" style={{boxShadow: 'var(--shadow-inset)'}}>
                         <p className="whitespace-pre-wrap">{generatedVideoPrompt}</p>
                     </div>
-                    <NeumorphicButton onClick={() => {navigator.clipboard.writeText(generatedVideoPrompt); showToast('Prompt disalin!', 'success')}} className="w-full">
-                        <Copy size={16}/> Salin Prompt
-                    </NeumorphicButton>
+                    {/* --- BLOK TOMBOL DIPERBARUI --- */}
+                    <div className="flex flex-wrap gap-2">
+                        <NeumorphicButton onClick={() => {navigator.clipboard.writeText(generatedVideoPrompt); showToast('Prompt disalin!', 'success')}} className="flex-1 text-sm">
+                            <Copy size={16}/> Salin Prompt
+                        </NeumorphicButton>
+                        <NeumorphicButton onClick={onDownloadVideoJson} className="flex-1 text-sm">
+                            <Download size={16}/> Unduh JSON
+                        </NeumorphicButton>
+                    </div>
+                    {/* --- AKHIR PEMBARUAN --- */}
                 </div>
             </div>
         );
     }
 
-    if (activeTab === 'audio' && generatedAudio) {
+    if (activeTab === 'audio' && generatedAudioData) {
         return (
             <div className="w-full flex justify-center">
                 <div className="p-6 rounded-2xl w-full max-w-3xl space-y-4 neumorphic-card">
                     <h3 className="text-xl font-bold">Hasil Audio</h3>
-                    <audio controls src={generatedAudio} className="w-full">
-                        Your browser does not support the audio element.
+                    <audio controls src={generatedAudioData.url} className="w-full">
+                        Browser Anda tidak mendukung elemen audio.
                     </audio>
+                    
+                    <div className="pt-4 border-t border-gray-500/20 space-y-3">
+                        <div>
+                            <h4 className="font-semibold text-sm mb-1">Teks (Prompt)</h4>
+                            <p className="text-sm p-3 rounded-lg opacity-80" style={{boxShadow: 'var(--shadow-inset)'}}>
+                                {generatedAudioData.prompt}
+                            </p>
+                        </div>
+                        <div>
+                            <h4 className="font-semibold text-sm mb-1">Model Suara</h4>
+                            <p className="text-sm p-3 rounded-lg opacity-80" style={{boxShadow: 'var(--shadow-inset)'}}>
+                                {generatedAudioData.voice.charAt(0).toUpperCase() + generatedAudioData.voice.slice(1)}
+                            </p>
+                        </div>
+                        <NeumorphicButton onClick={onDownloadAudio} className="w-full !mt-4 font-semibold">
+                            <Download size={16} /> Unduh Audio (.mp3)
+                        </NeumorphicButton>
+                    </div>
                 </div>
             </div>
         );

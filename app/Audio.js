@@ -2,44 +2,25 @@
 
 "use client";
 
-import { X, Sparkles, LogOut, User } from 'lucide-react'; // Tambahkan ikon User
-import { signOut } from "next-auth/react";
+// Hapus signOut, LogOut, dan User dari impor
+import { X, Sparkles } from 'lucide-react';
 import { NeumorphicButton } from './components.js';
 
+// Hapus prop 'session'
 export default function AudioSection({
   prompt,
   setPrompt,
   audioVoice,
   setAudioVoice,
   handleGenerate,
-  loading,
-  session // Terima prop session
+  loading
 }) {
   return (
     <div className="space-y-4 animate-fade-in">
-      <div className="flex justify-between items-center">
-        <label className="font-semibold block text-xl">Teks untuk Audio</label>
-        
-        {/* --- BLOK YANG DIMODIFIKASI --- */}
-        <div className="flex items-center gap-3">
-          {session?.user?.image && (
-            <img
-                src={session.user.image}
-                alt={session.user.name || 'User Avatar'}
-                className="w-8 h-8 rounded-full neumorphic-card p-0.5"
-                title={`Login sebagai ${session.user.name}`}
-            />
-          )}
-          <NeumorphicButton 
-            onClick={() => signOut()} 
-            className="!p-2"
-            title="Logout"
-          >
-            <LogOut size={16} />
-          </NeumorphicButton>
-        </div>
-        {/* --- AKHIR BLOK --- */}
-      </div>
+      {/* --- BLOK HEADER YANG DIHAPUS/DISEDERHANKAN --- */}
+      <label className="font-semibold block text-xl">Teks untuk Audio</label>
+      {/* Kode untuk avatar dan tombol logout di sini sudah dihapus */}
+      {/* --- AKHIR PERUBAHAN --- */}
 
       <div className="relative">
         <textarea
