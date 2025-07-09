@@ -94,23 +94,28 @@ export default function AIImageGenerator() {
       <Modals {...state} />
 
       <div className="flex flex-col min-h-screen">
-        <main className="flex-grow container mx-auto p-4 sm:p-6 lg:p-8 pt-20">
+        <main className="flex-grow container mx-auto p-4 sm:p-6 lg:p-8 pt-12 sm:pt-20">
           <header className="flex flex-col gap-4 items-center text-center mb-8">
-            <h1 className="text-3xl md:text-4xl font-bold flex items-center justify-center gap-2 md:gap-3">
-              <Wand2 className="text-yellow-500 h-8 w-8 md:h-9 md:w-9 flex-shrink-0" />
-              <span>RuangRiung AI Generator</span>
+            {/* --- BLOK HEADER YANG DIPERBARUI --- */}
+            <h1 className="text-3xl md:text-4xl font-bold">
+              <Wand2 className="text-yellow-500 inline-block align-middle h-8 w-8 md:h-9 md:w-9 mr-2" />
+              <span className="align-middle">RuangRiung AI Generator</span>
             </h1>
-            <h2 className="text-lg md:text-xl font-semibold mt-2">Tuangkan Imajinasimu, Biarkan AI Mewujudkannya</h2>
+            <h2 className="text-lg md:text-xl font-semibold mt-2">
+              Tuangkan Imajinasimu, Biarkan AI Mewujudkannya
+            </h2>
             <div className="flex items-center gap-2 sm:gap-4 flex-wrap justify-center">
-              <div className="flex items-center gap-2 sm:gap-4 p-2 rounded-xl" style={{ boxShadow: 'var(--shadow-outset)' }}>
-                <div className="flex items-center gap-2 border-r border-transparent sm:border-[var(--shadow-dark)] dark:sm:border-[var(--shadow-light)] pr-2 sm:pr-3"><Coins size={20} className="text-yellow-500" /><span className="font-bold">{state.coins}</span></div>
-                <div className="flex items-center gap-2 pr-2 sm:pr-3"><Clock size={20} className="opacity-70" /><span className="font-mono text-sm font-semibold">{state.countdown}</span></div>
+              <div className="flex items-center gap-1.5 sm:gap-4 p-2 rounded-xl" style={{ boxShadow: 'var(--shadow-outset)' }}>
+                <div className="flex items-center gap-1.5 sm:gap-3 border-r border-transparent sm:border-[var(--shadow-dark)] dark:sm:border-[var(--shadow-light)] pr-2 sm:pr-3"><Coins size={20} className="text-yellow-500" /><span className="font-bold">{state.coins}</span></div>
+                <div className="flex items-center gap-1.5 pr-2 sm:pr-3"><Clock size={20} className="opacity-70" /><span className="font-mono text-sm font-semibold">{state.countdown}</span></div>
                 <NeumorphicButton aria-label="Buka pengaturan" onClick={() => state.setIsAdminModalOpen(true)} className="!p-2"><Settings size={16} /></NeumorphicButton>
               </div>
               <NeumorphicButton aria-label={state.darkMode ? "Ganti ke mode terang" : "Ganti ke mode gelap"} onClick={() => state.setDarkMode(!state.darkMode)} className="!p-3">{state.darkMode ? <Sun /> : <Moon />}</NeumorphicButton>
               <AuthButtons />
             </div>
+            {/* --- AKHIR BLOK HEADER --- */}
           </header>
+
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             <div className="lg:col-span-4 space-y-6">
               <div className="p-6 rounded-2xl h-fit space-y-4 neumorphic-card">
@@ -118,7 +123,6 @@ export default function AIImageGenerator() {
                 
                 {state.activeTab === 'image' && <ImageTab {...state} />}
                 
-                {/* --- BLOK VIDEO DENGAN LOGIN --- */}
                 {state.activeTab === 'video' && (
                   status === 'authenticated' ? (
                     <VideoSection {...state} session={session} />
@@ -132,7 +136,6 @@ export default function AIImageGenerator() {
                   )
                 )}
                 
-                {/* --- BLOK AUDIO DENGAN LOGIN (TETAP ADA) --- */}
                 {state.activeTab === 'audio' && (
                   status === 'authenticated' ? (
                     <AudioSection {...state} session={session} />
