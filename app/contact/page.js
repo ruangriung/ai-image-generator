@@ -6,7 +6,6 @@ import { useState, useEffect } from 'react';
 import { useSession, signIn, signOut } from 'next-auth/react';
 import { NeumorphicButton, Spinner, Toasts } from '../components.js';
 import Link from 'next/link';
-// Hapus LogIn dari impor jika sudah tidak ada tombol lain yang menggunakannya
 import { LogOut, Send, User, Mail, MessageSquare } from 'lucide-react';
 
 export default function ContactPage() {
@@ -72,12 +71,18 @@ export default function ContactPage() {
         <div className="p-8 rounded-2xl w-full max-w-sm neumorphic-card">
           <h1 className="text-2xl font-bold mb-4">Eits, Tahan Dulu! ✋</h1>
           <p className="mb-6 opacity-70">Kamu perlu masuk dulu nih, biar bisa kirim pesan ke kami.</p>
-          <NeumorphicButton onClick={() => signIn('google')} className="font-bold w-full">
-            {/* --- BLOK YANG DIUBAH --- */}
-            <img src="/google-icon.svg" alt="Google logo" className="w-5 h-5" />
-            Lanjut dengan Google
-            {/* --- AKHIR BLOK --- */}
-          </NeumorphicButton>
+          {/* --- BLOK YANG DIPERBARUI --- */}
+          <div className="space-y-3">
+            <NeumorphicButton onClick={() => signIn('google')} className="font-bold w-full">
+              <img src="/google-icon.svg" alt="Google logo" className="w-5 h-5" />
+              Lanjut dengan Google
+            </NeumorphicButton>
+            <NeumorphicButton onClick={() => signIn('facebook')} className="font-bold w-full">
+              <img src="/facebook-icon.svg" alt="Facebook logo" className="w-5 h-5" />
+              Lanjut dengan Facebook
+            </NeumorphicButton>
+          </div>
+          {/* --- AKHIR PERUBAHAN --- */}
         </div>
         <div className="text-center mt-8">
             <Link href="/" className="font-semibold text-indigo-400 hover:text-indigo-300 transition-colors">
@@ -89,7 +94,6 @@ export default function ContactPage() {
   }
 
   return (
-    // ... sisa kode tidak berubah ...
     <div className="min-h-screen container mx-auto p-4 sm:p-6 lg:p-8 flex items-center justify-center">
       <Toasts toasts={toasts} />
       <div className="max-w-2xl w-full">
