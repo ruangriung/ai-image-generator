@@ -19,10 +19,20 @@ export default function AuthDisplay() {
 
   if (status === 'unauthenticated') {
     return (
-      <NeumorphicButton onClick={() => signIn('google')} className="w-full font-semibold">
-        <img src="/google-icon.svg" alt="Google logo" className="w-5 h-5" />
-        Login dengan Google
-      </NeumorphicButton>
+      <div className="space-y-3">
+        <NeumorphicButton onClick={() => signIn('google')} className="w-full font-semibold">
+          <img src="/google-icon.svg" alt="Google logo" className="w-5 h-5" />
+          Login dengan Google
+        </NeumorphicButton>
+        <NeumorphicButton 
+          onClick={() => signIn('facebook')} 
+          className="w-full font-semibold"
+        >
+          {/* --- PERUBAHAN DI SINI --- */}
+          <img src="/facebook-icon.svg" alt="Facebook logo" className="w-5 h-5" />
+          Login dengan Facebook
+        </NeumorphicButton>
+      </div>
     );
   }
 
