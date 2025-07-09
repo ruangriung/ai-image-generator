@@ -2,12 +2,13 @@
 
 "use client";
 
-// Impor ikon yang relevan, GitBranch dan Star tidak lagi diperlukan untuk GitHub
+// --- PENAMBAHAN BARU: Impor ikon baru ---
 import { 
-    Server, Bot, Cloud, Power, Type, Component, Library, PanelTop, Frame, Leaf, 
+    Server, Bot, GitBranch, Cloud, Power, Type, Component, Library, PanelTop, Frame, Leaf, 
     Package, CheckSquare, BrainCircuit, Orbit, Paintbrush 
 } from 'lucide-react';
 
+// Data untuk footer sekarang berada di dalam komponennya sendiri
 const footerSections = [
   {
     title: 'Services & Platforms',
@@ -16,8 +17,7 @@ const footerSections = [
       { name: 'Google', icon: <Power size={16} />, url: 'https://www.google.com' },
       { name: 'Vercel', icon: <Server size={16} />, url: 'https://vercel.com/' },
       { name: 'Cloudflare', icon: <Cloud size={16} />, url: 'https://www.cloudflare.com/' },
-      // --- PERUBAHAN DI SINI ---
-      { name: 'GitHub', icon: <img src="/github-icon.svg" alt="GitHub icon" className="w-4 h-4" />, url: 'https://github.com/' },
+      { name: 'GitHub', icon: <GitBranch size={16} />, url: 'https://github.com/' },
       { name: 'OpenAI', icon: <Bot size={16} />, url: 'https://openai.com/' }
     ]
   },
@@ -29,6 +29,7 @@ const footerSections = [
       { name: 'NextAuth.js', icon: <PanelTop size={16} />, url: 'https://next-auth.js.org/' },
       { name: 'Tailwind CSS', icon: <Library size={16} />, url: 'https://tailwindcss.com/' },
       { name: 'Lucide Icons', icon: <Leaf size={16} />, url: 'https://lucide.dev/' },
+      // --- PENAMBAHAN BARU ---
       { name: 'Framer Motion', icon: <Orbit size={16} />, url: 'https://www.framer.com/motion/' }
     ]
   },
@@ -39,6 +40,7 @@ const footerSections = [
       { name: 'TypeScript', icon: <Type size={16} />, url: 'https://www.typescriptlang.org/' },
       { name: 'pnpm', icon: <Package size={16} />, url: 'https://pnpm.io/' },
       { name: 'ESLint', icon: <CheckSquare size={16} />, url: 'https://eslint.org/' },
+      // --- PENAMBAHAN BARU ---
       { name: 'Prettier', icon: <Paintbrush size={16} />, url: 'https://prettier.io/' }
     ]
   }
@@ -64,33 +66,7 @@ export default function Footer() {
           </div>
         ))}
       </div>
-      
-      <div className="text-center mt-12">
-        <h4 className="font-semibold text-base mb-2">Ucapan Terima Kasih</h4>
-        <p className="opacity-80 max-w-2xl mx-auto">
-          Aplikasi ini tidak akan terwujud tanpa komunitas <i>open-source</i> yang luar biasa. Terima kasih kepada semua pengembang dan kontributor yang karyanya telah membantu proyek ini.
-        </p>
-        <p className="mt-4">
-          <a 
-            href="https://github.com/ruangriung/ai-image-generator" 
-            target="_blank" 
-            rel="noopener noreferrer" 
-            className="inline-flex items-center justify-center gap-2 font-semibold text-indigo-400 hover:text-indigo-300 transition-colors"
-          >
-            {/* --- PERUBAHAN DI SINI --- */}
-            <img src="/github-icon.svg" alt="GitHub icon" className="w-4 h-4" /> Beri Bintang di GitHub
-          </a>
-        </p>
-      </div>
-
       <div className="text-center mt-12 pt-8 border-t border-gray-500/20 opacity-70">
-        {/* --- PENAMBAHAN BARU: Tautan Kebijakan --- */}
-        <div className="space-x-4 mb-4">
-            <Link href="/terms" className="hover:underline">Ketentuan Layanan</Link>
-            <span>•</span>
-            <Link href="/privacy" className="hover:underline">Kebijakan Privasi</Link>
-        </div>
-        {/* --- AKHIR PENAMBAHAN --- */}
         <p>&copy; {new Date().getFullYear()} RuangRiung AI Image Generator - Developed with ❤️ by{' '}
           <a href="https://ariftirtana.com" target="_blank" rel="noopener noreferrer" className="font-semibold text-indigo-400 hover:text-indigo-300 transition-colors">
             Arif Tirtana
