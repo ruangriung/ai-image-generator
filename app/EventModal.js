@@ -9,13 +9,13 @@ import { NeumorphicButton } from './components.js'; //
 export default function EventModal({ darkMode }) { // Tambahkan `darkMode` sebagai prop
   const [isOpen, setIsOpen] = useState(false); //
 
-  useEffect(() => { //
-    const timer = setTimeout(() => {
-      setIsOpen(true); //
-    }, 5000); //
-
-    return () => clearTimeout(timer); //
-  }, []); //
+// useEffect(() => { //
+//   const timer = setTimeout(() => {
+//     setIsOpen(true); //
+//   }, 5000); //
+//
+//   return () => clearTimeout(timer); //
+// }, []); //
 
   const handleClose = () => { //
     setIsOpen(false); //
