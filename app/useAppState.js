@@ -6,6 +6,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 
 // Ini adalah Custom Hook kita!
 export function useAppState() {
+  // ... (semua state Anda tetap sama)
   const [isMounted, setIsMounted] = useState(false);
   const [prompt, setPrompt] = useState('');
   const [model, setModel] = useState('flux');
@@ -71,6 +72,7 @@ export function useAppState() {
     return { width: w, height: h };
   }, [useCustomSize, customWidth, customHeight, sizePreset]);
 
+  // ... (fungsi showToast dan lainnya tetap sama)
   const showToast = useCallback((message, type = 'info', duration = 4000) => {
     const id = Date.now() + Math.random();
     setToasts(prev => [...prev, { id, message, type }]);
@@ -353,8 +355,11 @@ export function useAppState() {
 
   const handleGenerateImage = useCallback(async () => {
     const finalPrompt = `${artStyle} ${prompt}`;
-    const promises = Array.from({ length: batchSize }, () => {
-        const currentSeed = seed || Math.floor(Math.random() * 1e9);
+    // --- BLOK YANG DIPERBAIKI ---
+    const promises = Array.from({ length: batchSize }, (_, i) => {
+        // Jika ada seed, kita tambahkan index batch (i) untuk membuat variasi kecil.
+        // Jika tidak ada seed, setiap gambar akan mendapat seed acak yang benar-benar baru.
+        const currentSeed = seed ? (parseInt(seed, 10) + i) : Math.floor(Math.random() * 1e9);
         
         let url;
         if (model === 'gptimage') {
@@ -375,6 +380,7 @@ export function useAppState() {
         if (apiKey) url += `&apikey=${apiKey}`;
         return fetch(url).then(res => res.ok ? { url: res.url, seed: currentSeed, prompt: finalPrompt, date: new Date().toISOString() } : Promise.reject(new Error(`Gagal membuat gambar (status: ${res.status})`)));
     });
+    // --- AKHIR BLOK PERBAIKAN ---
     try {
         const results = await Promise.all(promises);
         setGeneratedImages(results);
