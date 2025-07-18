@@ -6,7 +6,8 @@ import { Sun, Moon, Wand2, Upload, Coins, Clock, Settings, Trash2, ChevronUp, Do
 import { useSession } from "next-auth/react";
 import { useAppState } from './useAppState.js';
 
-import { Spinner, NeumorphicButton, Toasts, GeneratedContentDisplay } from './components.js';
+// --- PERUBAHAN: Impor AdBanner dari components.js ---
+import { Spinner, NeumorphicButton, Toasts, GeneratedContentDisplay, AdBanner } from './components.js';
 import ChatbotAssistant from './ChatbotAssistant.js';
 import Lab from './Lab.js';
 import HistorySection from './History.js';
@@ -19,25 +20,7 @@ import AuthButtons from './AuthButtons.js';
 import EventModal from './EventModal.js';
 import AuthWall from './AuthWall.js';
 import Footer from './Footer.js';
-import AuthDisplay from './AuthDisplay.js'; // Impor komponen AuthDisplay
-
-// --- PENAMBAHAN BARU: Komponen Iklan ---
-const AdBanner = () => {
-  return (
-    <div className="my-6 text-center">
-      <ins className="adsbygoogle"
-           style={{ display: 'block' }}
-           data-ad-client="ca-pub-1439044724518446"
-           data-ad-slot="YOUR_AD_SLOT_ID" // GANTI DENGAN AD SLOT ID ANDA
-           data-ad-format="auto"
-           data-full-width-responsive="true"></ins>
-      <script
-        dangerouslySetInnerHTML={{ __html: '(adsbygoogle = window.adsbygoogle || []).push({});' }}
-      />
-    </div>
-  );
-};
-// --- AKHIR PENAMBAHAN ---
+import AuthDisplay from './AuthDisplay.js';
 
 export default function AIImageGenerator() {
   const state = useAppState();
@@ -139,10 +122,9 @@ export default function AIImageGenerator() {
             </div>
           </header>
           
-          {/* --- PENAMBAHAN BARU: Menampilkan komponen iklan --- */}
-          <AdBanner />
-          {/* --- AKHIR PENAMBAHAN --- */}
-
+          {/* --- PENEMPATAN IKLAN PERTAMA --- */}
+          <AdBanner slotId="GANTI_DENGAN_ID_SLOT_IKLAN_ANDA_1" /> 
+          
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             <div className="lg:col-span-4 space-y-6">
               <div className="p-6 rounded-2xl h-fit space-y-4 neumorphic-card">

@@ -2,11 +2,48 @@
 
 "use client";
 
+// --- PERUBAHAN: Tambahkan useEffect ---
 import { useMemo, useState, useEffect, useRef, useCallback } from 'react';
 import {
     Search, Minus, Plus, X, Layers, ImageDown,
     Repeat, Sparkles, ChevronUp, ChevronDown, ZoomIn, ImageIcon as FileImage, Download, Upload, Wand2, Text, Image as ImageIconLucide, Move, Grid3x3, Copy
 } from 'lucide-react';
+
+// --- PENAMBAHAN BARU: Komponen Iklan ---
+export const AdBanner = ({ slotId }) => {
+  useEffect(() => {
+    // Mendorong iklan untuk dimuat setiap kali komponen ini muncul
+    try {
+      (window.adsbygoogle = window.adsbygoogle || []).push({});
+    } catch (err) {
+      console.error("Gagal memuat iklan:", err);
+    }
+  }, [slotId]); // Dijalankan ulang jika slotId berubah
+
+  // Jangan tampilkan apa pun jika slotId belum diisi
+  if (!slotId) {
+    return (
+        <div className="my-6 text-center p-4 bg-yellow-100 text-yellow-800 rounded-lg">
+            <strong>Info:</strong> Tempat Iklan. Silakan ganti placeholder ID slot di kode Anda.
+        </div>
+    );
+  }
+  
+  return (
+    <div className="my-6 text-center" key={slotId}>
+      <ins
+        className="adsbygoogle"
+        style={{ display: 'block' }}
+        data-ad-client="ca-pub-1439044724518446"
+        data-ad-slot={slotId}
+        data-ad-format="auto"
+        data-full-width-responsive="true"
+      ></ins>
+    </div>
+  );
+};
+// --- AKHIR PENAMBAHAN ---
+
 
 export const CollapsibleSection = ({ title, icon, children, defaultOpen = false }) => {
     const [isOpen, setIsOpen] = useState(defaultOpen);
