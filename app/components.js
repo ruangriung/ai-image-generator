@@ -2,29 +2,25 @@
 
 "use client";
 
-// --- PERUBAHAN: Tambahkan useEffect ---
 import { useMemo, useState, useEffect, useRef, useCallback } from 'react';
 import {
     Search, Minus, Plus, X, Layers, ImageDown,
     Repeat, Sparkles, ChevronUp, ChevronDown, ZoomIn, ImageIcon as FileImage, Download, Upload, Wand2, Text, Image as ImageIconLucide, Move, Grid3x3, Copy
 } from 'lucide-react';
 
-// --- PENAMBAHAN BARU: Komponen Iklan ---
 export const AdBanner = ({ slotId }) => {
   useEffect(() => {
-    // Mendorong iklan untuk dimuat setiap kali komponen ini muncul
     try {
       (window.adsbygoogle = window.adsbygoogle || []).push({});
     } catch (err) {
       console.error("Gagal memuat iklan:", err);
     }
-  }, [slotId]); // Dijalankan ulang jika slotId berubah
+  }, [slotId]);
 
-  // Jangan tampilkan apa pun jika slotId belum diisi
-  if (!slotId) {
+  if (!slotId || slotId.startsWith("GANTI_DENGAN")) {
     return (
-        <div className="my-6 text-center p-4 bg-yellow-100 text-yellow-800 rounded-lg">
-            <strong>Info:</strong> Tempat Iklan. Silakan ganti placeholder ID slot di kode Anda.
+        <div className="my-6 text-center p-4 bg-yellow-100 text-yellow-800 rounded-lg neumorphic-card">
+            <strong>Info:</strong> Ruang Iklan.
         </div>
     );
   }
@@ -42,7 +38,6 @@ export const AdBanner = ({ slotId }) => {
     </div>
   );
 };
-// --- AKHIR PENAMBAHAN ---
 
 
 export const CollapsibleSection = ({ title, icon, children, defaultOpen = false }) => {
@@ -218,7 +213,6 @@ export const ImageAnalysisModal = ({ isOpen, onClose, onPromptGenerated, showToa
     );
 };
 
-// --- KODE PROMPT EDIT MODAL DIPERBAIKI ---
 export const PromptEditModal = ({ isOpen, onClose, value, onSave }) => {
     const [text, setText] = useState(value);
 
@@ -235,18 +229,14 @@ export const PromptEditModal = ({ isOpen, onClose, value, onSave }) => {
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4 animate-fade-in">
-            {/* Mengubah struktur flexbox agar header dan footer tetap */}
             <div
                 className="p-6 rounded-2xl w-full max-w-lg flex flex-col gap-4 neumorphic-card"
                 style={{ background: 'var(--bg-color)', maxHeight: '80vh' }}
             >
-                {/* Header */}
                 <div className="flex-shrink-0 flex justify-between items-center">
                     <h2 className="text-xl font-bold">Edit Prompt</h2>
                     <NeumorphicButton onClick={onClose} className="!p-2"><X size={20} /></NeumorphicButton>
                 </div>
-
-                {/* Area Konten yang Bisa di-scroll */}
                 <div className="flex-grow overflow-y-auto pr-2">
                     <textarea
                         value={text}
@@ -255,8 +245,6 @@ export const PromptEditModal = ({ isOpen, onClose, value, onSave }) => {
                         placeholder="Ketik ide gambarmu di sini..."
                     />
                 </div>
-                
-                {/* Footer dengan tombol */}
                 <div className="flex-shrink-0 flex justify-end gap-4 border-t border-gray-500/20 pt-4">
                     <NeumorphicButton onClick={onClose}>Batal</NeumorphicButton>
                     <NeumorphicButton onClick={handleSave} className="font-bold">Simpan</NeumorphicButton>
@@ -269,7 +257,6 @@ export const PromptEditModal = ({ isOpen, onClose, value, onSave }) => {
 export const GeneratedContentDisplay = ({
     activeTab,
     loading, generatedImages, generatedVideoPrompt, 
-    // --- PERBAIKAN: Gunakan generatedAudioData dan onDownloadAudio ---
     generatedAudioData, 
     onDownloadAudio,
     onUsePromptAndSeed, onCreateVariation, onDownload, showToast,
@@ -337,10 +324,7 @@ export const GeneratedContentDisplay = ({
         };
     }, [isDragging, handleMouseMove, handleMouseUp]);
 
-    const setWatermarkPosition = (x, y) => {
-        setWatermark(w => ({ ...w, position: { x, y } }));
-    };
-    const handleWatermarkMouseDown = (e) => { e.stopPropagation(); setIsDraggingWatermark(true); };
+    // --- FUNGSI BARU UNTUK MENGATUR POSISI WATERMARK ---
     const handleWatermarkMove = useCallback((clientX, clientY) => {
         if (!watermarkRef.current || !imageContainerRef.current) return;
         const containerRect = imageContainerRef.current.getBoundingClientRect();
@@ -350,18 +334,41 @@ export const GeneratedContentDisplay = ({
         newY = Math.max(0, Math.min(100, newY));
         setWatermark(w => ({ ...w, position: { x: newX, y: newY } }));
     }, []);
+
+    // --- HANDLER UNTUK MOUSE ---
+    const handleWatermarkMouseDown = (e) => { e.stopPropagation(); setIsDraggingWatermark(true); };
     const handleWatermarkMouseMove = useCallback((e) => {
         if (isDraggingWatermark) handleWatermarkMove(e.clientX, e.clientY);
     }, [isDraggingWatermark, handleWatermarkMove]);
     const handleWatermarkMouseUp = useCallback(() => setIsDraggingWatermark(false), []);
+
+    // --- HANDLER BARU UNTUK SENTUHAN ---
+    const handleWatermarkTouchStart = (e) => { e.stopPropagation(); setIsDraggingWatermark(true); };
+    const handleWatermarkTouchMove = useCallback((e) => {
+        if (isDraggingWatermark) {
+            e.preventDefault(); // Mencegah scroll halaman saat drag
+            handleWatermarkMove(e.touches[0].clientX, e.touches[0].clientY);
+        }
+    }, [isDraggingWatermark, handleWatermarkMove]);
+    const handleWatermarkTouchEnd = useCallback(() => setIsDraggingWatermark(false), []);
+
+    // --- EFEK UNTUK MENGELOLA SEMUA EVENT LISTENER ---
     useEffect(() => {
+        // Event listeners untuk mouse
         window.addEventListener('mousemove', handleWatermarkMouseMove);
         window.addEventListener('mouseup', handleWatermarkMouseUp);
+        // Event listeners untuk sentuhan
+        window.addEventListener('touchmove', handleWatermarkTouchMove, { passive: false });
+        window.addEventListener('touchend', handleWatermarkTouchEnd);
+
         return () => {
             window.removeEventListener('mousemove', handleWatermarkMouseMove);
             window.removeEventListener('mouseup', handleWatermarkMouseUp);
+            window.removeEventListener('touchmove', handleWatermarkTouchMove);
+            window.removeEventListener('touchend', handleWatermarkTouchEnd);
         };
-    }, [handleWatermarkMouseMove, handleWatermarkMouseUp]);
+    }, [handleWatermarkMouseMove, handleWatermarkMouseUp, handleWatermarkTouchMove, handleWatermarkTouchEnd]);
+
 
     const finalFilter = useMemo(() => {
         if (baseFilter !== 'none') return baseFilter;
@@ -396,7 +403,6 @@ export const GeneratedContentDisplay = ({
                     <div className="p-4 rounded-lg text-sm" style={{boxShadow: 'var(--shadow-inset)'}}>
                         <p className="whitespace-pre-wrap">{generatedVideoPrompt}</p>
                     </div>
-                    {/* --- BLOK TOMBOL DIPERBARUI --- */}
                     <div className="flex flex-wrap gap-2">
                         <NeumorphicButton onClick={() => {navigator.clipboard.writeText(generatedVideoPrompt); showToast('Prompt disalin!', 'success')}} className="flex-1 text-sm">
                             <Copy size={16}/> Salin Prompt
@@ -405,7 +411,6 @@ export const GeneratedContentDisplay = ({
                             <Download size={16}/> Unduh JSON
                         </NeumorphicButton>
                     </div>
-                    {/* --- AKHIR PEMBARUAN --- */}
                 </div>
             </div>
         );
@@ -499,6 +504,7 @@ export const GeneratedContentDisplay = ({
                                 <div
                                     ref={watermarkRef}
                                     onMouseDown={handleWatermarkMouseDown}
+                                    onTouchStart={handleWatermarkTouchStart} // <-- Tambahkan ini
                                     className="absolute watermark-control z-10"
                                     style={{
                                         left: `${watermark.position.x}%`,
@@ -624,6 +630,7 @@ export const GeneratedContentDisplay = ({
                                     <div
                                         ref={watermarkRef}
                                         onMouseDown={handleWatermarkMouseDown}
+                                        onTouchStart={handleWatermarkTouchStart} // <-- Tambahkan ini
                                         className="absolute watermark-control z-10"
                                         style={{
                                             left: `${watermark.position.x}%`,
@@ -687,6 +694,7 @@ export const GeneratedContentDisplay = ({
                                     <div
                                         ref={watermarkRef}
                                         onMouseDown={handleWatermarkMouseDown}
+                                        onTouchStart={handleWatermarkTouchStart} // <-- Tambahkan ini
                                         className="absolute watermark-control z-10"
                                         style={{
                                             left: `${watermark.position.x}%`,

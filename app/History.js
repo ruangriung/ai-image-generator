@@ -107,7 +107,7 @@ export default function HistorySection({
       
       {/* --- PENAMBAHAN BARU: Menampilkan AdBanner di bawah panel --- */}
       <div className="mt-8">
-        <AdBanner slotId="GANTI_DENGAN_ID_SLOT_IKLAN_ANDA_2" />
+        <AdBanner slotId="6897039624" />
       </div>
     </>
   );
