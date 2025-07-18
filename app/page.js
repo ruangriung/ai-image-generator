@@ -21,6 +21,24 @@ import AuthWall from './AuthWall.js';
 import Footer from './Footer.js';
 import AuthDisplay from './AuthDisplay.js'; // Impor komponen AuthDisplay
 
+// --- PENAMBAHAN BARU: Komponen Iklan ---
+const AdBanner = () => {
+  return (
+    <div className="my-6 text-center">
+      <ins className="adsbygoogle"
+           style={{ display: 'block' }}
+           data-ad-client="ca-pub-1439044724518446"
+           data-ad-slot="YOUR_AD_SLOT_ID" // GANTI DENGAN AD SLOT ID ANDA
+           data-ad-format="auto"
+           data-full-width-responsive="true"></ins>
+      <script
+        dangerouslySetInnerHTML={{ __html: '(adsbygoogle = window.adsbygoogle || []).push({});' }}
+      />
+    </div>
+  );
+};
+// --- AKHIR PENAMBAHAN ---
+
 export default function AIImageGenerator() {
   const state = useAppState();
   const { data: session, status } = useSession();
@@ -120,6 +138,10 @@ export default function AIImageGenerator() {
               <AuthDisplay />
             </div>
           </header>
+          
+          {/* --- PENAMBAHAN BARU: Menampilkan komponen iklan --- */}
+          <AdBanner />
+          {/* --- AKHIR PENAMBAHAN --- */}
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             <div className="lg:col-span-4 space-y-6">
