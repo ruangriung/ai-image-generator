@@ -123,7 +123,7 @@ export default function AIImageGenerator() {
           </header>
           
           {/* --- PENEMPATAN IKLAN PERTAMA --- */}
-         {/*} <AdBanner slotId="6897039624" /> */}
+          {/* <AdBanner slotId="6897039624" />  */}
           
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             <div className="lg:col-span-4 space-y-6">
