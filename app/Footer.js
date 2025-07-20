@@ -2,13 +2,12 @@
 
 "use client";
 
-import Link from 'next/link'; // <-- Impor komponen Link
+import Link from 'next/link';
 import { 
     Server, Bot, GitBranch, Cloud, Power, Type, Component, Library, PanelTop, Frame, Leaf, 
     Package, CheckSquare, BrainCircuit, Orbit, Paintbrush 
 } from 'lucide-react';
 
-// Data untuk footer sekarang berada di dalam komponennya sendiri
 const footerSections = [
   {
     title: 'Services & Platforms',
@@ -70,29 +69,29 @@ export default function Footer() {
             Arif Tirtana
           </a>
         </p>
-        {/* --- BLOK BARU DITAMBAHKAN DI SINI --- */}
-        <div className="mt-4 flex justify-center gap-x-4">
-          <Link href="/privacy" className="font-semibold text-indigo-400 hover:text-indigo-300 transition-colors">
-            Kebijakan Privasi
+        
+        {/* === BAGIAN YANG DIPERBAIKI === */}
+        <div className="mt-4 flex flex-col sm:flex-row sm:flex-wrap items-center justify-center gap-y-2 sm:gap-x-4">
+          <Link href="/blog" className="font-semibold text-indigo-400 hover:text-indigo-300 transition-colors">
+            Blog
           </Link>
-          <span className="opacity-50">|</span>
-          <Link href="/terms" className="font-semibold text-indigo-400 hover:text-indigo-300 transition-colors">
-            Ketentuan Layanan
-          </Link>
-           <span className="opacity-50">|</span>
-          <Link href="/data-deletion" className="font-semibold text-indigo-400 hover:text-indigo-300 transition-colors">
-            Penghapusan Data
-          </Link>
-           <span className="opacity-50">|</span>
+          <span className="hidden sm:inline opacity-50">|</span>
           <Link href="/contact" className="font-semibold text-indigo-400 hover:text-indigo-300 transition-colors">
             Kontak Kami
           </Link>
-          <span className="opacity-50">|</span>
-           <Link href="/blog" className="font-semibold text-indigo-400 hover:text-indigo-300 transition-colors">
-            Blog
+          <span className="hidden sm:inline opacity-50">|</span>
+          <Link href="/privacy" className="font-semibold text-indigo-400 hover:text-indigo-300 transition-colors">
+            Kebijakan Privasi
+          </Link>
+          <span className="hidden sm:inline opacity-50">|</span>
+          <Link href="/terms" className="font-semibold text-indigo-400 hover:text-indigo-300 transition-colors">
+            Ketentuan Layanan
+          </Link>
+          <span className="hidden sm:inline opacity-50">|</span>
+          <Link href="/data-deletion" className="font-semibold text-indigo-400 hover:text-indigo-300 transition-colors">
+            Penghapusan Data
           </Link>
         </div>
-        {/* --- AKHIR BLOK BARU --- */}
       </div>
     </footer>
   );
