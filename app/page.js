@@ -18,7 +18,6 @@ import Modals from './Modals.js';
 import AuthButtons from './AuthButtons.js';
 import EventModal from './EventModal.js';
 import AuthWall from './AuthWall.js';
-import Footer from './Footer.js';
 import AuthDisplay from './AuthDisplay.js';
 
 export default function AIImageGenerator() {
@@ -30,49 +29,7 @@ export default function AIImageGenerator() {
   }
 
   return (
-    <div className={`min-h-screen transition-colors duration-300 bg-[var(--bg-color)] text-[var(--text-color)]`}>
-      <EventModal darkMode={state.darkMode} />
-      <style jsx global>{`
-          :root {
-            --bg-color: #e0e0e0;
-            --text-color: #313131;
-            --shadow-light: #ffffff;
-            --shadow-dark: #bebebe;
-            --shadow-outset: 6px 6px 12px var(--shadow-dark), -6px -6px 12px var(--shadow-light);
-            --shadow-inset: inset 6px 6px 12px var(--shadow-dark), inset -6px -6px 12px var(--shadow-light);
-          }
-          .dark {
-            --bg-color: #3a3a3a;
-            --text-color: #e0e0e0;
-            --shadow-light: #464646;
-            --shadow-dark: #2e2e2e;
-          }
-          .neumorphic-input, .neumorphic-select, .neumorphic-card {
-            background: var(--bg-color);
-            color: var(--text-color);
-          }
-          .neumorphic-card {
-            box-shadow: var(--shadow-outset);
-            transition: background 0.3s ease, color 0.3s ease;
-          }
-          .neumorphic-input, .neumorphic-select {
-            box-shadow: var(--shadow-inset);
-            border: none;
-          }
-          button, .neumorphic-btn, .neumorphic-button, .neumorphicButton {
-            min-width: 44px;
-            min-height: 44px;
-            outline: none;
-          }
-          button:focus-visible, .neumorphic-btn:focus-visible, .neumorphic-button:focus-visible, .neumorphicButton:focus-visible {
-            outline: 2px solid #2563eb;
-            outline-offset: 2px;
-          }
-          @keyframes fade-in-up { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-          @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
-          .animate-fade-in-up { animation: fade-in-up 0.3s ease-out forwards; }
-          .animate-fade-in { animation: fade-in 0.5s ease-out forwards; }
-      `}</style>
+    <div>
       
       {state.isBannerVisible && (
        <div className="fixed top-0 left-0 right-0 bg-blue-600 text-white p-3 flex items-center justify-center gap-4 z-50 shadow-lg animate-fade-in">
@@ -126,9 +83,9 @@ export default function AIImageGenerator() {
               <div className="p-6 rounded-2xl h-fit space-y-4 neumorphic-card">
                 <TabSelector activeTab={state.activeTab} setActiveTab={state.setActiveTab} />
                 
-                {/* --- PERBAIKAN DI SINI: Meneruskan semua state ke ImageTab --- */}
-                <ImageTab {...state} availableModels={state.availableModels} />
-                {state.activeTab === 'image' && <ImageTab {...state} />}
+                {/* === BAGIAN YANG DIPERBAIKI === */}
+                {/* Hanya satu panggilan ImageTab di dalam kondisi ini */}
+                {state.activeTab === 'image' && <ImageTab {...state} availableModels={state.availableModels} />}
                 
                 {state.activeTab === 'video' && (
                   status === 'authenticated' ? (
@@ -207,9 +164,7 @@ export default function AIImageGenerator() {
             <Trash2 size={16} /> Reset Semua Data Aplikasi
           </NeumorphicButton>
         </div>
-        
-        <Footer />
-
+      
       </div>
       {state.showBackToTop && (
         <NeumorphicButton onClick={state.scrollToTop} className="!p-3 fixed bottom-5 right-5 z-50 !rounded-full animate-fade-in" title="Back to Top">

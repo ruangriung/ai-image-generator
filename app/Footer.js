@@ -83,6 +83,14 @@ export default function Footer() {
           <Link href="/data-deletion" className="font-semibold text-indigo-400 hover:text-indigo-300 transition-colors">
             Penghapusan Data
           </Link>
+           <span className="opacity-50">|</span>
+          <Link href="/contact" className="font-semibold text-indigo-400 hover:text-indigo-300 transition-colors">
+            Kontak Kami
+          </Link>
+          <span className="opacity-50">|</span>
+           <Link href="/blog" className="font-semibold text-indigo-400 hover:text-indigo-300 transition-colors">
+            Blog
+          </Link>
         </div>
         {/* --- AKHIR BLOK BARU --- */}
       </div>

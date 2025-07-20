@@ -3,6 +3,7 @@
 import { Inter } from 'next/font/google';
 import './globals.css';
 import AuthProvider from './AuthProvider';
+import Footer from './Footer';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata = {
@@ -54,14 +55,16 @@ export default function RootLayout({ children }) {
         {/* <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1439044724518446"
      crossOrigin="anonymous"></script> */}
       </head>
-      <body className={inter.className}>
+       <body 
+        className={`${inter.className} bg-[var(--bg-color)] text-[var(--text-color)] transition-colors duration-300`}
+      >
         <AuthProvider>
-        <header>
-          {/* Tambahkan logo/nama aplikasi di sini jika ada */}
-        </header>
-        <main id="main-content" tabIndex="-1">
-          {children}
-        </main>
+          <div className="flex flex-col min-h-screen">
+            <main id="main-content" tabIndex="-1" className="flex-grow">
+              {children}
+            </main>
+            <Footer />
+          </div>
         </AuthProvider>
       </body>
     </html>
