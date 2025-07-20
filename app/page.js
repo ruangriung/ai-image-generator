@@ -127,6 +127,7 @@ export default function AIImageGenerator() {
                 <TabSelector activeTab={state.activeTab} setActiveTab={state.setActiveTab} />
                 
                 {/* --- PERBAIKAN DI SINI: Meneruskan semua state ke ImageTab --- */}
+                <ImageTab {...state} availableModels={state.availableModels} />
                 {state.activeTab === 'image' && <ImageTab {...state} />}
                 
                 {state.activeTab === 'video' && (

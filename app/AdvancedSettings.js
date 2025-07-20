@@ -7,6 +7,7 @@ import { artStyles } from './artStyles.js';
 export default function AdvancedSettings({
   artStyle, setArtStyle,
   model, handleModelChange,
+  availableModels, // Prop ini sekarang berisi daftar model gabungan
   quality, setQuality,
   sizePreset, setSizePreset,
   useCustomSize, setUseCustomSize,
@@ -16,6 +17,19 @@ export default function AdvancedSettings({
   seed, setSeed,
   turboCountdown
 }) {
+  // Fungsi untuk memberi label yang lebih deskriptif pada model kustom
+  const getModelLabel = (modelName) => {
+    const labels = {
+      flux: "Flux",
+      gptimage: "GPT Image",
+      turbo: "Turbo",
+      dalle3: "DALL-E 3 (Perlu Key)",
+      stability: "Stability (Perlu Key)",
+      ideogram: "Ideogram (Perlu Key)"
+    };
+    return labels[modelName] || (modelName.charAt(0).toUpperCase() + modelName.slice(1));
+  };
+
   return (
     <div className="p-4 rounded-lg space-y-4 animate-fade-in" style={{ boxShadow: 'var(--shadow-inset)' }}>
       <div>
@@ -34,13 +48,21 @@ export default function AdvancedSettings({
 
       <div>
         <label htmlFor="model-select" className="font-semibold block mb-2 text-sm">Model</label>
-        <select id="model-select" value={model} onChange={handleModelChange} className="w-full p-3 rounded-lg neumorphic-input bg-[var(--bg-color)]">
-          <option value="flux">Flux (Cepat & Bagus)</option>
-          <option value="gptimage">GPT Image (Deskriptif)</option>
-          <option value="turbo">Turbo (Premium)</option>
-          <option value="dalle3">DALL-E 3 (Perlu Key)</option>
-          <option value="stability">Stability (Perlu Key)</option>
-          <option value="ideogram">Ideogram (Perlu Key)</option>
+        <select 
+          id="model-select" 
+          value={model} 
+          onChange={handleModelChange} 
+          className="w-full p-3 rounded-lg neumorphic-input bg-[var(--bg-color)]"
+        >
+          {availableModels && availableModels.length > 0 ? (
+            availableModels.map(modelName => (
+              <option key={modelName} value={modelName}>
+                {getModelLabel(modelName)}
+              </option>
+            ))
+          ) : (
+            <option value="" disabled>Memuat model...</option>
+          )}
         </select>
         {model === 'turbo' && turboCountdown && (
           <div className="text-xs text-center mt-2 p-2 rounded-lg" style={{ boxShadow: 'var(--shadow-inset)' }}>

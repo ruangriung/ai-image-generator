@@ -56,6 +56,7 @@ export function useAppState() {
   const [aiSuggestions, setAiSuggestions] = useState([]);
   const [isFetchingSuggestions, setIsFetchingSuggestions] = useState(false);
   const [isLabAuthenticated, setIsLabAuthenticated] = useState(false);
+  const [availableModels, setAvailableModels] = useState([]);
 
   // Modal States
   const [isAnalysisModalOpen, setIsAnalysisModalOpen] = useState(false);
@@ -115,101 +116,96 @@ export function useAppState() {
     }
   }, [showToast]);
 
-  const handleRandomPrompt = useCallback(() => {
-    if (aiSuggestions.length === 0) {
-      showToast('Saran prompt sedang dimuat, coba lagi sesaat.', 'info');
-      if (!isFetchingSuggestions) {
-          fetchAiSuggestions();
-      }
-      return;
-    }
-    const randomIndex = Math.floor(Math.random() * aiSuggestions.length);
-    setPrompt(aiSuggestions[randomIndex]);
-    showToast('Prompt acak telah dimuat!', 'success');
-  }, [aiSuggestions, isFetchingSuggestions, showToast, fetchAiSuggestions]);
-
   useEffect(() => {
     setIsMounted(true);
-  }, []);
 
-  useEffect(() => {
-    if (isMounted) {
-        setDarkMode(localStorage.getItem('darkMode') === 'true');
-        if (sessionStorage.getItem('labAuthenticated') === 'true') {
-            setIsLabAuthenticated(true);
+    const fetchAndCombineModels = async () => {
+      const staticModels = ['flux', 'gptimage', 'turbo', 'dalle3', 'stability', 'ideogram'];
+      try {
+        const response = await fetch('https://image.pollinations.ai/models');
+        if (!response.ok) throw new Error('API request failed');
+        const apiModels = await response.json();
+        const combined = [...new Set([...staticModels, ...apiModels])];
+        setAvailableModels(combined);
+      } catch (error) {
+        console.error("Failed to fetch models, using fallback list:", error);
+        setAvailableModels(staticModels);
+        showToast('Gagal memuat model dari server.', 'error');
+      }
+    };
+
+    fetchAndCombineModels();
+    fetchAiSuggestions();
+
+    try {
+        const savedState = JSON.parse(localStorage.getItem('aiImageGeneratorState_v18') || '{}');
+        if (savedState) {
+            setPrompt(savedState.prompt || ''); setModel(savedState.model || 'flux'); setQuality(savedState.quality || 'hd'); setSizePreset(savedState.sizePreset || '1024x1024'); setApiKey(savedState.apiKey || ''); setGenerationHistory(savedState.generationHistory || []); setSavedPrompts(savedState.savedPrompts || []); setBatchSize(savedState.batchSize || 1); setSeed(savedState.seed || ''); setUseCustomSize(savedState.useCustomSize || false); setCustomWidth(savedState.customWidth || 1024); setCustomHeight(savedState.customHeight || 1024); setArtStyle(savedState.artStyle || '');
         }
+        const coinsDataString = localStorage.getItem('aiGeneratorCoinsData');
+        if (coinsDataString) {
+          const coinsData = JSON.parse(coinsDataString);
+          setCoins(coinsData.coins ?? 500);
+        }
+    } catch (e) { console.error("Gagal memuat state:", e); }
+
+    const handler = (e) => {
+      e.preventDefault();
+      setInstallPrompt(e);
+      if (sessionStorage.getItem('pwaBannerClosed') !== 'true') {
+        setIsBannerVisible(true);
+      }
+    };
+    window.addEventListener('beforeinstallprompt', handler);
+
+    const handleScroll = () => {
+        if (window.scrollY > 300) { setShowBackToTop(true); } else { setShowBackToTop(false); }
+    };
+    window.addEventListener('scroll', handleScroll);
+
+    const timer = setInterval(() => {
         try {
-            const savedState = JSON.parse(localStorage.getItem('aiImageGeneratorState_v18') || '{}');
-            if (savedState) {
-                setPrompt(savedState.prompt || ''); setModel(savedState.model || 'flux'); setQuality(savedState.quality || 'hd'); setSizePreset(savedState.sizePreset || '1024x1024'); setApiKey(savedState.apiKey || ''); setGenerationHistory(savedState.generationHistory || []); setSavedPrompts(savedState.savedPrompts || []); setBatchSize(savedState.batchSize || 1); setSeed(savedState.seed || ''); setUseCustomSize(savedState.useCustomSize || false); setCustomWidth(savedState.customWidth || 1024); setCustomHeight(savedState.customHeight || 1024); setArtStyle(savedState.artStyle || '');
+            const coinsDataString = localStorage.getItem('aiGeneratorCoinsData') || '{}';
+            const coinsData = JSON.parse(coinsDataString);
+            const lastReset = coinsData.lastReset || 0;
+            const nextReset = lastReset + 24 * 60 * 60 * 1000;
+            const now = new Date().getTime();
+
+            if (nextReset - now < 0) {
+              setCoins(500);
+              localStorage.setItem('aiGeneratorCoinsData', JSON.stringify({ coins: 500, lastReset: now }));
             }
-            const coinsDataString = localStorage.getItem('aiGeneratorCoinsData');
-            if (coinsDataString) {
-              const coinsData = JSON.parse(coinsDataString);
-              setCoins(coinsData.coins ?? 500);
-            }
-        } catch (e) { console.error("Gagal memuat state:", e); }
 
-        fetchAiSuggestions();
+            const diff = nextReset - now > 0 ? nextReset - now : 0;
+            setCountdown(`${String(Math.floor((diff/(1000*60*60))%24)).padStart(2,'0')}:${String(Math.floor((diff/1000/60)%60)).padStart(2,'0')}:${String(Math.floor((diff/1000)%60)).padStart(2,'0')}`);
 
-        const handler = (e) => {
-          e.preventDefault();
-          setInstallPrompt(e);
-          if (sessionStorage.getItem('pwaBannerClosed') !== 'true') {
-            setIsBannerVisible(true);
-          }
-        };
-        window.addEventListener('beforeinstallprompt', handler);
-
-        const handleScroll = () => {
-            if (window.scrollY > 300) { setShowBackToTop(true); } else { setShowBackToTop(false); }
-        };
-        window.addEventListener('scroll', handleScroll);
-
-        const timer = setInterval(() => {
-            try {
-                const coinsDataString = localStorage.getItem('aiGeneratorCoinsData') || '{}';
-                const coinsData = JSON.parse(coinsDataString);
-                const lastReset = coinsData.lastReset || 0;
-                const nextReset = lastReset + 24 * 60 * 60 * 1000;
-                const now = new Date().getTime();
-
-                if (nextReset - now < 0) {
-                  setCoins(500);
-                  localStorage.setItem('aiGeneratorCoinsData', JSON.stringify({ coins: 500, lastReset: now }));
-                }
-
-                const diff = nextReset - now > 0 ? nextReset - now : 0;
-                setCountdown(`${String(Math.floor((diff/(1000*60*60))%24)).padStart(2,'0')}:${String(Math.floor((diff/1000/60)%60)).padStart(2,'0')}:${String(Math.floor((diff/1000)%60)).padStart(2,'0')}`);
-
-                const turboDataString = localStorage.getItem('turboPasswordData');
-                if(turboDataString){
-                    const turboData = JSON.parse(turboDataString);
-                    if(turboData.password && turboData.expiry > now){
-                        const turboDiff = turboData.expiry - now;
-                        if(turboDiff > 0){
-                            setTurboCountdown(`${String(Math.floor((turboDiff/(1000*60*60))%24)).padStart(2,'0')}:${String(Math.floor((turboDiff/1000/60)%60)).padStart(2,'0')}:${String(Math.floor((diff/1000)%60)).padStart(2,'0')}`);
-                        } else {
-                            setTurboCountdown("Kadaluarsa");
-                            if (model === 'turbo') {
-                                setModel('flux');
-                                showToast('Sesi Turbo telah berakhir.', 'info');
-                            }
+            const turboDataString = localStorage.getItem('turboPasswordData');
+            if(turboDataString){
+                const turboData = JSON.parse(turboDataString);
+                if(turboData.password && turboData.expiry > now){
+                    const turboDiff = turboData.expiry - now;
+                    if(turboDiff > 0){
+                        setTurboCountdown(`${String(Math.floor((turboDiff/(1000*60*60))%24)).padStart(2,'0')}:${String(Math.floor((turboDiff/1000/60)%60)).padStart(2,'0')}:${String(Math.floor((diff/1000)%60)).padStart(2,'0')}`);
+                    } else {
+                        setTurboCountdown("Kadaluarsa");
+                        if (model === 'turbo') {
+                            setModel('flux');
+                            showToast('Sesi Turbo telah berakhir.', 'info');
                         }
                     }
-                } else {
-                    setTurboCountdown('');
                 }
-            } catch (e) { console.error("Gagal memproses timer:", e); }
-        }, 1000);
+            } else {
+                setTurboCountdown('');
+            }
+        } catch (e) { console.error("Gagal memproses timer:", e); }
+    }, 1000);
 
-        return () => {
-          window.removeEventListener('beforeinstallprompt', handler);
-          window.removeEventListener('scroll', handleScroll);
-          clearInterval(timer);
-        };
-    }
-  }, [isMounted]);
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handler);
+      window.removeEventListener('scroll', handleScroll);
+      clearInterval(timer);
+    };
+  }, []);
 
   useEffect(() => {
     if (!isMounted) return;
@@ -308,6 +304,19 @@ export function useAppState() {
         setIsEnhancing(false);
     }
   }, [prompt, showToast]);
+  
+  const handleRandomPrompt = useCallback(() => {
+    if (aiSuggestions.length === 0) {
+      showToast('Saran prompt sedang dimuat, coba lagi sesaat.', 'info');
+      if (!isFetchingSuggestions) {
+          fetchAiSuggestions();
+      }
+      return;
+    }
+    const randomIndex = Math.floor(Math.random() * aiSuggestions.length);
+    setPrompt(aiSuggestions[randomIndex]);
+    showToast('Prompt acak telah dimuat!', 'success');
+  }, [aiSuggestions, isFetchingSuggestions, showToast, fetchAiSuggestions]);
 
   const handleGenerateImage = useCallback(async () => {
     const finalPrompt = `${artStyle} ${prompt}`;
@@ -703,5 +712,6 @@ export function useAppState() {
     handleUsePromptAndSeed, handleCreateVariation, handleDownload,
     handleLabAuthSuccess, handleMasterReset, handleInstallClick, handleBannerClose, scrollToTop,
     handleDownloadAudio, handleDownloadVideoPromptJson,
+    availableModels,
   };
 }
