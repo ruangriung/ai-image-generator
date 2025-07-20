@@ -2,7 +2,6 @@
 
 "use client";
 
-// 1. Impor Ikon RSS dan komponen Link
 import { Sun, Moon, Wand2, Upload, Coins, Clock, Settings, Trash2, ChevronUp, Download, X, Rss } from 'lucide-react';
 import Link from 'next/link';
 import { useSession } from "next-auth/react";
@@ -33,6 +32,23 @@ export default function AIImageGenerator() {
   return (
     <div>
       <EventModal darkMode={state.darkMode} />
+      
+      {state.isBannerVisible && (
+       <div className="fixed top-0 left-0 right-0 bg-blue-600 text-white p-3 flex items-center justify-center gap-4 z-50 shadow-lg animate-fade-in">
+          <span className="text-sm md:text-base">Install aplikasi untuk akses lebih cepat!</span>
+          <button 
+            onClick={state.handleInstallClick} 
+            className="bg-white text-blue-700 font-bold py-2 px-4 rounded-lg flex items-center gap-2 text-sm hover:bg-gray-200 transition-colors shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white"
+          >
+            <Download size={16} />
+            Install
+          </button>
+          <button onClick={state.handleBannerClose} className="absolute top-1/2 right-3 -translate-y-1/2 text-white/70 hover:text-white">
+            <X size={20} />
+          </button>
+        </div>
+      )}
+      
       <Toasts toasts={state.toasts} />
       <canvas ref={state.canvasRef} className="hidden"></canvas>
       <Modals {...state} />
@@ -57,10 +73,10 @@ export default function AIImageGenerator() {
               <AuthButtons />
           </div>
 
-          <div className="w-full max-w-sm mt-4">
-            {/* === TOMBOL BARU DITAMBAHKAN DI SINI === */}
+          {/* === BAGIAN YANG DIPERBAIKI STRUKTURNYA === */}
+          <div className="w-full max-w-sm mt-4 flex flex-col gap-4">
             <Link href="/blog" passHref legacyBehavior>
-              <NeumorphicButton as="a" className="w-full font-semibold mb-4">
+              <NeumorphicButton as="a" className="w-full font-semibold">
                 <Rss size={16} />
                 Baca Artikel Blog
               </NeumorphicButton>
@@ -73,35 +89,13 @@ export default function AIImageGenerator() {
           <div className="lg:col-span-4 space-y-6">
             <div className="p-6 rounded-2xl h-fit space-y-4 neumorphic-card">
               <TabSelector activeTab={state.activeTab} setActiveTab={state.setActiveTab} />
-              
               {state.activeTab === 'image' && <ImageTab {...state} availableModels={state.availableModels} />}
-              
               {state.activeTab === 'video' && (
-                status === 'authenticated' ? (
-                  <VideoSection {...state} />
-                ) : (
-                  <div className="animate-fade-in pt-4">
-                    <AuthWall 
-                      title="Login Diperlukan"
-                      message="Fitur Video hanya tersedia untuk pengguna yang sudah login. Silakan masuk untuk melanjutkan."
-                    />
-                  </div>
-                )
+                status === 'authenticated' ? <VideoSection {...state} /> : <div className="animate-fade-in pt-4"><AuthWall title="Login Diperlukan" message="Fitur Video hanya tersedia untuk pengguna yang sudah login."/></div>
               )}
-              
               {state.activeTab === 'audio' && (
-                status === 'authenticated' ? (
-                  <AudioSection {...state} />
-                ) : (
-                  <div className="animate-fade-in pt-4">
-                    <AuthWall 
-                      title="Login Diperlukan"
-                      message="Fitur Audio hanya tersedia untuk pengguna yang sudah login. Silakan masuk untuk melanjutkan."
-                    />
-                  </div>
-                )
+                status === 'authenticated' ? <AudioSection {...state} /> : <div className="animate-fade-in pt-4"><AuthWall title="Login Diperlukan" message="Fitur Audio hanya tersedia untuk pengguna yang sudah login."/></div>
               )}
-
               {state.activeTab === 'lab' && <Lab isAuthenticated={state.isLabAuthenticated} onAuthSuccess={state.handleLabAuthSuccess} showToast={state.showToast} />}
             </div>
             <div className="p-6 rounded-2xl h-fit neumorphic-card">
@@ -110,29 +104,32 @@ export default function AIImageGenerator() {
             </div>
           </div>
           <div className="lg:col-span-8 space-y-8">
-            <GeneratedContentDisplay
-                activeTab={state.activeTab}
-                loading={state.loading}
-                generatedImages={state.generatedImages}
-                generatedVideoPrompt={state.generatedVideoPrompt}
-                generatedAudioData={state.generatedAudioData}
-                onUsePromptAndSeed={state.handleUsePromptAndSeed}
-                onCreateVariation={state.handleCreateVariation}
-                onDownload={state.handleDownload}
-                showToast={state.showToast}
-                selectedHistoryImage={state.selectedHistoryImage}
-                onDownloadVideoJson={state.handleDownloadVideoPromptJson}
-                onDownloadAudio={state.handleDownloadAudio}
-            />
-            
-            {state.activeTab === 'lab' && !state.loading && (
+            {state.loading ? (
               <div className="w-full flex justify-center">
-                <div className="rounded-2xl p-8 text-center text-gray-400 bg-[var(--bg-color)] border border-gray-200 dark:border-gray-800 neumorphic-card shadow-lg max-w-3xl w-full">
-                  {state.isLabAuthenticated ? 'Hasil eksperimen Lab akan muncul di sini.' : 'Masukkan kata sandi untuk melihat konten Lab.'}
+                <div className="flex flex-col items-center justify-center min-h-[300px] py-16 bg-[var(--bg-color)] border border-gray-200 dark:border-gray-800 rounded-2xl shadow-lg max-w-3xl w-full neumorphic-card">
+                    <Spinner />
+                    <p className="mt-6 text-xl font-semibold opacity-80">Memproses...</p>
                 </div>
               </div>
+            ) : (
+              <GeneratedContentDisplay
+                  activeTab={state.activeTab}
+                  loading={state.loading}
+                  generatedImages={state.generatedImages}
+                  generatedVideoPrompt={state.generatedVideoPrompt}
+                  generatedAudioData={state.generatedAudioData}
+                  onUsePromptAndSeed={state.handleUsePromptAndSeed}
+                  onCreateVariation={state.handleCreateVariation}
+                  onDownload={state.handleDownload}
+                  showToast={state.showToast}
+                  selectedHistoryImage={state.selectedHistoryImage}
+                  onDownloadVideoJson={state.handleDownloadVideoPromptJson}
+                  onDownloadAudio={state.handleDownloadAudio}
+              />
             )}
-            
+            {state.activeTab === 'lab' && !state.loading && (
+              <div className="w-full flex justify-center"><div className="rounded-2xl p-8 text-center text-gray-400 bg-[var(--bg-color)] border border-gray-200 dark:border-gray-800 neumorphic-card shadow-lg max-w-3xl w-full">{state.isLabAuthenticated ? 'Hasil eksperimen Lab akan muncul di sini.' : 'Masukkan kata sandi untuk melihat konten Lab.'}</div></div>
+            )}
             <HistorySection
               generationHistory={state.generationHistory}
               setGenerationHistory={state.setGenerationHistory}
