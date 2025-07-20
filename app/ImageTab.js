@@ -1,5 +1,7 @@
 // File: app/ImageTab.js
 
+// File: app/ImageTab.js
+
 "use client";
 
 import { useState } from 'react';
@@ -17,6 +19,7 @@ export default function ImageTab({
   showToast,
   // Props untuk AdvancedSettings
   artStyle, setArtStyle, model, handleModelChange,
+  availableModels, // <-- TAMBAHKAN INI
   quality, setQuality, sizePreset, setSizePreset,
   useCustomSize, setUseCustomSize, customWidth, setCustomWidth,
   customHeight, setCustomHeight, batchSize, setBatchSize,
@@ -105,10 +108,11 @@ export default function ImageTab({
         </span>
       </NeumorphicButton>
 
-      {isSettingsOpen && (
+       {isSettingsOpen && (
         <AdvancedSettings
           artStyle={artStyle} setArtStyle={setArtStyle}
           model={model} handleModelChange={handleModelChange}
+          availableModels={availableModels} // <-- TAMBAHKAN INI
           quality={quality} setQuality={setQuality}
           sizePreset={sizePreset} setSizePreset={setSizePreset}
           useCustomSize={useCustomSize} setUseCustomSize={setUseCustomSize}

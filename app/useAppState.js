@@ -6,7 +6,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 
 // Ini adalah Custom Hook kita!
 export function useAppState() {
-  // ... (semua state Anda tetap sama)
+  // State
   const [isMounted, setIsMounted] = useState(false);
   const [prompt, setPrompt] = useState('');
   const [model, setModel] = useState('flux');
@@ -33,7 +33,7 @@ export function useAppState() {
       fps: 24, cameraMovement: 'static', cameraAngle: 'eye-level', lensType: 'standard',
       depthOfField: 'medium', filmGrain: 20, chromaticAberration: 10,
       colorGrading: 'neutral', timeOfDay: 'midday', weather: 'clear',
-      narration: '', 
+      narration: '',
       videoModel: 'default'
   });
   const [tempApiKey, setTempApiKey] = useState('');
@@ -56,14 +56,15 @@ export function useAppState() {
   const [aiSuggestions, setAiSuggestions] = useState([]);
   const [isFetchingSuggestions, setIsFetchingSuggestions] = useState(false);
   const [isLabAuthenticated, setIsLabAuthenticated] = useState(false);
-  
+
+  // Modal States
   const [isAnalysisModalOpen, setIsAnalysisModalOpen] = useState(false);
   const [isPromptModalOpen, setIsPromptModalOpen] = useState(false);
   const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
   const [isClearHistoryModalOpen, setIsClearHistoryModalOpen] = useState(false);
   const [isApiModalOpen, setIsApiModalOpen] = useState(false);
   const [isMasterResetModalOpen, setIsMasterResetModalOpen] = useState(false);
-  
+
   const canvasRef = useRef(null);
 
   const { width, height } = useMemo(() => {
@@ -72,53 +73,11 @@ export function useAppState() {
     return { width: w, height: h };
   }, [useCustomSize, customWidth, customHeight, sizePreset]);
 
-  // ... (fungsi showToast dan lainnya tetap sama)
   const showToast = useCallback((message, type = 'info', duration = 4000) => {
     const id = Date.now() + Math.random();
     setToasts(prev => [...prev, { id, message, type }]);
     setTimeout(() => setToasts(prev => prev.filter(toast => toast.id !== id)), duration);
   }, []);
-
-  const handleDownloadAudio = useCallback(() => {
-    if (!generatedAudioData || !generatedAudioData.url) {
-      showToast('Tidak ada audio untuk diunduh.', 'error');
-      return;
-    }
-    const link = document.createElement('a');
-    link.href = generatedAudioData.url;
-    link.download = `ruangriung-audio-${generatedAudioData.voice}-${Date.now()}.mp3`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    showToast('Audio berhasil diunduh!', 'success');
-  }, [generatedAudioData, showToast]);
-
-  const handleDownloadVideoPromptJson = useCallback(() => {
-    if (!generatedVideoPrompt) {
-      showToast('Tidak ada prompt video untuk diunduh.', 'error');
-      return;
-    }
-
-    const dataToDownload = {
-      generator: 'RuangRiung AI Video Prompt Assistant',
-      createdAt: new Date().toISOString(),
-      prompt: generatedVideoPrompt,
-      parameters: videoParams,
-    };
-
-    const jsonString = JSON.stringify(dataToDownload, null, 2);
-    const blob = new Blob([jsonString], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `ruangriung-video-prompt-${Date.now()}.json`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-    showToast('File JSON berhasil diunduh!', 'success');
-  }, [generatedVideoPrompt, videoParams, showToast]);
 
   const fetchAiSuggestions = useCallback(async () => {
     setIsFetchingSuggestions(true);
@@ -132,10 +91,7 @@ export function useAppState() {
                 messages: [{
                     role: 'system',
                     content: 'You are a creative prompt generator. Generate 3 diverse, creative, and detailed prompts for an AI image generator. Each prompt must be on a new line. Do not number them.'
-                }, {
-                    role: 'user',
-                    content: 'Give me 3 creative prompts.'
-                }]
+                }, { role: 'user', content: 'Give me 3 creative prompts.' }]
             })
         });
         if (!res.ok) throw new Error('Failed to fetch suggestions');
@@ -253,7 +209,7 @@ export function useAppState() {
           clearInterval(timer);
         };
     }
-  }, [isMounted, fetchAiSuggestions, showToast]);
+  }, [isMounted]);
 
   useEffect(() => {
     if (!isMounted) return;
@@ -355,12 +311,9 @@ export function useAppState() {
 
   const handleGenerateImage = useCallback(async () => {
     const finalPrompt = `${artStyle} ${prompt}`;
-    // --- BLOK YANG DIPERBAIKI ---
     const promises = Array.from({ length: batchSize }, (_, i) => {
-        // Jika ada seed, kita tambahkan index batch (i) untuk membuat variasi kecil.
-        // Jika tidak ada seed, setiap gambar akan mendapat seed acak yang benar-benar baru.
         const currentSeed = seed ? (parseInt(seed, 10) + i) : Math.floor(Math.random() * 1e9);
-        
+
         let url;
         if (model === 'gptimage') {
             const aspectRatio = width / height;
@@ -380,7 +333,6 @@ export function useAppState() {
         if (apiKey) url += `&apikey=${apiKey}`;
         return fetch(url).then(res => res.ok ? { url: res.url, seed: currentSeed, prompt: finalPrompt, date: new Date().toISOString() } : Promise.reject(new Error(`Gagal membuat gambar (status: ${res.status})`)));
     });
-    // --- AKHIR BLOK PERBAIKAN ---
     try {
         const results = await Promise.all(promises);
         setGeneratedImages(results);
@@ -400,13 +352,13 @@ export function useAppState() {
         const encodedPrompt = encodeURIComponent(prompt);
         const randomCacheBuster = `&r=${Math.random()}`;
         const url = `https://text.pollinations.ai/${encodedPrompt}?model=openai-audio&voice=${audioVoice}&referrer=rrai.my.id${randomCacheBuster}`;
-        
+
         const res = await fetch(url);
 
         if (!res.ok) {
             throw new Error(`Gagal membuat audio (status: ${res.status})`);
         }
-        
+
         const blob = await res.blob();
         if (blob.type !== 'audio/mpeg') {
             throw new Error('Respons yang diterima bukan file audio.');
@@ -431,8 +383,48 @@ export function useAppState() {
         setLoading(false);
     }
   }, [prompt, audioVoice, showToast, coins, generatedAudioData]);
+
+  const handleDownloadAudio = useCallback(() => {
+    if (!generatedAudioData || !generatedAudioData.url) {
+      showToast('Tidak ada audio untuk diunduh.', 'error');
+      return;
+    }
+    const link = document.createElement('a');
+    link.href = generatedAudioData.url;
+    link.download = `ruangriung-audio-${generatedAudioData.voice}-${Date.now()}.mp3`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showToast('Audio berhasil diunduh!', 'success');
+  }, [generatedAudioData, showToast]);
+
+  const handleDownloadVideoPromptJson = useCallback(() => {
+    if (!generatedVideoPrompt) {
+      showToast('Tidak ada prompt video untuk diunduh.', 'error');
+      return;
+    }
+
+    const dataToDownload = {
+      generator: 'RuangRiung AI Video Prompt Assistant',
+      createdAt: new Date().toISOString(),
+      prompt: generatedVideoPrompt,
+      parameters: videoParams,
+    };
+
+    const jsonString = JSON.stringify(dataToDownload, null, 2);
+    const blob = new Blob([jsonString], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `ruangriung-video-prompt-${Date.now()}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    showToast('File JSON berhasil diunduh!', 'success');
+  }, [generatedVideoPrompt, videoParams, showToast]);
   
-  // --- FUNGSI YANG DIPERBAIKI ---
   const handleBuildVideoPrompt = useCallback(async () => {
       if (!videoParams.concept.trim()) {
           showToast('Konsep utama video tidak boleh kosong.', 'error');
@@ -461,7 +453,6 @@ export function useAppState() {
           const data = await res.json();
           const videoPrompt = data.choices[0]?.message?.content;
           
-          // --- LOGIKA VALIDASI BARU ---
           const trimmedPrompt = videoPrompt ? videoPrompt.trim() : '';
           
           if (trimmedPrompt) {
@@ -469,11 +460,9 @@ export function useAppState() {
               setCoins(c => Math.max(0, c - 1));
               showToast('Prompt video profesional berhasil dibuat!', 'success');
           } else {
-              // Jika respons kosong, tampilkan error dan jangan potong koin
               console.error("API returned an empty or whitespace-only response for video prompt.");
               throw new Error('AI tidak memberikan hasil. Coba ubah parameter Anda.');
           }
-          // --- AKHIR LOGIKA VALIDASI ---
 
       } catch (err) {
           showToast(err.message, 'error');
@@ -605,7 +594,6 @@ export function useAppState() {
     setActiveTab('image');
     setSelectedHistoryImage(null);
     setTimeout(() => handleGenerate(), 100);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [showToast, handleGenerate]);
 
   const handleAdminReset = useCallback(() => {
@@ -622,8 +610,7 @@ export function useAppState() {
 
   const handleGenerateModalPassword = useCallback(() => {
     const randomChars = Array(5).fill(0).map(() => Math.floor(Math.random() * 10)).join('');
-    const newPassword = `ruangriung-${randomChars}`;
-    setGeneratedTurboPassword(newPassword);
+    setGeneratedTurboPassword(`ruangriung-${randomChars}`);
     setTurboPasswordInput('');
   }, []);
 
@@ -715,6 +702,6 @@ export function useAppState() {
     handleAdminReset, handleGenerateModalPassword, handleActivateTurbo, handleClearHistory,
     handleUsePromptAndSeed, handleCreateVariation, handleDownload,
     handleLabAuthSuccess, handleMasterReset, handleInstallClick, handleBannerClose, scrollToTop,
-    handleDownloadAudio, handleDownloadVideoPromptJson
+    handleDownloadAudio, handleDownloadVideoPromptJson,
   };
 }

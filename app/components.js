@@ -24,7 +24,7 @@ export const AdBanner = ({ slotId }) => {
         </div>
     );
   }
-  
+
   return (
     <div className="my-6 text-center" key={slotId}>
       <ins
@@ -256,8 +256,8 @@ export const PromptEditModal = ({ isOpen, onClose, value, onSave }) => {
 
 export const GeneratedContentDisplay = ({
     activeTab,
-    loading, generatedImages, generatedVideoPrompt, 
-    generatedAudioData, 
+    loading, generatedImages, generatedVideoPrompt,
+    generatedAudioData,
     onDownloadAudio,
     onUsePromptAndSeed, onCreateVariation, onDownload, showToast,
     selectedHistoryImage,
@@ -276,10 +276,6 @@ export const GeneratedContentDisplay = ({
     const startDragPos = useRef({ x: 0, y: 0 });
     const [baseFilter, setBaseFilter] = useState('none');
     const [watermark, setWatermark] = useState({
-        type: 'text', text: '', color: '#ffffff', size: 8, opacity: 0.7,
-        position: { x: 50, y: 50 }, imageUrl: null, imageFile: null,
-    });
-    const [pendingWatermark, setPendingWatermark] = useState({
         type: 'text', text: '', color: '#ffffff', size: 8, opacity: 0.7,
         position: { x: 50, y: 50 }, imageUrl: null, imageFile: null,
     });
@@ -324,7 +320,6 @@ export const GeneratedContentDisplay = ({
         };
     }, [isDragging, handleMouseMove, handleMouseUp]);
 
-    // --- FUNGSI BARU UNTUK MENGATUR POSISI WATERMARK ---
     const handleWatermarkMove = useCallback((clientX, clientY) => {
         if (!watermarkRef.current || !imageContainerRef.current) return;
         const containerRect = imageContainerRef.current.getBoundingClientRect();
@@ -335,29 +330,24 @@ export const GeneratedContentDisplay = ({
         setWatermark(w => ({ ...w, position: { x: newX, y: newY } }));
     }, []);
 
-    // --- HANDLER UNTUK MOUSE ---
     const handleWatermarkMouseDown = (e) => { e.stopPropagation(); setIsDraggingWatermark(true); };
     const handleWatermarkMouseMove = useCallback((e) => {
         if (isDraggingWatermark) handleWatermarkMove(e.clientX, e.clientY);
     }, [isDraggingWatermark, handleWatermarkMove]);
     const handleWatermarkMouseUp = useCallback(() => setIsDraggingWatermark(false), []);
 
-    // --- HANDLER BARU UNTUK SENTUHAN ---
     const handleWatermarkTouchStart = (e) => { e.stopPropagation(); setIsDraggingWatermark(true); };
     const handleWatermarkTouchMove = useCallback((e) => {
         if (isDraggingWatermark) {
-            e.preventDefault(); // Mencegah scroll halaman saat drag
+            e.preventDefault();
             handleWatermarkMove(e.touches[0].clientX, e.touches[0].clientY);
         }
     }, [isDraggingWatermark, handleWatermarkMove]);
     const handleWatermarkTouchEnd = useCallback(() => setIsDraggingWatermark(false), []);
 
-    // --- EFEK UNTUK MENGELOLA SEMUA EVENT LISTENER ---
     useEffect(() => {
-        // Event listeners untuk mouse
         window.addEventListener('mousemove', handleWatermarkMouseMove);
         window.addEventListener('mouseup', handleWatermarkMouseUp);
-        // Event listeners untuk sentuhan
         window.addEventListener('touchmove', handleWatermarkTouchMove, { passive: false });
         window.addEventListener('touchend', handleWatermarkTouchEnd);
 
@@ -394,7 +384,7 @@ export const GeneratedContentDisplay = ({
             </div>
         );
     }
-    
+
      if (activeTab === 'video' && generatedVideoPrompt) {
         return (
             <div className="w-full flex justify-center">
@@ -424,7 +414,7 @@ export const GeneratedContentDisplay = ({
                     <audio controls src={generatedAudioData.url} className="w-full">
                         Browser Anda tidak mendukung elemen audio.
                     </audio>
-                    
+
                     <div className="pt-4 border-t border-gray-500/20 space-y-3">
                         <div>
                             <h4 className="font-semibold text-sm mb-1">Teks (Prompt)</h4>
@@ -459,13 +449,8 @@ export const GeneratedContentDisplay = ({
 
     if (imagesToShow.length === 1) {
         const img = imagesToShow[0];
-        const handleApplyWatermark = () => {
-            setWatermark({ ...pendingWatermark });
-            showToast('Watermark diterapkan!', 'success');
-        };
         const handleRemoveWatermark = () => {
             setWatermark({ type: 'text', text: '', color: '#ffffff', size: 8, opacity: 0.7, position: { x: 50, y: 50 }, imageUrl: null, imageFile: null });
-            setPendingWatermark({ type: 'text', text: '', color: '#ffffff', size: 8, opacity: 0.7, position: { x: 50, y: 50 }, imageUrl: null, imageFile: null });
             showToast('Watermark dihapus.', 'info');
         };
 
@@ -504,7 +489,7 @@ export const GeneratedContentDisplay = ({
                                 <div
                                     ref={watermarkRef}
                                     onMouseDown={handleWatermarkMouseDown}
-                                    onTouchStart={handleWatermarkTouchStart} // <-- Tambahkan ini
+                                    onTouchStart={handleWatermarkTouchStart}
                                     className="absolute watermark-control z-10"
                                     style={{
                                         left: `${watermark.position.x}%`,
@@ -549,12 +534,12 @@ export const GeneratedContentDisplay = ({
                         </div>
                         <div className="flex flex-wrap items-center gap-2 ml-2">
                             <label className="text-xs font-semibold">Watermark:</label>
-                            <select value={pendingWatermark.type} onChange={e => setPendingWatermark(w => ({...w, type: e.target.value}))} className="text-xs p-2 rounded-lg neumorphic-input border">
+                            <select value={watermark.type} onChange={e => setWatermark(w => ({...w, type: e.target.value}))} className="text-xs p-2 rounded-lg neumorphic-input border">
                                 <option value="text">Teks</option>
                                 <option value="image">Gambar</option>
                             </select>
-                            {pendingWatermark.type === 'text' ? (
-                                <input type="text" value={pendingWatermark.text} onChange={e => setPendingWatermark(w => ({...w, text: e.target.value}))} placeholder="Isi watermark..." className="text-xs p-2 rounded-lg neumorphic-input border w-24" />
+                            {watermark.type === 'text' ? (
+                                <input type="text" value={watermark.text} onChange={e => setWatermark(w => ({...w, text: e.target.value}))} placeholder="Isi watermark..." className="text-xs p-2 rounded-lg neumorphic-input border w-24" />
                             ) : (
                                 <input type="file" accept="image/png, image/jpeg" onChange={e => {
                                     const file = e.target.files[0];
@@ -565,22 +550,21 @@ export const GeneratedContentDisplay = ({
                                         }
                                         const reader = new FileReader();
                                         reader.onload = (event) => {
-                                            setPendingWatermark(w => ({ ...w, imageUrl: event.target.result, text: '' }));
+                                            setWatermark(w => ({ ...w, imageUrl: event.target.result, text: '' }));
                                         };
                                         reader.readAsDataURL(file);
                                     }
                                 }} className="w-32 text-xs" />
                             )}
-                            <input type="color" value={pendingWatermark.color} onChange={e => setPendingWatermark(w => ({...w, color: e.target.value}))} className="w-8 h-8 p-1 rounded-lg border" title="Warna watermark"/>
+                            <input type="color" value={watermark.color} onChange={e => setWatermark(w => ({...w, color: e.target.value}))} className="w-8 h-8 p-1 rounded-lg border" title="Warna watermark"/>
                             <div className="flex flex-col items-center">
                                 <label className="text-[10px] opacity-70">Ukuran</label>
-                                <input type="range" min="1" max="50" value={pendingWatermark.size} onChange={e => setPendingWatermark(w => ({...w, size: Number(e.target.value)}))} className="w-16" title="Ukuran watermark"/>
+                                <input type="range" min="1" max="50" value={watermark.size} onChange={e => setWatermark(w => ({...w, size: Number(e.target.value)}))} className="w-16" title="Ukuran watermark"/>
                             </div>
                             <div className="flex flex-col items-center">
                                 <label className="text-[10px] opacity-70">Opasitas</label>
-                                <input type="range" min="0.1" max="1" step="0.05" value={pendingWatermark.opacity} onChange={(e) => setPendingWatermark(w => ({...w, opacity: Number(e.target.value)}))} className="w-16" title="Opasitas watermark"/>
+                                <input type="range" min="0.1" max="1" step="0.05" value={watermark.opacity} onChange={(e) => setWatermark(w => ({...w, opacity: Number(e.target.value)}))} className="w-16" title="Opasitas watermark"/>
                             </div>
-                            <NeumorphicButton onClick={handleApplyWatermark} className="text-xs !p-2 bg-primary-500 text-black dark:text-white dark:bg-primary-600">Terapkan</NeumorphicButton>
                             <NeumorphicButton onClick={handleRemoveWatermark} className="text-xs !p-2 bg-red-400 text-black dark:text-white dark:bg-red-700">Hapus</NeumorphicButton>
                         </div>
                     </div>
@@ -630,7 +614,7 @@ export const GeneratedContentDisplay = ({
                                     <div
                                         ref={watermarkRef}
                                         onMouseDown={handleWatermarkMouseDown}
-                                        onTouchStart={handleWatermarkTouchStart} // <-- Tambahkan ini
+                                        onTouchStart={handleWatermarkTouchStart}
                                         className="absolute watermark-control z-10"
                                         style={{
                                             left: `${watermark.position.x}%`,
@@ -662,64 +646,7 @@ export const GeneratedContentDisplay = ({
             {selectedIndex !== null && imagesToShow[selectedIndex] && (
                 <div className="w-full flex justify-center animate-fade-in mt-10">
                     <div className="max-w-2xl w-full flex flex-col items-center">
-                        <div className="relative w-full flex justify-center">
-                            <div ref={imageContainerRef}
-                                className="w-full h-auto max-h-[60vh] overflow-hidden rounded-xl flex items-center justify-center relative bg-black/5 shadow-md"
-                                style={{boxShadow: 'var(--shadow-inset)', cursor: isDragging ? 'grabbing' : (zoomLevel > 1 ? 'grab' : 'default') }}
-                                onMouseDown={handleMouseDown}
-                            >
-                                <img
-                                    src={imagesToShow[selectedIndex].url}
-                                    alt="Generated"
-                                    style={{
-                                        transform: `scale(${zoomLevel}) translate(${imagePosition.x / zoomLevel}px, ${imagePosition.y / zoomLevel}px)`,
-                                        filter: finalFilter,
-                                        transition: isDragging ? 'none' : 'transform 0.1s ease-out, filter 0.2s',
-                                        maxWidth: '100%',
-                                        maxHeight: '100%',
-                                        userSelect: 'none',
-                                    }}
-                                    draggable="false"
-                                    className="rounded-xl shadow-md"
-                                />
-                                <div className="absolute top-2 right-2 flex flex-col gap-1 zoom-control rounded-lg p-1 opacity-90 hover:opacity-100 transition-all z-20"
-                                    style={{ background: 'rgba(255,255,255,0.85)', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
-                                    <button onClick={() => handleOpenZoomModal(imagesToShow[selectedIndex].url)} className="p-1 rounded hover:bg-gray-200" title="Perbesar">
-                                        <ZoomIn size={18} className="text-black dark:text-white"/>
-                                    </button>
-                                    <button onClick={handleZoomIn} className="p-1 rounded hover:bg-gray-200"><Plus size={14} className="text-black dark:text-white"/></button>
-                                    <button onClick={handleZoomOut} className="p-1 rounded hover:bg-gray-200"><Minus size={14} className="text-black dark:text-white"/></button>
-                                </div>
-                                {(watermark.text || watermark.imageUrl) && (
-                                    <div
-                                        ref={watermarkRef}
-                                        onMouseDown={handleWatermarkMouseDown}
-                                        onTouchStart={handleWatermarkTouchStart} // <-- Tambahkan ini
-                                        className="absolute watermark-control z-10"
-                                        style={{
-                                            left: `${watermark.position.x}%`,
-                                            top: `${watermark.position.y}%`,
-                                            transform: 'translate(-50%, -50%)',
-                                            opacity: watermark.opacity,
-                                            cursor: isDraggingWatermark ? 'grabbing' : 'grab',
-                                            pointerEvents: 'auto',
-                                            color: watermark.color,
-                                            fontSize: `${watermark.size}vmin`,
-                                            fontWeight: 'bold',
-                                            textShadow: '0 0 2px black, 0 0 2px black',
-                                            WebkitUserSelect: 'none', userSelect: 'none',
-                                        }}
-                                    >
-                                        {watermark.type === 'text' && watermark.text}
-                                        {watermark.type === 'image' && watermark.imageUrl && (
-                                            <img src={watermark.imageUrl} alt="Watermark preview" style={{ width: `${watermark.size * 2}px`, height: 'auto' }} />
-                                        )}
-                                    </div>
-                                )}
-                            </div>
-                            <div className="text-xs text-center opacity-60 mt-2">Seed: {imagesToShow[selectedIndex].seed}</div>
-                        </div>
-                        <div className="max-w-2xl w-full flex flex-wrap gap-2 justify-center items-center bg-[var(--bg-color)] rounded-2xl shadow-2xl p-4 mt-8 border border-gray-200 dark:border-gray-800 neumorphic-card">
+                         <div className="max-w-2xl w-full flex flex-wrap gap-2 justify-center items-center bg-[var(--bg-color)] rounded-2xl shadow-2xl p-4 mt-8 border border-gray-200 dark:border-gray-800 neumorphic-card">
                             <NeumorphicButton onClick={() => onUsePromptAndSeed?.(imagesToShow[selectedIndex].prompt, imagesToShow[selectedIndex].seed)} className="text-xs !p-2"><Layers size={16}/> Gunakan Prompt & Seed</NeumorphicButton>
                             <NeumorphicButton onClick={() => onCreateVariation?.(imagesToShow[selectedIndex].prompt)} className="text-xs !p-2"><Repeat size={16}/> Buat Variasi</NeumorphicButton>
                             <NeumorphicButton onClick={() => onDownload?.(imagesToShow[selectedIndex], finalFilter, watermark)} className="text-xs !p-2 font-bold"><ImageDown size={16}/> Unduh</NeumorphicButton>

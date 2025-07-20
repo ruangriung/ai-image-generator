@@ -6,8 +6,7 @@ import { Sun, Moon, Wand2, Upload, Coins, Clock, Settings, Trash2, ChevronUp, Do
 import { useSession } from "next-auth/react";
 import { useAppState } from './useAppState.js';
 
-// --- PERUBAHAN: Impor AdBanner dari components.js ---
-import { Spinner, NeumorphicButton, Toasts, GeneratedContentDisplay, AdBanner } from './components.js';
+import { Spinner, NeumorphicButton, Toasts, GeneratedContentDisplay } from './components.js';
 import ChatbotAssistant from './ChatbotAssistant.js';
 import Lab from './Lab.js';
 import HistorySection from './History.js';
@@ -122,14 +121,12 @@ export default function AIImageGenerator() {
             </div>
           </header>
           
-          {/* --- PENEMPATAN IKLAN PERTAMA --- */}
-          {/* <AdBanner slotId="6897039624" />  */}
-          
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             <div className="lg:col-span-4 space-y-6">
               <div className="p-6 rounded-2xl h-fit space-y-4 neumorphic-card">
                 <TabSelector activeTab={state.activeTab} setActiveTab={state.setActiveTab} />
                 
+                {/* --- PERBAIKAN DI SINI: Meneruskan semua state ke ImageTab --- */}
                 {state.activeTab === 'image' && <ImageTab {...state} />}
                 
                 {state.activeTab === 'video' && (
@@ -200,7 +197,6 @@ export default function AIImageGenerator() {
                 showToast={state.showToast}
                 setPrompt={state.setPrompt}
                 setSeed={state.setSeed}
-                onUsePromptAndSeed={state.handleUsePromptAndSeed}
               />
             </div>
           </div>
